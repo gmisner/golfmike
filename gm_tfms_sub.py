@@ -1,4 +1,7 @@
 import time
+from lxml import objectify, etree
+from collections import OrderedDict
+import re
 from solace.messaging.messaging_service import MessagingService, ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener, ServiceEvent
 from solace.messaging.resources.queue import Queue
 from solace.messaging.config.retry_strategy import RetryStrategy
@@ -29,11 +32,20 @@ class MessageHandlerImpl(MessageHandler):
             payload = payload.decode()
 
         topic = message.get_destination_name()
-        print("\n" + f"Received message on: {topic}")
-        print("\n" + f"Message payload: {payload} \n")
+        #print("\n" + f"Received message on: {topic}")
+        #print("\n" + f"Message payload: {payload} \n")
         self.receiver.ack(message)
         # print("\n" + f"Message dump: {message} \n")
 
+        xml_content = (payload)
+        xml_content_without_encoding = re.sub(r'<\?xml version="1.0" encoding="UTF-8" standalone="yes"\?>', '', xml_content)
+
+        root = objectify.fromstring(xml_content_without_encoding) # xml_string contains the XML data above
+        print(root)
+        #print (root.fiOutput.fiMessage.tmiFlightDataList.flightData.flight.aircraftID) # returns the book title
+        
+       
+ 
 # Inner classes for error handling
 class ServiceEventHandler(ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener):
     def on_reconnected(self, e: ServiceEvent):
@@ -86,10 +98,10 @@ durable_non_exclusive_queue = Queue.durable_non_exclusive_queue(queue_name)
 
 try:
   # Build a receiver and bind it to the durable exclusive queue
-  persistent_receiver: PersistentMessageReceiver = messaging_service.create_persistent_message_receiver_builder()\
+    persistent_receiver: PersistentMessageReceiver = messaging_service.create_persistent_message_receiver_builder()\
             .with_missing_resources_creation_strategy(MissingResourcesCreationStrategy.CREATE_ON_START)\
             .build(durable_non_exclusive_queue)
-  persistent_receiver.start()
+    persistent_receiver.start()
 
   # Callback for received messages
   persistent_receiver.receive_async(MessageHandlerImpl(persistent_receiver))
