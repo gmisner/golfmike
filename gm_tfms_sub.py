@@ -36,19 +36,60 @@ class XmlDictConfig(dict):
             else:
                 self.update({element.tag: element.text})
 
-# Handle received messages
+
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
         self.receiver: PersistentMessageReceiver = persistent_receiver
 
     def on_message(self, message: InboundMessage):
-        # Check if the payload is a String or Byte, decode if its the later
-        payload = message.get_payload_as_string() if message.get_payload_as_string() != None else message.get_payload_as_bytes()
+        payload = message.get_payload_as_string() if message.get_payload_as_string() is not None else message.get_payload_as_bytes()
         if isinstance(payload, bytearray):
             print(f"Received a message of type: {type(payload)}. Decoding to string")
             payload = payload.decode()
+
         root = ElementTree.XML(payload)
-        pprint(XmlDictConfig(root))
+        xml_dict = XmlDictConfig(root)
+
+        print("XML Dictionary:")
+        #pprint(xml_dict)  # Print the full XML dictionary for debugging
+
+        def extract_value(xml_dict, *keys):
+            current_level = xml_dict
+            for key in keys:
+                current_level = current_level.get(key, {})
+            return current_level
+
+        # Extracting values
+        aircraft_id = extract_value(xml_dict,
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdataservice}fiOutput',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiMessage',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}tmiFlightDataList',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}flightData',
+            '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}aircraftId')
+
+        # Extract origination and destination
+        flight_data = extract_value(xml_dict,
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiOutput',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiMessage',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}tmiFlightDataList',
+            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}flightData')
+
+        origination_airport = extract_value(flight_data, '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}departurePoint',
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}airport')
+
+        destination_airport = extract_value(flight_data, '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}arrivalPoint',
+            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}airport')
+
+        # Printing values
+        print(f"Aircraft ID: {aircraft_id}")
+        print(f"Origination: {origination_airport}")
+        print(f"Destination: {destination_airport}")
+
+
+
 
 # Inner classes for error handling
 class ServiceEventHandler(ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener):
