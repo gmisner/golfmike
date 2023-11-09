@@ -1,7 +1,6 @@
 import time
-from lxml import objectify, etree
-from collections import OrderedDict
-import re
+from pprint import pprint
+from xml.etree import cElementTree as ElementTree
 from solace.messaging.messaging_service import MessagingService, ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener, ServiceEvent
 from solace.messaging.resources.queue import Queue
 from solace.messaging.config.retry_strategy import RetryStrategy
@@ -19,6 +18,25 @@ VPN_NAME = "TFMS"
 # The queue where you want to receive messages
 QUEUE_NAME = "gear.twinhawk.co.TFMS.9e3be232-071b-4763-8299-9add28baef3e.OUT"
 
+class XmlDictConfig(dict):
+    def __init__(self, parent_element):
+        if parent_element.items():
+            self.update(dict(parent_element.items()))
+        for element in parent_element:
+            if element:
+                if len(element) == 1 or element[0].tag != element[1].tag:
+                    aDict = XmlDictConfig(element)
+                else:
+                    aDict = {element[0].tag: XmlDictConfig(element)}
+                if element.items():
+                    aDict.update(dict(element.items()))
+                self.update({element.tag: aDict})
+            elif element.items():
+                self.update({element.tag: dict(element.items())})
+            else:
+                self.update({element.tag: element.text})
+        for flight.
+
 # Handle received messages
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
@@ -30,22 +48,9 @@ class MessageHandlerImpl(MessageHandler):
         if isinstance(payload, bytearray):
             print(f"Received a message of type: {type(payload)}. Decoding to string")
             payload = payload.decode()
+        root = ElementTree.XML(payload)
+        pprint(XmlDictConfig(root))
 
-        topic = message.get_destination_name()
-        #print("\n" + f"Received message on: {topic}")
-        #print("\n" + f"Message payload: {payload} \n")
-        self.receiver.ack(message)
-        # print("\n" + f"Message dump: {message} \n")
-
-        xml_content = (payload)
-        xml_content_without_encoding = re.sub(r'<\?xml version="1.0" encoding="UTF-8" standalone="yes"\?>', '', xml_content)
-
-        root = objectify.fromstring(xml_content_without_encoding) # xml_string contains the XML data above
-        print(root)
-        #print (root.fiOutput.fiMessage.tmiFlightDataList.flightData.flight.aircraftID) # returns the book title
-        
-       
- 
 # Inner classes for error handling
 class ServiceEventHandler(ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener):
     def on_reconnected(self, e: ServiceEvent):
@@ -104,12 +109,12 @@ try:
     persistent_receiver.start()
 
   # Callback for received messages
-  persistent_receiver.receive_async(MessageHandlerImpl(persistent_receiver))
-  print(f'PERSISTENT receiver started... Bound to Queue [{durable_non_exclusive_queue.get_name()}]')
-  try: 
+    persistent_receiver.receive_async(MessageHandlerImpl(persistent_receiver))
+    print(f'PERSISTENT receiver started... Bound to Queue [{durable_non_exclusive_queue.get_name()}]')
+    try: 
       while True:
           time.sleep(1)
-  except KeyboardInterrupt:
+    except KeyboardInterrupt:
       print('\nKeyboardInterrupt received')
 # Handle API exception 
 except PubSubPlusClientError as exception:
