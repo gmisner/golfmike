@@ -35,7 +35,6 @@ class XmlDictConfig(dict):
                 self.update({element.tag: dict(element.items())})
             else:
                 self.update({element.tag: element.text})
-        for flight.
 
 # Handle received messages
 class MessageHandlerImpl(MessageHandler):
@@ -57,7 +56,7 @@ class ServiceEventHandler(ReconnectionListener, ReconnectionAttemptListener, Ser
         print("\non_reconnected")
         print(f"Error cause: {e.get_cause()}")
         print(f"Message: {e.get_message()}")
-    
+
     def on_reconnecting(self, e: "ServiceEvent"):
         print("\non_reconnecting")
         print(f"Error cause: {e.get_cause()}")
@@ -97,7 +96,7 @@ messaging_service.add_reconnection_attempt_listener(service_handler)
 messaging_service.add_service_interruption_listener(service_handler)
 
 # Queue name. 
-# NOTE: This assumes that a persistent queue already exists on the broker with the right topic subscription 
+# NOTE: This assumes that a persistent queue already exists on the broker with the right topic subscription
 queue_name = (QUEUE_NAME)
 durable_non_exclusive_queue = Queue.durable_non_exclusive_queue(queue_name)
 
@@ -111,18 +110,18 @@ try:
   # Callback for received messages
     persistent_receiver.receive_async(MessageHandlerImpl(persistent_receiver))
     print(f'PERSISTENT receiver started... Bound to Queue [{durable_non_exclusive_queue.get_name()}]')
-    try: 
-      while True:
-          time.sleep(1)
+    try:
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
-      print('\nKeyboardInterrupt received')
-# Handle API exception 
+        print('\nKeyboardInterrupt received')
+# Handle API exception
 except PubSubPlusClientError as exception:
-  print(f'\nMake sure queue {queue_name} exists on broker!')
+    print(f'\nMake sure queue {queue_name} exists on broker!')
 
 finally:
     if persistent_receiver and persistent_receiver.is_running():
-      print('\nTerminating receiver')
-      persistent_receiver.terminate(grace_period = 0)
+        print('\nTerminating receiver')
+        persistent_receiver.terminate(grace_period = 0)
     print('\nDisconnecting Messaging Service')
     messaging_service.disconnect()
