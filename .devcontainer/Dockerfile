@@ -5,6 +5,14 @@ ARG VARIANT="3.10"
 ARG arch="amd64"
 FROM --platform=linux/${arch} mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 
+# Set DNS servers (replace with your desired DNS servers)
+#RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    #echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+
+# Install ping, nslookup, and dig
+#RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    #&& apt-get -y install --no-install-recommends iputils-ping dnsutils
+
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 #ARG NODE_VERSION="none"
 #RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi

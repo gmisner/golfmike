@@ -1,6 +1,7 @@
 import time
-from pprint import pprint
-from xml.etree import cElementTree as ElementTree
+import xml.etree.ElementTree as ET
+import pprint
+from gm_xml_parser import parse_and_store_to_database
 from solace.messaging.messaging_service import MessagingService, ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener, ServiceEvent
 from solace.messaging.resources.queue import Queue
 from solace.messaging.config.retry_strategy import RetryStrategy
@@ -18,77 +19,21 @@ VPN_NAME = "TFMS"
 # The queue where you want to receive messages
 QUEUE_NAME = "gear.twinhawk.co.TFMS.9e3be232-071b-4763-8299-9add28baef3e.OUT"
 
-class XmlDictConfig(dict):
-    def __init__(self, parent_element):
-        if parent_element.items():
-            self.update(dict(parent_element.items()))
-        for element in parent_element:
-            if element:
-                if len(element) == 1 or element[0].tag != element[1].tag:
-                    aDict = XmlDictConfig(element)
-                else:
-                    aDict = {element[0].tag: XmlDictConfig(element)}
-                if element.items():
-                    aDict.update(dict(element.items()))
-                self.update({element.tag: aDict})
-            elif element.items():
-                self.update({element.tag: dict(element.items())})
-            else:
-                self.update({element.tag: element.text})
-
-
+# Handle received messages
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
         self.receiver: PersistentMessageReceiver = persistent_receiver
 
     def on_message(self, message: InboundMessage):
+        # Check if the payload is a String or Byte, decode if it's the latter
         payload = message.get_payload_as_string() if message.get_payload_as_string() is not None else message.get_payload_as_bytes()
         if isinstance(payload, bytearray):
             print(f"Received a message of type: {type(payload)}. Decoding to string")
             payload = payload.decode()
+            parsed_data = parse_and_store_to_database(payload)
 
-        root = ElementTree.XML(payload)
-        xml_dict = XmlDictConfig(root)
-
-        print("XML Dictionary:")
-        #pprint(xml_dict)  # Print the full XML dictionary for debugging
-
-        def extract_value(xml_dict, *keys):
-            current_level = xml_dict
-            for key in keys:
-                current_level = current_level.get(key, {})
-            return current_level
-
-        # Extracting values
-        aircraft_id = extract_value(xml_dict,
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdataservice}fiOutput',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiMessage',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}tmiFlightDataList',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}flightData',
-            '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}aircraftId')
-
-        # Extract origination and destination
-        flight_data = extract_value(xml_dict,
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiOutput',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}fiMessage',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}tmiFlightDataList',
-            '{urn:us:gov:dot:faa:atm:tfm:flowinformation}flightData')
-
-        origination_airport = extract_value(flight_data, '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}departurePoint',
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}airport')
-
-        destination_airport = extract_value(flight_data, '{urn:us:gov:dot:faa:atm:tfm:ficommonmessages2}flight',
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}arrivalPoint',
-            '{urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements}airport')
-
-        # Printing values
-        print(f"Aircraft ID: {aircraft_id}")
-        print(f"Origination: {origination_airport}")
-        print(f"Destination: {destination_airport}")
-
-
+            # Now, 'parsed_data' contains the Pydantic model instance, and data is stored in the database.
+            print(parsed_data.sensitivity, parsed_data.visDomain, parsed_data.destinationCodes, parsed_data.sourceFacility, parsed_data.sourceTimeStamp, parsed_data.msgType)
 
 
 # Inner classes for error handling
@@ -136,7 +81,7 @@ messaging_service.add_reconnection_listener(service_handler)
 messaging_service.add_reconnection_attempt_listener(service_handler)
 messaging_service.add_service_interruption_listener(service_handler)
 
-# Queue name. 
+# Queue name.
 # NOTE: This assumes that a persistent queue already exists on the broker with the right topic subscription
 queue_name = (QUEUE_NAME)
 durable_non_exclusive_queue = Queue.durable_non_exclusive_queue(queue_name)

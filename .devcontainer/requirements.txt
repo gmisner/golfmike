@@ -5,3 +5,7 @@ solace-pubsubplus==1.6.0
 pylint
 sqlalchemy
 lxml
+xmltodict
+pydantic
+sqlalchemy
+psycopg2
