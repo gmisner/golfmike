@@ -29,7 +29,8 @@
 				"ms-ossdata.vscode-postgresql",
 				"KevinRose.vsc-python-indent",
 				"donjayamanne.python-extension-pack",
-				"ms-azuretools.vscode-docker"
+				"ms-azuretools.vscode-docker",
+				"ms-python.black-formatter"
 			]
 		}
 	},

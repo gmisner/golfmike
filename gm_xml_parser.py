@@ -1,27 +1,26 @@
-# xml_parser.py
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError
 import xmltodict
 from sqlalchemy import create_engine, Column, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import URL
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.engine.url import URL
+from datetime import datetime
 
-
-# URL configuration
-connection_string = URL(
-    "postgresql",
+# URL configuration with the correct endpoint ID
+connection_string = URL.create(
+    drivername="postgresql+psycopg2",
     username="gkmisner",
     password="81QgOfuHCwyk",
     host="ep-tight-lake-32732521.us-west-2.aws.neon.tech",
-    port=5432,  # Change the port number if it's different
+    port=5432,
     database="swim",
-    query={"sslmode": "require", "options": "endpoint%3Dep-tight-lake-32732521"},
+    query={
+        "sslmode": "require",
+        "options": "endpoint=ep-tight-lake-32732521"  # Make sure the endpoint ID is correct
+    }
 )
 
 engine = create_engine(connection_string)
 Base = declarative_base()
-
 
 class FlightDataDBModel(Base):
     __tablename__ = "flight_data"
@@ -56,60 +55,56 @@ class FlightDataDBModel(Base):
     entryHeading = Column(String)
     exitInd = Column(String)
 
-
 class FlightDataModel(BaseModel):
     sensitivity: str
     visDomain: str
     destinationCodes: str
     sourceFacility: str
-    sourceTimeStamp: str
+    sourceTimeStamp: datetime = Field(..., alias='sourceTimeStamp')
     msgType: str
     aircraftId: str
     gufi: str
-    igtd: str
+    igtd: datetime = Field(..., alias='igtd')
     departurePoint: str
     arrivalPoint: str
     flightReference: str
     status: str
     tmiUpdateType: str
-    tmiLastUpdateTime: str
+    tmiLastUpdateTime: datetime = Field(..., alias='tmiLastUpdateTime')
     fcaId: str
     fxaId: str
-    bentryTm: str
-    createTm: str
-    eentryTm: str
-    entryTm: str
-    exitTm: str
-    extendedExitTm: str
-    ientryTm: str
-    oentryTm: str
+    bentryTm: datetime = Field(..., alias='bentryTm')
+    createTm: datetime = Field(..., alias='createTm')
+    eentryTm: datetime = Field(..., alias='eentryTm')
+    entryTm: datetime = Field(..., alias='entryTm')
+    exitTm: datetime = Field(..., alias='exitTm')
+    extendedExitTm: datetime = Field(..., alias='extendedExitTm')
+    ientryTm: datetime = Field(..., alias='ientryTm')
+    oentryTm: datetime = Field(..., alias='oentryTm')
     entryLat: str
     entryLon: str
     entryHeading: str
     exitInd: str
 
-
 def parse_xml_to_pydantic(xml_data):
-    xml_dict = xmltodict.parse(xml_data)
-    return FlightDataModel(
-        **xml_dict.get("tfmDataService", {})
-        .get("fiOutput", {})
-        .get("fiMessage", {})
-        .get("tmiFlightDataList", {})
-        .get("flightData", {})
-    )
-
+    try:
+        xml_dict = xmltodict.parse(xml_data)
+        flight_data = xml_dict.get("tfmDataService", {}).get("fiOutput", {}).get("fiMessage", {}).get("tmiFlightDataList", {}).get("flightData", {})
+        return FlightDataModel(**flight_data)
+    except ValidationError as e:
+        print(f"Validation error: {e}")
+        return None
 
 def parse_and_store_to_database(xml_data):
     parsed_data = parse_xml_to_pydantic(xml_data)
-
-    flight_data_model = FlightDataDBModel(**parsed_data.dict())
-    session = Session()
-    session.add(flight_data_model)
-    session.commit()
-
-    return parsed_data
-
+    if parsed_data:
+        flight_data_db_model = FlightDataDBModel(**parsed_data.dict())
+        with Session() as session:
+            session.add(flight_data_db_model)
+            session.commit()
+        return parsed_data
+    else:
+        print("Failed to parse XML data")
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
