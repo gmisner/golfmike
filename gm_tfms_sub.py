@@ -1,6 +1,6 @@
+"""Module to ingest data from the FAA SWIM queues"""
+
 import time
-import xml.etree.ElementTree as ET
-import pprint
 import logging
 from solace.messaging.messaging_service import (
     MessagingService,
@@ -19,7 +19,7 @@ from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientErro
 from solace.messaging.config.missing_resources_creation_configuration import (
     MissingResourcesCreationStrategy,
 )
-from gm_xml_parser import parse_and_store_to_database
+from swim_data_processor import parse_and_store_to_database  # Adjust this import path as needed
 
 # Configure logging
 logging.basicConfig(
@@ -32,10 +32,9 @@ HOST = "tcps://ems1.swim.faa.gov:55443"
 USERNAME = "gear.twinhawk.co"
 PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
 VPN_NAME = "TFMS"
-QUEUE_NAME = "gear.twinhawk.co.TFMS.9e3be232-071b-4763-8299-9add28baef3e.OUT"
+QUEUE_NAME = "gear.twinhawk.co.TFMS.b70b3338-3b0e-4388-bba0-b49d870a502c.OUT"
 
 
-# Handle received messages
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
         self.receiver: PersistentMessageReceiver = persistent_receiver
@@ -52,12 +51,16 @@ class MessageHandlerImpl(MessageHandler):
             )
             payload = payload.decode()
 
+        # LOG THE RECEIVED XML HERE (outside the conditional block):
+        logger.info(f"Received XML: {payload}")
+
         try:
             parsed_data = parse_and_store_to_database(payload)
             if parsed_data:
-                logger.info(f"Parsed data: {parsed_data}")
+                logger.info(f"Stored data for flight: {parsed_data.aircraftId}")
             else:
                 logger.error("Failed to parse and store the XML data")
+
         except Exception as e:
             logger.error(f"Error processing message: {e}")
 

@@ -30,7 +30,8 @@
 				"KevinRose.vsc-python-indent",
 				"donjayamanne.python-extension-pack",
 				"ms-azuretools.vscode-docker",
-				"ms-python.black-formatter"
+				"ms-python.black-formatter",
+				"mikoz.black-py"
 			]
 		}
 	},
