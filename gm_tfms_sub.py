@@ -1,7 +1,5 @@
-"""Module to ingest data from the FAA SWIM queues"""
-
+# gm_tfms_sub.py
 import time
-import logging
 from solace.messaging.messaging_service import (
     MessagingService,
     ReconnectionListener,
@@ -19,13 +17,8 @@ from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientErro
 from solace.messaging.config.missing_resources_creation_configuration import (
     MissingResourcesCreationStrategy,
 )
-from swim_data_processor import parse_and_store_to_database  # Adjust this import path as needed
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+from swim_data_processor import parse_and_store_to_database
+from utils.logger import main_logger as logger
 
 # Solace message broker connection parameters
 HOST = "tcps://ems1.swim.faa.gov:55443"
@@ -33,6 +26,9 @@ USERNAME = "gear.twinhawk.co"
 PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
 VPN_NAME = "TFMS"
 QUEUE_NAME = "gear.twinhawk.co.TFMS.b70b3338-3b0e-4388-bba0-b49d870a502c.OUT"
+
+# Delay between processing messages (in seconds)
+PROCESSING_DELAY = 5  # Adjust this value as needed
 
 
 class MessageHandlerImpl(MessageHandler):
@@ -63,6 +59,9 @@ class MessageHandlerImpl(MessageHandler):
 
         except Exception as e:
             logger.error(f"Error processing message: {e}")
+
+        # Add a delay to avoid hitting rate limits
+        time.sleep(PROCESSING_DELAY)
 
 
 # Inner classes for error handling
@@ -140,7 +139,12 @@ try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("KeyboardInterrupt received")
+        logger.info("KeyboardInterrupt received. Shutting down gracefully...")
+        if persistent_receiver and persistent_receiver.is_running():
+            logger.info("Terminating receiver")
+            persistent_receiver.terminate(grace_period=0)
+        logger.info("Disconnecting Messaging Service")
+        messaging_service.disconnect()
 
 except PubSubPlusClientError as exception:
     logger.error(

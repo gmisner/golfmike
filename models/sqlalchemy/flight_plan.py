@@ -1,0 +1,53 @@
+# models/sqlalchemy/flight_plan.py
+
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+from sqlalchemy.orm import relationship
+from db_config import Base
+
+
+class FlightPlanDBModel(Base):
+    """Class representing flight plan information in the database"""
+
+    __tablename__ = "flight_plans"
+    id = Column(String, primary_key=True)
+    sourceId_00e = Column(String)
+    sourceTime_00e1 = Column(String)
+    sourceSeqNo_00e2 = Column(String)
+    flightId_02a = Column(String, ForeignKey("aircraft.aircraft_id"))
+    computerId_02d = Column(String)
+    eramGufi_316a = Column(String)
+    eramGufi_316aNum = Column(Integer)
+    eramGufi_316aDT = Column(DateTime)
+    sspId_167a = Column(String)
+    numberOfAircraft_03a = Column(String)
+    typeOfAircraft_03c = Column(String)
+    airborneEquip_03e = Column(String)
+    beaconCode_04a = Column(String)
+    externalBeaconCode_04b = Column(String)
+    trueAirSpeed_05a = Column(String)
+    machSpeed_05c = Column(String)
+    classifiedSpeed_05d = Column(String)
+    coordFix_06a = Column(String)
+    coordStatusTime_07d = Column(String)
+    coordStatus_07d1 = Column(String)
+    coordTime_07d2 = Column(DateTime)
+    delayTime_07e = Column(String)
+    assignedAlt_08a = Column(String)
+    assignedAlt_08b = Column(String)
+    assignedAlt_08c = Column(String)
+    assignedAlt_08d = Column(String)
+    assignedAlt_08e = Column(String)
+    assignedAlt_08f = Column(String)
+    assignedAlt_08g = Column(String)
+    assignedAlt_08h = Column(String)
+    requestedAlt_09a = Column(String)
+    requestedAlt_09b = Column(String)
+    requestedAlt_09c = Column(String)
+    requestedAlt_09d = Column(String)
+    requestedAlt_09e = Column(String)
+    requestedAlt_09f = Column(String)
+    requestedAlt_09g = Column(String)
+    flightPlanRoute_10a = Column(String)
+    departurePoint_26a = Column(String)
+    destination_27a = Column(String)
+    aircraft = relationship("AircraftDBModel", back_populates="flight_plans")

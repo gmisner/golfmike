@@ -31,7 +31,9 @@
 				"donjayamanne.python-extension-pack",
 				"ms-azuretools.vscode-docker",
 				"ms-python.black-formatter",
-				"mikoz.black-py"
+				"mikoz.black-py",
+				"PKief.material-icon-theme",
+				"njpwerner.autodocstring"
 			]
 		}
 	},

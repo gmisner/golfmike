@@ -1,0 +1,1364 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ds:tfmDataService
+  xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata"
+  xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements"
+  xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd">
+  <fltdOutput>
+    <fdm:fltdMessage acid="PDT5746" airline="PDT" arrArpt="PHL" cdmPart="false" depArpt="ROA" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90166378" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>PDT5746</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T22:40:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>ROA</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>PHL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">ROA</nxce:fix>
+          <nxce:fix elapsedTime="307" sequenceNumber="2">HOKEE</nxce:fix>
+          <nxce:fix elapsedTime="639" sequenceNumber="3">LYH</nxce:fix>
+          <nxce:fix elapsedTime="1270" sequenceNumber="4">BBDOL</nxce:fix>
+          <nxce:fix elapsedTime="1371" sequenceNumber="5">WNDYB</nxce:fix>
+          <nxce:fix elapsedTime="1534" sequenceNumber="6">GDZLA</nxce:fix>
+          <nxce:fix elapsedTime="1715" sequenceNumber="7">KRABY</nxce:fix>
+          <nxce:fix elapsedTime="1961" sequenceNumber="8">BUKYY</nxce:fix>
+          <nxce:fix elapsedTime="2364" sequenceNumber="9">JAYBO</nxce:fix>
+          <nxce:fix elapsedTime="2472" sequenceNumber="10">HEDGE</nxce:fix>
+          <nxce:fix elapsedTime="2627" sequenceNumber="11">CANNY</nxce:fix>
+          <nxce:fix elapsedTime="2802" sequenceNumber="12">ESSSO</nxce:fix>
+          <nxce:fix elapsedTime="2900" sequenceNumber="13">PAATS</nxce:fix>
+          <nxce:fix elapsedTime="3126" sequenceNumber="14">RANSM</nxce:fix>
+          <nxce:fix elapsedTime="3157" sequenceNumber="15">EBRLY</nxce:fix>
+          <nxce:fix elapsedTime="3480" sequenceNumber="16">PHL</nxce:fix>
+          <nxce:waypoint latitudeDecimal="37.33" longitudeDecimal="-79.98" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="80" latitudeDecimal="37.27" longitudeDecimal="-79.93" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="106" latitudeDecimal="37.24" longitudeDecimal="-79.91" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="129" latitudeDecimal="37.22" longitudeDecimal="-79.89" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="149" latitudeDecimal="37.20" longitudeDecimal="-79.88" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="152" latitudeDecimal="37.20" longitudeDecimal="-79.87" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="229" latitudeDecimal="37.12" longitudeDecimal="-79.81" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="243" latitudeDecimal="37.11" longitudeDecimal="-79.80" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="307" latitudeDecimal="37.04" longitudeDecimal="-79.75" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="341" latitudeDecimal="37.06" longitudeDecimal="-79.70" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="465" latitudeDecimal="37.14" longitudeDecimal="-79.51" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="513" latitudeDecimal="37.17" longitudeDecimal="-79.44" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="639" latitudeDecimal="37.25" longitudeDecimal="-79.24" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="650" latitudeDecimal="37.26" longitudeDecimal="-79.22" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="736" latitudeDecimal="37.30" longitudeDecimal="-79.06" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="777" latitudeDecimal="37.33" longitudeDecimal="-78.98" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="822" latitudeDecimal="37.35" longitudeDecimal="-78.89" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="862" latitudeDecimal="37.37" longitudeDecimal="-78.82" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="898" latitudeDecimal="37.39" longitudeDecimal="-78.75" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="947" latitudeDecimal="37.42" longitudeDecimal="-78.65" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="1011" latitudeDecimal="37.45" longitudeDecimal="-78.52" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="1027" latitudeDecimal="37.47" longitudeDecimal="-78.48" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="1149" latitudeDecimal="37.55" longitudeDecimal="-78.16" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="1270" latitudeDecimal="37.64" longitudeDecimal="-77.85" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="1371" latitudeDecimal="37.80" longitudeDecimal="-77.69" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="1391" latitudeDecimal="37.84" longitudeDecimal="-77.66" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="1534" latitudeDecimal="38.07" longitudeDecimal="-77.43" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="1715" latitudeDecimal="38.39" longitudeDecimal="-77.16" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="1808" latitudeDecimal="38.52" longitudeDecimal="-76.99" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="1929" latitudeDecimal="38.67" longitudeDecimal="-76.79" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="1961" latitudeDecimal="38.71" longitudeDecimal="-76.75" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="1974" latitudeDecimal="38.71" longitudeDecimal="-76.72" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="2177" latitudeDecimal="38.79" longitudeDecimal="-76.35" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="2234" latitudeDecimal="38.81" longitudeDecimal="-76.25" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="2244" latitudeDecimal="38.81" longitudeDecimal="-76.23" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="2281" latitudeDecimal="38.82" longitudeDecimal="-76.17" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="2364" latitudeDecimal="38.85" longitudeDecimal="-76.02" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="2387" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="2391" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="2456" latitudeDecimal="38.89" longitudeDecimal="-75.86" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="2472" latitudeDecimal="38.89" longitudeDecimal="-75.84" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="2604" latitudeDecimal="39.04" longitudeDecimal="-75.70" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="2627" latitudeDecimal="39.06" longitudeDecimal="-75.68" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="2758" latitudeDecimal="39.23" longitudeDecimal="-75.66" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="2766" latitudeDecimal="39.24" longitudeDecimal="-75.66" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="2802" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="2819" latitudeDecimal="39.30" longitudeDecimal="-75.64" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="2855" latitudeDecimal="39.34" longitudeDecimal="-75.61" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="2878" latitudeDecimal="39.36" longitudeDecimal="-75.58" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="2900" latitudeDecimal="39.39" longitudeDecimal="-75.56" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="2938" latitudeDecimal="39.43" longitudeDecimal="-75.55" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="2998" latitudeDecimal="39.51" longitudeDecimal="-75.53" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="3031" latitudeDecimal="39.55" longitudeDecimal="-75.51" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="3058" latitudeDecimal="39.58" longitudeDecimal="-75.50" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="3122" latitudeDecimal="39.65" longitudeDecimal="-75.48" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="3126" latitudeDecimal="39.66" longitudeDecimal="-75.48" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="3157" latitudeDecimal="39.69" longitudeDecimal="-75.49" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="3175" latitudeDecimal="39.70" longitudeDecimal="-75.47" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="3192" latitudeDecimal="39.71" longitudeDecimal="-75.46" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="3261" latitudeDecimal="39.76" longitudeDecimal="-75.40" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="3271" latitudeDecimal="39.77" longitudeDecimal="-75.39" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="3360" latitudeDecimal="39.82" longitudeDecimal="-75.32" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="3480" latitudeDecimal="39.87" longitudeDecimal="-75.24" sequenceNumber="63"/>
+          <nxce:airway sequenceNumber="1">HOKEE3</nxce:airway>
+          <nxce:airway sequenceNumber="2">PAATS4</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="2819" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCROA</nxce:sector>
+          <nxce:sector elapsedEntryTime="243" sequenceNumber="2">ZDC22</nxce:sector>
+          <nxce:sector elapsedEntryTime="736" sequenceNumber="3">ZDC31</nxce:sector>
+          <nxce:sector elapsedEntryTime="822" sequenceNumber="4">ZDC60</nxce:sector>
+          <nxce:sector elapsedEntryTime="1149" sequenceNumber="5">ZDC20</nxce:sector>
+          <nxce:sector elapsedEntryTime="1391" sequenceNumber="6">ZDC12</nxce:sector>
+          <nxce:sector elapsedEntryTime="1974" sequenceNumber="7">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="2387" sequenceNumber="8">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="2819" sequenceNumber="9">ZNYPHL</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="GJS4442" airline="GJS" arrArpt="EWR" cdmPart="false" depArpt="DCA" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90133610" major="UAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>GJS4442</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T17:00:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>DCA</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>EWR</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">DCA</nxce:fix>
+          <nxce:fix elapsedTime="97" sequenceNumber="2">REVGE</nxce:fix>
+          <nxce:fix elapsedTime="142" sequenceNumber="3">BEBLE</nxce:fix>
+          <nxce:fix elapsedTime="191" sequenceNumber="4">COVTO</nxce:fix>
+          <nxce:fix elapsedTime="242" sequenceNumber="5">ALEEX</nxce:fix>
+          <nxce:fix elapsedTime="328" sequenceNumber="6">DOGUE</nxce:fix>
+          <nxce:fix elapsedTime="626" sequenceNumber="7">PHERB</nxce:fix>
+          <nxce:fix elapsedTime="804" sequenceNumber="8">SOOKI</nxce:fix>
+          <nxce:fix elapsedTime="971" sequenceNumber="9">SWANN</nxce:fix>
+          <nxce:fix elapsedTime="1452" sequenceNumber="10">DQO</nxce:fix>
+          <nxce:fix elapsedTime="1754" sequenceNumber="11">STEFE</nxce:fix>
+          <nxce:fix elapsedTime="1942" sequenceNumber="12">SOMTO</nxce:fix>
+          <nxce:fix elapsedTime="2099" sequenceNumber="13">ARD</nxce:fix>
+          <nxce:fix elapsedTime="2145" sequenceNumber="14">DYLIN</nxce:fix>
+          <nxce:fix elapsedTime="2176" sequenceNumber="15">MERSR</nxce:fix>
+          <nxce:fix elapsedTime="2334" sequenceNumber="16">METRO</nxce:fix>
+          <nxce:fix elapsedTime="2526" sequenceNumber="17">MARRT</nxce:fix>
+          <nxce:fix elapsedTime="2779" sequenceNumber="18">PHLBO</nxce:fix>
+          <nxce:fix elapsedTime="3300" sequenceNumber="19">EWR</nxce:fix>
+          <nxce:waypoint latitudeDecimal="38.85" longitudeDecimal="-77.04" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="69" latitudeDecimal="38.88" longitudeDecimal="-77.06" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="83" latitudeDecimal="38.89" longitudeDecimal="-77.06" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="96" latitudeDecimal="38.90" longitudeDecimal="-77.07" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="97" latitudeDecimal="38.90" longitudeDecimal="-77.07" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="118" latitudeDecimal="38.91" longitudeDecimal="-77.09" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="121" latitudeDecimal="38.91" longitudeDecimal="-77.09" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="142" latitudeDecimal="38.92" longitudeDecimal="-77.11" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="184" latitudeDecimal="38.94" longitudeDecimal="-77.13" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="191" latitudeDecimal="38.95" longitudeDecimal="-77.13" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="211" latitudeDecimal="38.96" longitudeDecimal="-77.14" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="214" latitudeDecimal="38.96" longitudeDecimal="-77.14" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="242" latitudeDecimal="38.98" longitudeDecimal="-77.16" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="279" latitudeDecimal="39.01" longitudeDecimal="-77.13" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="307" latitudeDecimal="39.03" longitudeDecimal="-77.11" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="328" latitudeDecimal="39.04" longitudeDecimal="-77.10" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="517" latitudeDecimal="39.07" longitudeDecimal="-76.88" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="626" latitudeDecimal="39.09" longitudeDecimal="-76.74" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="684" latitudeDecimal="39.10" longitudeDecimal="-76.67" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="691" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="695" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="733" latitudeDecimal="39.11" longitudeDecimal="-76.61" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="771" latitudeDecimal="39.11" longitudeDecimal="-76.56" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="788" latitudeDecimal="39.12" longitudeDecimal="-76.54" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="804" latitudeDecimal="39.12" longitudeDecimal="-76.52" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="810" latitudeDecimal="39.12" longitudeDecimal="-76.52" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="817" latitudeDecimal="39.12" longitudeDecimal="-76.51" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="895" latitudeDecimal="39.13" longitudeDecimal="-76.38" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="971" latitudeDecimal="39.15" longitudeDecimal="-76.23" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="1210" latitudeDecimal="39.41" longitudeDecimal="-75.92" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="1448" latitudeDecimal="39.67" longitudeDecimal="-75.61" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="1452" latitudeDecimal="39.68" longitudeDecimal="-75.61" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="1576" latitudeDecimal="39.80" longitudeDecimal="-75.46" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="1603" latitudeDecimal="39.83" longitudeDecimal="-75.43" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="1668" latitudeDecimal="39.89" longitudeDecimal="-75.35" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="1753" latitudeDecimal="39.96" longitudeDecimal="-75.26" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="1754" latitudeDecimal="39.97" longitudeDecimal="-75.26" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="1765" latitudeDecimal="39.97" longitudeDecimal="-75.25" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="1775" latitudeDecimal="39.98" longitudeDecimal="-75.24" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="1815" latitudeDecimal="40.02" longitudeDecimal="-75.20" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="1845" latitudeDecimal="40.04" longitudeDecimal="-75.16" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="1865" latitudeDecimal="40.06" longitudeDecimal="-75.14" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="1871" latitudeDecimal="40.07" longitudeDecimal="-75.14" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="1929" latitudeDecimal="40.12" longitudeDecimal="-75.08" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="1942" latitudeDecimal="40.13" longitudeDecimal="-75.06" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="1994" latitudeDecimal="40.17" longitudeDecimal="-75.01" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="2099" latitudeDecimal="40.25" longitudeDecimal="-74.91" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="2137" latitudeDecimal="40.28" longitudeDecimal="-74.87" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="2145" latitudeDecimal="40.29" longitudeDecimal="-74.86" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="2169" latitudeDecimal="40.31" longitudeDecimal="-74.83" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="2176" latitudeDecimal="40.31" longitudeDecimal="-74.83" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="2285" latitudeDecimal="40.39" longitudeDecimal="-74.72" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="2334" latitudeDecimal="40.42" longitudeDecimal="-74.67" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="2440" latitudeDecimal="40.53" longitudeDecimal="-74.64" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="2526" latitudeDecimal="40.61" longitudeDecimal="-74.62" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="2679" latitudeDecimal="40.75" longitudeDecimal="-74.58" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="2779" latitudeDecimal="40.83" longitudeDecimal="-74.56" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="2780" latitudeDecimal="40.83" longitudeDecimal="-74.56" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="2880" latitudeDecimal="40.80" longitudeDecimal="-74.46" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="3000" latitudeDecimal="40.76" longitudeDecimal="-74.36" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="3136" latitudeDecimal="40.73" longitudeDecimal="-74.27" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="3300" latitudeDecimal="40.69" longitudeDecimal="-74.17" sequenceNumber="62"/>
+          <nxce:airway sequenceNumber="1">PHLBO4</nxce:airway>
+          <nxce:airway sequenceNumber="2">SOOKI5</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1668" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="1753" sequenceNumber="3">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1765" sequenceNumber="4">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="1929" sequenceNumber="5">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1994" sequenceNumber="6">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCMT1</nxce:sector>
+          <nxce:sector elapsedEntryTime="684" sequenceNumber="2">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="771" sequenceNumber="3">ZDCMT1</nxce:sector>
+          <nxce:sector elapsedEntryTime="788" sequenceNumber="4">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="817" sequenceNumber="5">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="1210" sequenceNumber="6">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="1668" sequenceNumber="7">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="1753" sequenceNumber="8">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="1765" sequenceNumber="9">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="1929" sequenceNumber="10">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="1994" sequenceNumber="11">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="2169" sequenceNumber="12">ZNYNC1</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="SWA3738" airline="SWA" arrArpt="BDL" cdmPart="false" depArpt="BWI" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90129511" major="SWA" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>SWA3738</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T16:15:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>BWI</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>BDL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">BWI</nxce:fix>
+          <nxce:fix elapsedTime="299" sequenceNumber="2">SWANN</nxce:fix>
+          <nxce:fix elapsedTime="495" sequenceNumber="3">BROSS</nxce:fix>
+          <nxce:fix elapsedTime="692" sequenceNumber="4">MYFOO</nxce:fix>
+          <nxce:fix elapsedTime="802" sequenceNumber="5">NACYN</nxce:fix>
+          <nxce:fix elapsedTime="901" sequenceNumber="6">BSERK</nxce:fix>
+          <nxce:fix elapsedTime="1015" sequenceNumber="7">HULKK</nxce:fix>
+          <nxce:fix elapsedTime="1193" sequenceNumber="8">RBV</nxce:fix>
+          <nxce:fix elapsedTime="1383" sequenceNumber="9">LAURN</nxce:fix>
+          <nxce:fix elapsedTime="1499" sequenceNumber="10">JFK</nxce:fix>
+          <nxce:fix elapsedTime="1662" sequenceNumber="11">DPK</nxce:fix>
+          <nxce:fix elapsedTime="1855" sequenceNumber="12">BELTT</nxce:fix>
+          <nxce:fix elapsedTime="2071" sequenceNumber="13">MAD</nxce:fix>
+          <nxce:fix elapsedTime="2421" sequenceNumber="14">BRISS</nxce:fix>
+          <nxce:fix elapsedTime="2798" sequenceNumber="15">BDL</nxce:fix>
+          <nxce:waypoint latitudeDecimal="39.18" longitudeDecimal="-76.67" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="60" latitudeDecimal="39.17" longitudeDecimal="-76.60" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="85" latitudeDecimal="39.17" longitudeDecimal="-76.57" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="106" latitudeDecimal="39.17" longitudeDecimal="-76.54" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="108" latitudeDecimal="39.17" longitudeDecimal="-76.53" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="125" latitudeDecimal="39.17" longitudeDecimal="-76.51" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="142" latitudeDecimal="39.17" longitudeDecimal="-76.48" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="157" latitudeDecimal="39.16" longitudeDecimal="-76.46" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="159" latitudeDecimal="39.16" longitudeDecimal="-76.46" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="176" latitudeDecimal="39.16" longitudeDecimal="-76.43" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="193" latitudeDecimal="39.16" longitudeDecimal="-76.40" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="209" latitudeDecimal="39.16" longitudeDecimal="-76.38" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="224" latitudeDecimal="39.16" longitudeDecimal="-76.35" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="299" latitudeDecimal="39.15" longitudeDecimal="-76.23" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="351" latitudeDecimal="39.16" longitudeDecimal="-76.14" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="470" latitudeDecimal="39.19" longitudeDecimal="-75.93" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="472" latitudeDecimal="39.19" longitudeDecimal="-75.92" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="495" latitudeDecimal="39.19" longitudeDecimal="-75.88" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="516" latitudeDecimal="39.21" longitudeDecimal="-75.86" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="527" latitudeDecimal="39.23" longitudeDecimal="-75.84" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="537" latitudeDecimal="39.24" longitudeDecimal="-75.83" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="541" latitudeDecimal="39.24" longitudeDecimal="-75.82" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="577" latitudeDecimal="39.29" longitudeDecimal="-75.78" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="594" latitudeDecimal="39.31" longitudeDecimal="-75.75" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="596" latitudeDecimal="39.31" longitudeDecimal="-75.75" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="609" latitudeDecimal="39.33" longitudeDecimal="-75.73" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="613" latitudeDecimal="39.33" longitudeDecimal="-75.73" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="633" latitudeDecimal="39.36" longitudeDecimal="-75.70" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="685" latitudeDecimal="39.43" longitudeDecimal="-75.62" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="692" latitudeDecimal="39.44" longitudeDecimal="-75.61" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="714" latitudeDecimal="39.47" longitudeDecimal="-75.58" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="739" latitudeDecimal="39.50" longitudeDecimal="-75.54" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="759" latitudeDecimal="39.54" longitudeDecimal="-75.50" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="802" latitudeDecimal="39.61" longitudeDecimal="-75.42" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="901" latitudeDecimal="39.79" longitudeDecimal="-75.22" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="1015" latitudeDecimal="39.97" longitudeDecimal="-74.95" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="1093" latitudeDecimal="40.07" longitudeDecimal="-74.75" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="1193" latitudeDecimal="40.20" longitudeDecimal="-74.50" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="1383" latitudeDecimal="40.55" longitudeDecimal="-74.12" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="1499" latitudeDecimal="40.63" longitudeDecimal="-73.77" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="1656" latitudeDecimal="40.79" longitudeDecimal="-73.32" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="1662" latitudeDecimal="40.79" longitudeDecimal="-73.30" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="1669" latitudeDecimal="40.80" longitudeDecimal="-73.29" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="1679" latitudeDecimal="40.82" longitudeDecimal="-73.28" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="1682" latitudeDecimal="40.82" longitudeDecimal="-73.27" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="1705" latitudeDecimal="40.85" longitudeDecimal="-73.23" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="1731" latitudeDecimal="40.89" longitudeDecimal="-73.19" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="1786" latitudeDecimal="40.97" longitudeDecimal="-73.10" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="1837" latitudeDecimal="41.04" longitudeDecimal="-73.01" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="1855" latitudeDecimal="41.06" longitudeDecimal="-72.99" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="1861" latitudeDecimal="41.07" longitudeDecimal="-72.98" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="1891" latitudeDecimal="41.11" longitudeDecimal="-72.93" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="2008" latitudeDecimal="41.25" longitudeDecimal="-72.77" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="2070" latitudeDecimal="41.31" longitudeDecimal="-72.69" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="2071" latitudeDecimal="41.31" longitudeDecimal="-72.69" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="2077" latitudeDecimal="41.32" longitudeDecimal="-72.70" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="2201" latitudeDecimal="41.46" longitudeDecimal="-72.82" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="2253" latitudeDecimal="41.52" longitudeDecimal="-72.86" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="2367" latitudeDecimal="41.65" longitudeDecimal="-72.97" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="2394" latitudeDecimal="41.67" longitudeDecimal="-72.99" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="2421" latitudeDecimal="41.70" longitudeDecimal="-73.02" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="2467" latitudeDecimal="41.74" longitudeDecimal="-72.97" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="2510" latitudeDecimal="41.77" longitudeDecimal="-72.92" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="2541" latitudeDecimal="41.79" longitudeDecimal="-72.89" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="2550" latitudeDecimal="41.80" longitudeDecimal="-72.88" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="2595" latitudeDecimal="41.83" longitudeDecimal="-72.84" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="2692" latitudeDecimal="41.89" longitudeDecimal="-72.76" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="2798" latitudeDecimal="41.94" longitudeDecimal="-72.68" sequenceNumber="68"/>
+          <nxce:airway sequenceNumber="1">SWANN3</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q419</nxce:airway>
+          <nxce:airway sequenceNumber="3">DPK3</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1093" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="1669" sequenceNumber="3">ZBW</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="527" sequenceNumber="2">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="537" sequenceNumber="3">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="594" sequenceNumber="4">ZDC19</nxce:sector>
+          <nxce:sector elapsedEntryTime="1093" sequenceNumber="5">ZNY56</nxce:sector>
+          <nxce:sector elapsedEntryTime="1669" sequenceNumber="6">ZBW19</nxce:sector>
+          <nxce:sector elapsedEntryTime="2070" sequenceNumber="7">ZBWBDF</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="AAL1417" airline="AAL" arrArpt="PHL" cdmPart="false" depArpt="BNA" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90162279" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>AAL1417</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T22:01:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>BNA</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>PHL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">BNA</nxce:fix>
+          <nxce:fix elapsedTime="422" sequenceNumber="2">OZCAR</nxce:fix>
+          <nxce:fix elapsedTime="573" sequenceNumber="3">CHADM</nxce:fix>
+          <nxce:fix elapsedTime="855" sequenceNumber="4">SWAPP</nxce:fix>
+          <nxce:fix elapsedTime="1100" sequenceNumber="5">GHATS</nxce:fix>
+          <nxce:fix elapsedTime="1303" sequenceNumber="6">FOUNT</nxce:fix>
+          <nxce:fix elapsedTime="1698" sequenceNumber="7">TONIO</nxce:fix>
+          <nxce:fix elapsedTime="2043" sequenceNumber="8">KONGO</nxce:fix>
+          <nxce:fix elapsedTime="2170" sequenceNumber="9">NEALS</nxce:fix>
+          <nxce:fix elapsedTime="2430" sequenceNumber="10">SITTR</nxce:fix>
+          <nxce:fix elapsedTime="2665" sequenceNumber="11">ASBUR</nxce:fix>
+          <nxce:fix elapsedTime="2953" sequenceNumber="12">DENNY</nxce:fix>
+          <nxce:fix elapsedTime="3144" sequenceNumber="13">MAULS</nxce:fix>
+          <nxce:fix elapsedTime="3700" sequenceNumber="14">GVE</nxce:fix>
+          <nxce:fix elapsedTime="4136" sequenceNumber="15">BOOYA</nxce:fix>
+          <nxce:fix elapsedTime="4486" sequenceNumber="16">BUKYY</nxce:fix>
+          <nxce:fix elapsedTime="4871" sequenceNumber="17">JAYBO</nxce:fix>
+          <nxce:fix elapsedTime="4975" sequenceNumber="18">HEDGE</nxce:fix>
+          <nxce:fix elapsedTime="5127" sequenceNumber="19">CANNY</nxce:fix>
+          <nxce:fix elapsedTime="5297" sequenceNumber="20">ESSSO</nxce:fix>
+          <nxce:fix elapsedTime="5393" sequenceNumber="21">PAATS</nxce:fix>
+          <nxce:fix elapsedTime="5608" sequenceNumber="22">RANSM</nxce:fix>
+          <nxce:fix elapsedTime="5637" sequenceNumber="23">EBRLY</nxce:fix>
+          <nxce:fix elapsedTime="5940" sequenceNumber="24">PHL</nxce:fix>
+          <nxce:waypoint latitudeDecimal="36.12" longitudeDecimal="-86.68" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="134" latitudeDecimal="36.14" longitudeDecimal="-86.53" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="192" latitudeDecimal="36.15" longitudeDecimal="-86.45" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="245" latitudeDecimal="36.16" longitudeDecimal="-86.38" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="355" latitudeDecimal="36.19" longitudeDecimal="-86.19" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="422" latitudeDecimal="36.20" longitudeDecimal="-86.08" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="469" latitudeDecimal="36.23" longitudeDecimal="-86.00" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="525" latitudeDecimal="36.28" longitudeDecimal="-85.90" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="559" latitudeDecimal="36.30" longitudeDecimal="-85.84" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="573" latitudeDecimal="36.32" longitudeDecimal="-85.81" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="622" latitudeDecimal="36.36" longitudeDecimal="-85.71" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="700" latitudeDecimal="36.45" longitudeDecimal="-85.53" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="726" latitudeDecimal="36.48" longitudeDecimal="-85.47" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="753" latitudeDecimal="36.50" longitudeDecimal="-85.41" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="767" latitudeDecimal="36.52" longitudeDecimal="-85.38" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="800" latitudeDecimal="36.56" longitudeDecimal="-85.31" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="845" latitudeDecimal="36.60" longitudeDecimal="-85.20" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="855" latitudeDecimal="36.61" longitudeDecimal="-85.18" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="917" latitudeDecimal="36.66" longitudeDecimal="-85.03" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="956" latitudeDecimal="36.69" longitudeDecimal="-84.93" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="1033" latitudeDecimal="36.75" longitudeDecimal="-84.74" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="1100" latitudeDecimal="36.80" longitudeDecimal="-84.57" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="1170" latitudeDecimal="36.85" longitudeDecimal="-84.39" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="1225" latitudeDecimal="36.90" longitudeDecimal="-84.25" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="1303" latitudeDecimal="36.96" longitudeDecimal="-84.05" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="1539" latitudeDecimal="37.14" longitudeDecimal="-83.44" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="1698" latitudeDecimal="37.25" longitudeDecimal="-83.03" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="2043" latitudeDecimal="37.51" longitudeDecimal="-82.14" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="2170" latitudeDecimal="37.60" longitudeDecimal="-81.81" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="2430" latitudeDecimal="37.78" longitudeDecimal="-81.12" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="2557" latitudeDecimal="37.80" longitudeDecimal="-80.77" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="2665" latitudeDecimal="37.82" longitudeDecimal="-80.46" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="2785" latitudeDecimal="37.84" longitudeDecimal="-80.12" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="2863" latitudeDecimal="37.86" longitudeDecimal="-79.93" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="2953" latitudeDecimal="37.87" longitudeDecimal="-79.74" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="3011" latitudeDecimal="37.87" longitudeDecimal="-79.61" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="3144" latitudeDecimal="37.88" longitudeDecimal="-79.33" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="3464" latitudeDecimal="37.96" longitudeDecimal="-78.65" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="3700" latitudeDecimal="38.01" longitudeDecimal="-78.15" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="4039" latitudeDecimal="38.32" longitudeDecimal="-77.54" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="4136" latitudeDecimal="38.41" longitudeDecimal="-77.36" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="4139" latitudeDecimal="38.41" longitudeDecimal="-77.36" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="4237" latitudeDecimal="38.49" longitudeDecimal="-77.18" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="4343" latitudeDecimal="38.59" longitudeDecimal="-76.99" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="4450" latitudeDecimal="38.68" longitudeDecimal="-76.81" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="4456" latitudeDecimal="38.68" longitudeDecimal="-76.80" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="4486" latitudeDecimal="38.71" longitudeDecimal="-76.75" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="4650" latitudeDecimal="38.77" longitudeDecimal="-76.43" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="4706" latitudeDecimal="38.79" longitudeDecimal="-76.33" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="4717" latitudeDecimal="38.80" longitudeDecimal="-76.31" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="4753" latitudeDecimal="38.81" longitudeDecimal="-76.24" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="4862" latitudeDecimal="38.85" longitudeDecimal="-76.04" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="4871" latitudeDecimal="38.85" longitudeDecimal="-76.02" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="4893" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="4912" latitudeDecimal="38.87" longitudeDecimal="-75.95" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="4927" latitudeDecimal="38.88" longitudeDecimal="-75.92" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="4975" latitudeDecimal="38.89" longitudeDecimal="-75.84" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="5074" latitudeDecimal="39.00" longitudeDecimal="-75.73" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="5127" latitudeDecimal="39.06" longitudeDecimal="-75.68" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="5229" latitudeDecimal="39.20" longitudeDecimal="-75.66" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="5237" latitudeDecimal="39.21" longitudeDecimal="-75.66" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="5291" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="5297" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="5298" latitudeDecimal="39.29" longitudeDecimal="-75.65" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="5327" latitudeDecimal="39.32" longitudeDecimal="-75.63" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="5351" latitudeDecimal="39.34" longitudeDecimal="-75.60" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="5393" latitudeDecimal="39.39" longitudeDecimal="-75.56" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="5410" latitudeDecimal="39.41" longitudeDecimal="-75.56" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="5470" latitudeDecimal="39.49" longitudeDecimal="-75.53" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="5516" latitudeDecimal="39.55" longitudeDecimal="-75.51" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="5530" latitudeDecimal="39.56" longitudeDecimal="-75.51" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="5593" latitudeDecimal="39.64" longitudeDecimal="-75.48" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="5608" latitudeDecimal="39.66" longitudeDecimal="-75.48" sequenceNumber="73"/>
+          <nxce:waypoint elapsedTime="5637" latitudeDecimal="39.69" longitudeDecimal="-75.49" sequenceNumber="74"/>
+          <nxce:waypoint elapsedTime="5654" latitudeDecimal="39.70" longitudeDecimal="-75.47" sequenceNumber="75"/>
+          <nxce:waypoint elapsedTime="5661" latitudeDecimal="39.71" longitudeDecimal="-75.47" sequenceNumber="76"/>
+          <nxce:waypoint elapsedTime="5737" latitudeDecimal="39.76" longitudeDecimal="-75.40" sequenceNumber="77"/>
+          <nxce:waypoint elapsedTime="5739" latitudeDecimal="39.76" longitudeDecimal="-75.39" sequenceNumber="78"/>
+          <nxce:waypoint elapsedTime="5830" latitudeDecimal="39.82" longitudeDecimal="-75.32" sequenceNumber="79"/>
+          <nxce:waypoint elapsedTime="5940" latitudeDecimal="39.87" longitudeDecimal="-75.24" sequenceNumber="80"/>
+          <nxce:airway sequenceNumber="1">CHADM3</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q34</nxce:airway>
+          <nxce:airway sequenceNumber="3">PAATS4</nxce:airway>
+          <nxce:center sequenceNumber="1">ZME</nxce:center>
+          <nxce:center elapsedEntryTime="726" sequenceNumber="2">ZID</nxce:center>
+          <nxce:center elapsedEntryTime="2557" sequenceNumber="3">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="5298" sequenceNumber="4">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZMEBNA</nxce:sector>
+          <nxce:sector elapsedEntryTime="525" sequenceNumber="2">ZME40</nxce:sector>
+          <nxce:sector elapsedEntryTime="726" sequenceNumber="3">ZID21</nxce:sector>
+          <nxce:sector elapsedEntryTime="767" sequenceNumber="4">ZID84</nxce:sector>
+          <nxce:sector elapsedEntryTime="1225" sequenceNumber="5">ZID94</nxce:sector>
+          <nxce:sector elapsedEntryTime="1539" sequenceNumber="6">ZID96</nxce:sector>
+          <nxce:sector elapsedEntryTime="2557" sequenceNumber="7">ZDC37</nxce:sector>
+          <nxce:sector elapsedEntryTime="3011" sequenceNumber="8">ZDC52</nxce:sector>
+          <nxce:sector elapsedEntryTime="3464" sequenceNumber="9">ZDC32</nxce:sector>
+          <nxce:sector elapsedEntryTime="4039" sequenceNumber="10">ZDC12</nxce:sector>
+          <nxce:sector elapsedEntryTime="4450" sequenceNumber="11">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="4893" sequenceNumber="12">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="5298" sequenceNumber="13">ZNYPHL</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="AAL2461" airline="AAL" arrArpt="PWM" cdmPart="false" depArpt="DCA" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90145890" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>AAL2461</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T18:59:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>DCA</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>PWM</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">DCA</nxce:fix>
+          <nxce:fix elapsedTime="66" sequenceNumber="2">REVGE</nxce:fix>
+          <nxce:fix elapsedTime="101" sequenceNumber="3">BEBLE</nxce:fix>
+          <nxce:fix elapsedTime="139" sequenceNumber="4">COVTO</nxce:fix>
+          <nxce:fix elapsedTime="178" sequenceNumber="5">ALEEX</nxce:fix>
+          <nxce:fix elapsedTime="242" sequenceNumber="6">DOGUE</nxce:fix>
+          <nxce:fix elapsedTime="442" sequenceNumber="7">PHERB</nxce:fix>
+          <nxce:fix elapsedTime="552" sequenceNumber="8">SOOKI</nxce:fix>
+          <nxce:fix elapsedTime="668" sequenceNumber="9">SWANN</nxce:fix>
+          <nxce:fix elapsedTime="792" sequenceNumber="10">BROSS</nxce:fix>
+          <nxce:fix elapsedTime="935" sequenceNumber="11">MYFOO</nxce:fix>
+          <nxce:fix elapsedTime="1032" sequenceNumber="12">NACYN</nxce:fix>
+          <nxce:fix elapsedTime="1122" sequenceNumber="13">BSERK</nxce:fix>
+          <nxce:fix elapsedTime="1226" sequenceNumber="14">HULKK</nxce:fix>
+          <nxce:fix elapsedTime="1387" sequenceNumber="15">RBV</nxce:fix>
+          <nxce:fix elapsedTime="1557" sequenceNumber="16">LAURN</nxce:fix>
+          <nxce:fix elapsedTime="1708" sequenceNumber="17">LLUND</nxce:fix>
+          <nxce:fix elapsedTime="1925" sequenceNumber="18">BDR</nxce:fix>
+          <nxce:fix elapsedTime="2413" sequenceNumber="19">FOSTY</nxce:fix>
+          <nxce:fix elapsedTime="2653" sequenceNumber="20">BILJE</nxce:fix>
+          <nxce:fix elapsedTime="2814" sequenceNumber="21">BUOYY</nxce:fix>
+          <nxce:fix elapsedTime="2938" sequenceNumber="22">SHAUN</nxce:fix>
+          <nxce:fix elapsedTime="3139" sequenceNumber="23">CEKAY</nxce:fix>
+          <nxce:fix elapsedTime="3243" sequenceNumber="24">SCOGS</nxce:fix>
+          <nxce:fix elapsedTime="3313" sequenceNumber="25">SAACO</nxce:fix>
+          <nxce:fix elapsedTime="3406" sequenceNumber="26">BIDDE</nxce:fix>
+          <nxce:fix elapsedTime="3624" sequenceNumber="27">TRIDO</nxce:fix>
+          <nxce:fix elapsedTime="3689" sequenceNumber="28">ARARR</nxce:fix>
+          <nxce:fix elapsedTime="3755" sequenceNumber="29">BUXTO</nxce:fix>
+          <nxce:fix elapsedTime="3960" sequenceNumber="30">PWM</nxce:fix>
+          <nxce:waypoint latitudeDecimal="38.85" longitudeDecimal="-77.04" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="66" latitudeDecimal="38.90" longitudeDecimal="-77.07" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="87" latitudeDecimal="38.91" longitudeDecimal="-77.09" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="101" latitudeDecimal="38.92" longitudeDecimal="-77.11" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="106" latitudeDecimal="38.92" longitudeDecimal="-77.11" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="124" latitudeDecimal="38.93" longitudeDecimal="-77.12" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="139" latitudeDecimal="38.95" longitudeDecimal="-77.13" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="155" latitudeDecimal="38.96" longitudeDecimal="-77.14" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="157" latitudeDecimal="38.96" longitudeDecimal="-77.14" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="178" latitudeDecimal="38.98" longitudeDecimal="-77.16" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="195" latitudeDecimal="39.00" longitudeDecimal="-77.14" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="212" latitudeDecimal="39.01" longitudeDecimal="-77.13" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="214" latitudeDecimal="39.02" longitudeDecimal="-77.13" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="242" latitudeDecimal="39.04" longitudeDecimal="-77.10" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="249" latitudeDecimal="39.04" longitudeDecimal="-77.09" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="264" latitudeDecimal="39.05" longitudeDecimal="-77.06" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="275" latitudeDecimal="39.05" longitudeDecimal="-77.05" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="372" latitudeDecimal="39.07" longitudeDecimal="-76.88" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="442" latitudeDecimal="39.09" longitudeDecimal="-76.74" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="479" latitudeDecimal="39.10" longitudeDecimal="-76.67" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="483" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="485" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="507" latitudeDecimal="39.10" longitudeDecimal="-76.62" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="528" latitudeDecimal="39.11" longitudeDecimal="-76.58" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="543" latitudeDecimal="39.12" longitudeDecimal="-76.54" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="547" latitudeDecimal="39.12" longitudeDecimal="-76.53" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="551" latitudeDecimal="39.12" longitudeDecimal="-76.52" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="552" latitudeDecimal="39.12" longitudeDecimal="-76.52" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="601" latitudeDecimal="39.13" longitudeDecimal="-76.41" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="612" latitudeDecimal="39.14" longitudeDecimal="-76.38" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="616" latitudeDecimal="39.14" longitudeDecimal="-76.37" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="632" latitudeDecimal="39.14" longitudeDecimal="-76.32" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="635" latitudeDecimal="39.14" longitudeDecimal="-76.32" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="668" latitudeDecimal="39.15" longitudeDecimal="-76.23" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="710" latitudeDecimal="39.16" longitudeDecimal="-76.12" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="746" latitudeDecimal="39.18" longitudeDecimal="-76.02" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="774" latitudeDecimal="39.19" longitudeDecimal="-75.93" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="777" latitudeDecimal="39.19" longitudeDecimal="-75.92" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="792" latitudeDecimal="39.19" longitudeDecimal="-75.88" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="805" latitudeDecimal="39.21" longitudeDecimal="-75.86" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="848" latitudeDecimal="39.29" longitudeDecimal="-75.78" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="916" latitudeDecimal="39.40" longitudeDecimal="-75.65" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="935" latitudeDecimal="39.44" longitudeDecimal="-75.61" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="953" latitudeDecimal="39.47" longitudeDecimal="-75.58" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="1022" latitudeDecimal="39.59" longitudeDecimal="-75.44" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="1032" latitudeDecimal="39.61" longitudeDecimal="-75.42" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="1122" latitudeDecimal="39.79" longitudeDecimal="-75.22" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="1226" latitudeDecimal="39.97" longitudeDecimal="-74.95" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="1297" latitudeDecimal="40.07" longitudeDecimal="-74.75" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="1387" latitudeDecimal="40.20" longitudeDecimal="-74.50" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="1557" latitudeDecimal="40.55" longitudeDecimal="-74.12" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="1708" latitudeDecimal="40.86" longitudeDecimal="-73.78" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="1812" latitudeDecimal="41.01" longitudeDecimal="-73.47" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="1925" latitudeDecimal="41.16" longitudeDecimal="-73.12" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="2016" latitudeDecimal="41.29" longitudeDecimal="-72.85" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="2082" latitudeDecimal="41.38" longitudeDecimal="-72.65" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="2413" latitudeDecimal="41.84" longitudeDecimal="-71.64" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="2632" latitudeDecimal="42.08" longitudeDecimal="-70.99" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="2653" latitudeDecimal="42.10" longitudeDecimal="-70.93" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="2670" latitudeDecimal="42.13" longitudeDecimal="-70.91" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="2687" latitudeDecimal="42.17" longitudeDecimal="-70.90" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="2704" latitudeDecimal="42.20" longitudeDecimal="-70.88" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="2814" latitudeDecimal="42.43" longitudeDecimal="-70.77" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="2839" latitudeDecimal="42.48" longitudeDecimal="-70.75" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="2866" latitudeDecimal="42.54" longitudeDecimal="-70.72" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="2888" latitudeDecimal="42.58" longitudeDecimal="-70.69" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="2938" latitudeDecimal="42.68" longitudeDecimal="-70.64" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="2978" latitudeDecimal="42.75" longitudeDecimal="-70.60" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="3030" latitudeDecimal="42.84" longitudeDecimal="-70.54" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="3139" latitudeDecimal="43.02" longitudeDecimal="-70.42" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="3141" latitudeDecimal="43.02" longitudeDecimal="-70.42" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="3235" latitudeDecimal="43.15" longitudeDecimal="-70.31" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="3243" latitudeDecimal="43.16" longitudeDecimal="-70.30" sequenceNumber="73"/>
+          <nxce:waypoint elapsedTime="3270" latitudeDecimal="43.20" longitudeDecimal="-70.27" sequenceNumber="74"/>
+          <nxce:waypoint elapsedTime="3277" latitudeDecimal="43.20" longitudeDecimal="-70.26" sequenceNumber="75"/>
+          <nxce:waypoint elapsedTime="3313" latitudeDecimal="43.25" longitudeDecimal="-70.22" sequenceNumber="76"/>
+          <nxce:waypoint elapsedTime="3389" latitudeDecimal="43.33" longitudeDecimal="-70.33" sequenceNumber="77"/>
+          <nxce:waypoint elapsedTime="3406" latitudeDecimal="43.35" longitudeDecimal="-70.35" sequenceNumber="78"/>
+          <nxce:waypoint elapsedTime="3542" latitudeDecimal="43.49" longitudeDecimal="-70.54" sequenceNumber="79"/>
+          <nxce:waypoint elapsedTime="3621" latitudeDecimal="43.56" longitudeDecimal="-70.64" sequenceNumber="80"/>
+          <nxce:waypoint elapsedTime="3624" latitudeDecimal="43.56" longitudeDecimal="-70.64" sequenceNumber="81"/>
+          <nxce:waypoint elapsedTime="3678" latitudeDecimal="43.62" longitudeDecimal="-70.63" sequenceNumber="82"/>
+          <nxce:waypoint elapsedTime="3689" latitudeDecimal="43.63" longitudeDecimal="-70.62" sequenceNumber="83"/>
+          <nxce:waypoint elapsedTime="3694" latitudeDecimal="43.63" longitudeDecimal="-70.62" sequenceNumber="84"/>
+          <nxce:waypoint elapsedTime="3702" latitudeDecimal="43.64" longitudeDecimal="-70.61" sequenceNumber="85"/>
+          <nxce:waypoint elapsedTime="3755" latitudeDecimal="43.66" longitudeDecimal="-70.54" sequenceNumber="86"/>
+          <nxce:waypoint elapsedTime="3758" latitudeDecimal="43.66" longitudeDecimal="-70.53" sequenceNumber="87"/>
+          <nxce:waypoint elapsedTime="3787" latitudeDecimal="43.66" longitudeDecimal="-70.50" sequenceNumber="88"/>
+          <nxce:waypoint elapsedTime="3850" latitudeDecimal="43.65" longitudeDecimal="-70.42" sequenceNumber="89"/>
+          <nxce:waypoint elapsedTime="3960" latitudeDecimal="43.65" longitudeDecimal="-70.31" sequenceNumber="90"/>
+          <nxce:airway sequenceNumber="1">SOOKI5</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q419</nxce:airway>
+          <nxce:airway sequenceNumber="3">Q22</nxce:airway>
+          <nxce:airway sequenceNumber="4">SCOGS3</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1297" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="1812" sequenceNumber="3">ZBW</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCMT1</nxce:sector>
+          <nxce:sector elapsedEntryTime="479" sequenceNumber="2">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="528" sequenceNumber="3">ZDCMT1</nxce:sector>
+          <nxce:sector elapsedEntryTime="543" sequenceNumber="4">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="551" sequenceNumber="5">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="746" sequenceNumber="6">ZDC19</nxce:sector>
+          <nxce:sector elapsedEntryTime="1297" sequenceNumber="7">ZNY56</nxce:sector>
+          <nxce:sector elapsedEntryTime="1812" sequenceNumber="8">ZBW49</nxce:sector>
+          <nxce:sector elapsedEntryTime="2016" sequenceNumber="9">ZBW46</nxce:sector>
+          <nxce:sector elapsedEntryTime="2866" sequenceNumber="10">ZBW16</nxce:sector>
+          <nxce:sector elapsedEntryTime="3270" sequenceNumber="11">ZBWPWF</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="NKS1626" airline="NKS" arrArpt="KPHL" cdmPart="false" depArpt="KIAH" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90084448" major="NKS" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>NKS1626</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+            <nxce:idNumber>47T</nxce:idNumber>
+          </nxce:computerId>
+          <nxce:gufi>KH82407200</nxce:gufi>
+          <nxce:igtd>2024-06-25T01:09:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>KIAH</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>KPHL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">IAH</nxce:fix>
+          <nxce:fix elapsedTime="131" sequenceNumber="2">KNTKY</nxce:fix>
+          <nxce:fix elapsedTime="288" sequenceNumber="3">PEETY</nxce:fix>
+          <nxce:fix elapsedTime="410" sequenceNumber="4">DARTR</nxce:fix>
+          <nxce:fix elapsedTime="523" sequenceNumber="5">MUSIQ</nxce:fix>
+          <nxce:fix elapsedTime="803" sequenceNumber="6">CLAVN</nxce:fix>
+          <nxce:fix elapsedTime="898" sequenceNumber="7">VELCO</nxce:fix>
+          <nxce:fix elapsedTime="955" sequenceNumber="8">ENJOY</nxce:fix>
+          <nxce:fix elapsedTime="1234" sequenceNumber="9">LURIC</nxce:fix>
+          <nxce:fix elapsedTime="1824" sequenceNumber="10">ORRTH</nxce:fix>
+          <nxce:fix elapsedTime="3549" sequenceNumber="11">CRAMM</nxce:fix>
+          <nxce:fix elapsedTime="4614" sequenceNumber="12">BNA</nxce:fix>
+          <nxce:fix elapsedTime="5196" sequenceNumber="13">SWAPP</nxce:fix>
+          <nxce:fix elapsedTime="5433" sequenceNumber="14">GHATS</nxce:fix>
+          <nxce:fix elapsedTime="5633" sequenceNumber="15">FOUNT</nxce:fix>
+          <nxce:fix elapsedTime="6027" sequenceNumber="16">TONIO</nxce:fix>
+          <nxce:fix elapsedTime="6369" sequenceNumber="17">KONGO</nxce:fix>
+          <nxce:fix elapsedTime="6495" sequenceNumber="18">NEALS</nxce:fix>
+          <nxce:fix elapsedTime="6750" sequenceNumber="19">SITTR</nxce:fix>
+          <nxce:fix elapsedTime="6978" sequenceNumber="20">ASBUR</nxce:fix>
+          <nxce:fix elapsedTime="7263" sequenceNumber="21">DENNY</nxce:fix>
+          <nxce:fix elapsedTime="7454" sequenceNumber="22">MAULS</nxce:fix>
+          <nxce:fix elapsedTime="8015" sequenceNumber="23">GVE</nxce:fix>
+          <nxce:fix elapsedTime="8454" sequenceNumber="24">BOOYA</nxce:fix>
+          <nxce:fix elapsedTime="8805" sequenceNumber="25">BUKYY</nxce:fix>
+          <nxce:fix elapsedTime="9192" sequenceNumber="26">JAYBO</nxce:fix>
+          <nxce:fix elapsedTime="9297" sequenceNumber="27">HEDGE</nxce:fix>
+          <nxce:fix elapsedTime="9448" sequenceNumber="28">CANNY</nxce:fix>
+          <nxce:fix elapsedTime="9617" sequenceNumber="29">ESSSO</nxce:fix>
+          <nxce:fix elapsedTime="9711" sequenceNumber="30">PAATS</nxce:fix>
+          <nxce:fix elapsedTime="9928" sequenceNumber="31">RANSM</nxce:fix>
+          <nxce:fix elapsedTime="9957" sequenceNumber="32">EBRLY</nxce:fix>
+          <nxce:fix elapsedTime="10260" sequenceNumber="33">PHL</nxce:fix>
+          <nxce:waypoint latitudeDecimal="29.98" longitudeDecimal="-95.34" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="119" latitudeDecimal="30.08" longitudeDecimal="-95.27" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="131" latitudeDecimal="30.09" longitudeDecimal="-95.26" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="182" latitudeDecimal="30.14" longitudeDecimal="-95.22" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="226" latitudeDecimal="30.18" longitudeDecimal="-95.18" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="245" latitudeDecimal="30.20" longitudeDecimal="-95.17" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="288" latitudeDecimal="30.25" longitudeDecimal="-95.13" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="349" latitudeDecimal="30.33" longitudeDecimal="-95.07" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="410" latitudeDecimal="30.40" longitudeDecimal="-95.01" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="457" latitudeDecimal="30.46" longitudeDecimal="-94.96" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="523" latitudeDecimal="30.55" longitudeDecimal="-94.89" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="534" latitudeDecimal="30.57" longitudeDecimal="-94.88" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="604" latitudeDecimal="30.67" longitudeDecimal="-94.80" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="677" latitudeDecimal="30.79" longitudeDecimal="-94.71" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="778" latitudeDecimal="30.96" longitudeDecimal="-94.58" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="803" latitudeDecimal="31.01" longitudeDecimal="-94.54" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="865" latitudeDecimal="31.12" longitudeDecimal="-94.46" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="898" latitudeDecimal="31.18" longitudeDecimal="-94.41" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="907" latitudeDecimal="31.19" longitudeDecimal="-94.40" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="913" latitudeDecimal="31.20" longitudeDecimal="-94.39" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="955" latitudeDecimal="31.28" longitudeDecimal="-94.33" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="981" latitudeDecimal="31.33" longitudeDecimal="-94.29" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="1046" latitudeDecimal="31.44" longitudeDecimal="-94.20" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="1100" latitudeDecimal="31.54" longitudeDecimal="-94.13" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="1208" latitudeDecimal="31.73" longitudeDecimal="-93.97" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="1234" latitudeDecimal="31.78" longitudeDecimal="-93.93" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="1321" latitudeDecimal="31.90" longitudeDecimal="-93.76" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="1434" latitudeDecimal="32.04" longitudeDecimal="-93.54" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="1740" latitudeDecimal="32.45" longitudeDecimal="-92.91" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="1824" latitudeDecimal="32.56" longitudeDecimal="-92.74" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="2242" latitudeDecimal="33.07" longitudeDecimal="-91.83" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="2859" latitudeDecimal="33.82" longitudeDecimal="-90.46" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="3064" latitudeDecimal="34.06" longitudeDecimal="-90.00" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="3450" latitudeDecimal="34.52" longitudeDecimal="-89.13" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="3549" latitudeDecimal="34.64" longitudeDecimal="-88.90" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="3764" latitudeDecimal="34.94" longitudeDecimal="-88.46" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="3979" latitudeDecimal="35.24" longitudeDecimal="-88.02" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="4279" latitudeDecimal="35.67" longitudeDecimal="-87.40" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="4614" latitudeDecimal="36.14" longitudeDecimal="-86.68" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="5079" latitudeDecimal="36.52" longitudeDecimal="-85.49" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="5196" latitudeDecimal="36.61" longitudeDecimal="-85.18" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="5433" latitudeDecimal="36.80" longitudeDecimal="-84.57" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="5633" latitudeDecimal="36.96" longitudeDecimal="-84.05" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="5869" latitudeDecimal="37.14" longitudeDecimal="-83.44" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="6027" latitudeDecimal="37.25" longitudeDecimal="-83.03" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="6369" latitudeDecimal="37.51" longitudeDecimal="-82.14" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="6495" latitudeDecimal="37.60" longitudeDecimal="-81.81" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="6559" latitudeDecimal="37.64" longitudeDecimal="-81.64" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="6750" latitudeDecimal="37.78" longitudeDecimal="-81.12" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="6873" latitudeDecimal="37.80" longitudeDecimal="-80.77" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="6978" latitudeDecimal="37.82" longitudeDecimal="-80.46" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="7095" latitudeDecimal="37.84" longitudeDecimal="-80.12" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="7172" latitudeDecimal="37.86" longitudeDecimal="-79.93" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="7263" latitudeDecimal="37.87" longitudeDecimal="-79.74" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="7321" latitudeDecimal="37.87" longitudeDecimal="-79.61" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="7454" latitudeDecimal="37.88" longitudeDecimal="-79.33" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="7777" latitudeDecimal="37.96" longitudeDecimal="-78.65" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="8015" latitudeDecimal="38.01" longitudeDecimal="-78.15" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="8357" latitudeDecimal="38.32" longitudeDecimal="-77.54" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="8454" latitudeDecimal="38.41" longitudeDecimal="-77.36" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="8457" latitudeDecimal="38.41" longitudeDecimal="-77.36" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="8555" latitudeDecimal="38.49" longitudeDecimal="-77.18" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="8661" latitudeDecimal="38.59" longitudeDecimal="-76.99" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="8769" latitudeDecimal="38.68" longitudeDecimal="-76.81" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="8775" latitudeDecimal="38.68" longitudeDecimal="-76.80" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="8805" latitudeDecimal="38.71" longitudeDecimal="-76.75" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="8970" latitudeDecimal="38.77" longitudeDecimal="-76.43" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="9026" latitudeDecimal="38.79" longitudeDecimal="-76.33" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="9037" latitudeDecimal="38.80" longitudeDecimal="-76.31" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="9073" latitudeDecimal="38.81" longitudeDecimal="-76.24" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="9183" latitudeDecimal="38.85" longitudeDecimal="-76.04" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="9192" latitudeDecimal="38.85" longitudeDecimal="-76.02" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="9214" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="73"/>
+          <nxce:waypoint elapsedTime="9233" latitudeDecimal="38.87" longitudeDecimal="-75.95" sequenceNumber="74"/>
+          <nxce:waypoint elapsedTime="9248" latitudeDecimal="38.88" longitudeDecimal="-75.92" sequenceNumber="75"/>
+          <nxce:waypoint elapsedTime="9297" latitudeDecimal="38.89" longitudeDecimal="-75.84" sequenceNumber="76"/>
+          <nxce:waypoint elapsedTime="9395" latitudeDecimal="39.00" longitudeDecimal="-75.73" sequenceNumber="77"/>
+          <nxce:waypoint elapsedTime="9448" latitudeDecimal="39.06" longitudeDecimal="-75.68" sequenceNumber="78"/>
+          <nxce:waypoint elapsedTime="9549" latitudeDecimal="39.20" longitudeDecimal="-75.66" sequenceNumber="79"/>
+          <nxce:waypoint elapsedTime="9557" latitudeDecimal="39.21" longitudeDecimal="-75.66" sequenceNumber="80"/>
+          <nxce:waypoint elapsedTime="9611" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="81"/>
+          <nxce:waypoint elapsedTime="9617" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="82"/>
+          <nxce:waypoint elapsedTime="9618" latitudeDecimal="39.29" longitudeDecimal="-75.65" sequenceNumber="83"/>
+          <nxce:waypoint elapsedTime="9646" latitudeDecimal="39.32" longitudeDecimal="-75.63" sequenceNumber="84"/>
+          <nxce:waypoint elapsedTime="9669" latitudeDecimal="39.34" longitudeDecimal="-75.60" sequenceNumber="85"/>
+          <nxce:waypoint elapsedTime="9711" latitudeDecimal="39.39" longitudeDecimal="-75.56" sequenceNumber="86"/>
+          <nxce:waypoint elapsedTime="9729" latitudeDecimal="39.41" longitudeDecimal="-75.56" sequenceNumber="87"/>
+          <nxce:waypoint elapsedTime="9788" latitudeDecimal="39.49" longitudeDecimal="-75.53" sequenceNumber="88"/>
+          <nxce:waypoint elapsedTime="9835" latitudeDecimal="39.55" longitudeDecimal="-75.51" sequenceNumber="89"/>
+          <nxce:waypoint elapsedTime="9849" latitudeDecimal="39.56" longitudeDecimal="-75.51" sequenceNumber="90"/>
+          <nxce:waypoint elapsedTime="9912" latitudeDecimal="39.64" longitudeDecimal="-75.48" sequenceNumber="91"/>
+          <nxce:waypoint elapsedTime="9928" latitudeDecimal="39.66" longitudeDecimal="-75.48" sequenceNumber="92"/>
+          <nxce:waypoint elapsedTime="9957" latitudeDecimal="39.69" longitudeDecimal="-75.49" sequenceNumber="93"/>
+          <nxce:waypoint elapsedTime="9975" latitudeDecimal="39.70" longitudeDecimal="-75.47" sequenceNumber="94"/>
+          <nxce:waypoint elapsedTime="9982" latitudeDecimal="39.71" longitudeDecimal="-75.47" sequenceNumber="95"/>
+          <nxce:waypoint elapsedTime="10058" latitudeDecimal="39.76" longitudeDecimal="-75.40" sequenceNumber="96"/>
+          <nxce:waypoint elapsedTime="10060" latitudeDecimal="39.76" longitudeDecimal="-75.39" sequenceNumber="97"/>
+          <nxce:waypoint elapsedTime="10152" latitudeDecimal="39.82" longitudeDecimal="-75.32" sequenceNumber="98"/>
+          <nxce:waypoint elapsedTime="10260" latitudeDecimal="39.87" longitudeDecimal="-75.24" sequenceNumber="99"/>
+          <nxce:airway sequenceNumber="1">LURIC8</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q32</nxce:airway>
+          <nxce:airway sequenceNumber="3">Q32</nxce:airway>
+          <nxce:airway sequenceNumber="4">Q34</nxce:airway>
+          <nxce:airway sequenceNumber="5">PAATS4</nxce:airway>
+          <nxce:center sequenceNumber="1">ZHU</nxce:center>
+          <nxce:center elapsedEntryTime="981" sequenceNumber="2">ZFW</nxce:center>
+          <nxce:center elapsedEntryTime="2242" sequenceNumber="3">ZME</nxce:center>
+          <nxce:center elapsedEntryTime="5079" sequenceNumber="4">ZID</nxce:center>
+          <nxce:center elapsedEntryTime="6873" sequenceNumber="5">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="9618" sequenceNumber="6">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZHUIAH</nxce:sector>
+          <nxce:sector elapsedEntryTime="534" sequenceNumber="2">ZHU49</nxce:sector>
+          <nxce:sector elapsedEntryTime="865" sequenceNumber="3">ZHU46</nxce:sector>
+          <nxce:sector elapsedEntryTime="981" sequenceNumber="4">ZFW86</nxce:sector>
+          <nxce:sector elapsedEntryTime="1740" sequenceNumber="5">ZFW28</nxce:sector>
+          <nxce:sector elapsedEntryTime="2242" sequenceNumber="6">ZME43</nxce:sector>
+          <nxce:sector elapsedEntryTime="3064" sequenceNumber="7">ZME32</nxce:sector>
+          <nxce:sector elapsedEntryTime="3979" sequenceNumber="8">ZME33</nxce:sector>
+          <nxce:sector elapsedEntryTime="4279" sequenceNumber="9">ZME61</nxce:sector>
+          <nxce:sector elapsedEntryTime="5079" sequenceNumber="10">ZID94</nxce:sector>
+          <nxce:sector elapsedEntryTime="5869" sequenceNumber="11">ZID96</nxce:sector>
+          <nxce:sector elapsedEntryTime="6873" sequenceNumber="12">ZDC37</nxce:sector>
+          <nxce:sector elapsedEntryTime="7321" sequenceNumber="13">ZDC52</nxce:sector>
+          <nxce:sector elapsedEntryTime="7777" sequenceNumber="14">ZDC32</nxce:sector>
+          <nxce:sector elapsedEntryTime="8357" sequenceNumber="15">ZDC12</nxce:sector>
+          <nxce:sector elapsedEntryTime="8769" sequenceNumber="16">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="9214" sequenceNumber="17">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="9618" sequenceNumber="18">ZNYPHL</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="AAL1107" airline="AAL" arrArpt="PHL" cdmPart="false" depArpt="CHS" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90162273" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>AAL1107</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T22:05:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>CHS</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>PHL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">CHS</nxce:fix>
+          <nxce:fix elapsedTime="316" sequenceNumber="2">PALLI</nxce:fix>
+          <nxce:fix elapsedTime="435" sequenceNumber="3">SWPFX</nxce:fix>
+          <nxce:fix elapsedTime="736" sequenceNumber="4">FILLI</nxce:fix>
+          <nxce:fix elapsedTime="936" sequenceNumber="5">FLO</nxce:fix>
+          <nxce:fix elapsedTime="1828" sequenceNumber="6">RDU</nxce:fix>
+          <nxce:fix elapsedTime="2805" sequenceNumber="7">BBDOL</nxce:fix>
+          <nxce:fix elapsedTime="2939" sequenceNumber="8">WNDYB</nxce:fix>
+          <nxce:fix elapsedTime="3158" sequenceNumber="9">GDZLA</nxce:fix>
+          <nxce:fix elapsedTime="3408" sequenceNumber="10">KRABY</nxce:fix>
+          <nxce:fix elapsedTime="3718" sequenceNumber="11">BUKYY</nxce:fix>
+          <nxce:fix elapsedTime="4132" sequenceNumber="12">JAYBO</nxce:fix>
+          <nxce:fix elapsedTime="4244" sequenceNumber="13">HEDGE</nxce:fix>
+          <nxce:fix elapsedTime="4404" sequenceNumber="14">CANNY</nxce:fix>
+          <nxce:fix elapsedTime="4584" sequenceNumber="15">ESSSO</nxce:fix>
+          <nxce:fix elapsedTime="4686" sequenceNumber="16">PAATS</nxce:fix>
+          <nxce:fix elapsedTime="4919" sequenceNumber="17">RANSM</nxce:fix>
+          <nxce:fix elapsedTime="4950" sequenceNumber="18">EBRLY</nxce:fix>
+          <nxce:fix elapsedTime="5280" sequenceNumber="19">PHL</nxce:fix>
+          <nxce:waypoint latitudeDecimal="32.90" longitudeDecimal="-80.04" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="130" latitudeDecimal="33.01" longitudeDecimal="-80.01" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="178" latitudeDecimal="33.06" longitudeDecimal="-79.99" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="197" latitudeDecimal="33.08" longitudeDecimal="-79.99" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="264" latitudeDecimal="33.16" longitudeDecimal="-79.96" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="276" latitudeDecimal="33.17" longitudeDecimal="-79.96" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="316" latitudeDecimal="33.22" longitudeDecimal="-79.94" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="376" latitudeDecimal="33.30" longitudeDecimal="-79.92" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="435" latitudeDecimal="33.38" longitudeDecimal="-79.90" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="493" latitudeDecimal="33.46" longitudeDecimal="-79.87" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="630" latitudeDecimal="33.67" longitudeDecimal="-79.82" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="731" latitudeDecimal="33.85" longitudeDecimal="-79.77" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="736" latitudeDecimal="33.85" longitudeDecimal="-79.77" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="840" latitudeDecimal="34.05" longitudeDecimal="-79.71" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="933" latitudeDecimal="34.23" longitudeDecimal="-79.66" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="936" latitudeDecimal="34.23" longitudeDecimal="-79.66" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="978" latitudeDecimal="34.31" longitudeDecimal="-79.62" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="984" latitudeDecimal="34.32" longitudeDecimal="-79.61" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="1032" latitudeDecimal="34.41" longitudeDecimal="-79.56" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="1081" latitudeDecimal="34.51" longitudeDecimal="-79.51" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="1101" latitudeDecimal="34.54" longitudeDecimal="-79.49" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="1125" latitudeDecimal="34.59" longitudeDecimal="-79.47" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="1183" latitudeDecimal="34.70" longitudeDecimal="-79.41" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="1299" latitudeDecimal="34.91" longitudeDecimal="-79.30" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="1421" latitudeDecimal="35.13" longitudeDecimal="-79.18" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="1607" latitudeDecimal="35.47" longitudeDecimal="-79.00" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="1668" latitudeDecimal="35.58" longitudeDecimal="-78.94" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="1828" latitudeDecimal="35.87" longitudeDecimal="-78.78" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="2146" latitudeDecimal="36.47" longitudeDecimal="-78.47" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="2586" latitudeDecimal="37.29" longitudeDecimal="-78.04" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="2751" latitudeDecimal="37.56" longitudeDecimal="-77.89" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="2805" latitudeDecimal="37.64" longitudeDecimal="-77.85" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="2939" latitudeDecimal="37.80" longitudeDecimal="-77.69" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="2961" latitudeDecimal="37.83" longitudeDecimal="-77.66" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="2966" latitudeDecimal="37.84" longitudeDecimal="-77.66" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="3158" latitudeDecimal="38.07" longitudeDecimal="-77.43" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="3234" latitudeDecimal="38.17" longitudeDecimal="-77.35" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="3408" latitudeDecimal="38.39" longitudeDecimal="-77.16" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="3523" latitudeDecimal="38.51" longitudeDecimal="-77.01" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="3685" latitudeDecimal="38.67" longitudeDecimal="-76.79" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="3718" latitudeDecimal="38.71" longitudeDecimal="-76.75" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="3732" latitudeDecimal="38.71" longitudeDecimal="-76.72" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="3940" latitudeDecimal="38.79" longitudeDecimal="-76.35" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="3998" latitudeDecimal="38.81" longitudeDecimal="-76.25" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="4008" latitudeDecimal="38.81" longitudeDecimal="-76.23" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="4046" latitudeDecimal="38.82" longitudeDecimal="-76.17" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="4132" latitudeDecimal="38.85" longitudeDecimal="-76.02" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="4156" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="4160" latitudeDecimal="38.86" longitudeDecimal="-75.98" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="4227" latitudeDecimal="38.89" longitudeDecimal="-75.86" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="4244" latitudeDecimal="38.89" longitudeDecimal="-75.84" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="4380" latitudeDecimal="39.04" longitudeDecimal="-75.70" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="4404" latitudeDecimal="39.06" longitudeDecimal="-75.68" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="4539" latitudeDecimal="39.23" longitudeDecimal="-75.66" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="4547" latitudeDecimal="39.24" longitudeDecimal="-75.66" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="4584" latitudeDecimal="39.28" longitudeDecimal="-75.65" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="4602" latitudeDecimal="39.30" longitudeDecimal="-75.64" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="4639" latitudeDecimal="39.34" longitudeDecimal="-75.61" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="4663" latitudeDecimal="39.36" longitudeDecimal="-75.58" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="4686" latitudeDecimal="39.39" longitudeDecimal="-75.56" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="4725" latitudeDecimal="39.43" longitudeDecimal="-75.55" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="4787" latitudeDecimal="39.51" longitudeDecimal="-75.53" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="4821" latitudeDecimal="39.55" longitudeDecimal="-75.51" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="4849" latitudeDecimal="39.58" longitudeDecimal="-75.50" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="4915" latitudeDecimal="39.65" longitudeDecimal="-75.48" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="4919" latitudeDecimal="39.66" longitudeDecimal="-75.48" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="4950" latitudeDecimal="39.69" longitudeDecimal="-75.49" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="4969" latitudeDecimal="39.70" longitudeDecimal="-75.47" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="4987" latitudeDecimal="39.71" longitudeDecimal="-75.46" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="5058" latitudeDecimal="39.76" longitudeDecimal="-75.40" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="5068" latitudeDecimal="39.77" longitudeDecimal="-75.39" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="5159" latitudeDecimal="39.82" longitudeDecimal="-75.32" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="5280" latitudeDecimal="39.87" longitudeDecimal="-75.24" sequenceNumber="73"/>
+          <nxce:airway sequenceNumber="1">SWPFX3</nxce:airway>
+          <nxce:airway sequenceNumber="2">PAATS4</nxce:airway>
+          <nxce:center sequenceNumber="1">ZJX</nxce:center>
+          <nxce:center elapsedEntryTime="1101" sequenceNumber="2">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="4602" sequenceNumber="3">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZJXCHS</nxce:sector>
+          <nxce:sector elapsedEntryTime="178" sequenceNumber="2">ZJXLRO</nxce:sector>
+          <nxce:sector elapsedEntryTime="276" sequenceNumber="3">ZJX74</nxce:sector>
+          <nxce:sector elapsedEntryTime="630" sequenceNumber="4">ZJX71</nxce:sector>
+          <nxce:sector elapsedEntryTime="933" sequenceNumber="5">ZJX47</nxce:sector>
+          <nxce:sector elapsedEntryTime="1101" sequenceNumber="6">ZDC36</nxce:sector>
+          <nxce:sector elapsedEntryTime="2146" sequenceNumber="7">ZDC16</nxce:sector>
+          <nxce:sector elapsedEntryTime="2961" sequenceNumber="8">ZDC20</nxce:sector>
+          <nxce:sector elapsedEntryTime="2966" sequenceNumber="9">ZDC12</nxce:sector>
+          <nxce:sector elapsedEntryTime="3732" sequenceNumber="10">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="4156" sequenceNumber="11">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="4602" sequenceNumber="12">ZNYPHL</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="RPA4358" airline="RPA" arrArpt="LGA" cdmPart="false" depArpt="ORF" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90158110" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>RPA4358</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T21:02:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>ORF</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>LGA</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">ORF</nxce:fix>
+          <nxce:fix elapsedTime="734" sequenceNumber="2">HOUKY</nxce:fix>
+          <nxce:fix elapsedTime="1136" sequenceNumber="3">TAPPA</nxce:fix>
+          <nxce:fix elapsedTime="1409" sequenceNumber="4">HYTRA</nxce:fix>
+          <nxce:fix elapsedTime="1660" sequenceNumber="5">PRNCZ</nxce:fix>
+          <nxce:fix elapsedTime="1895" sequenceNumber="6">RIDGY</nxce:fix>
+          <nxce:fix elapsedTime="2110" sequenceNumber="7">ENO</nxce:fix>
+          <nxce:fix elapsedTime="2309" sequenceNumber="8">SKIPY</nxce:fix>
+          <nxce:fix elapsedTime="2435" sequenceNumber="9">BESSI</nxce:fix>
+          <nxce:fix elapsedTime="2557" sequenceNumber="10">EDJER</nxce:fix>
+          <nxce:fix elapsedTime="2609" sequenceNumber="11">DAVYS</nxce:fix>
+          <nxce:fix elapsedTime="2651" sequenceNumber="12">HOLEY</nxce:fix>
+          <nxce:fix elapsedTime="2711" sequenceNumber="13">BRAND</nxce:fix>
+          <nxce:fix elapsedTime="2771" sequenceNumber="14">KORRY</nxce:fix>
+          <nxce:fix elapsedTime="2897" sequenceNumber="15">DEPDY</nxce:fix>
+          <nxce:fix elapsedTime="2996" sequenceNumber="16">TYKES</nxce:fix>
+          <nxce:fix elapsedTime="3096" sequenceNumber="17">MINKS</nxce:fix>
+          <nxce:fix elapsedTime="3138" sequenceNumber="18">JERZY</nxce:fix>
+          <nxce:fix elapsedTime="3271" sequenceNumber="19">RENUE</nxce:fix>
+          <nxce:fix elapsedTime="3316" sequenceNumber="20">APPLE</nxce:fix>
+          <nxce:fix elapsedTime="3412" sequenceNumber="21">PROUD</nxce:fix>
+          <nxce:fix elapsedTime="3660" sequenceNumber="22">LGA</nxce:fix>
+          <nxce:waypoint latitudeDecimal="36.89" longitudeDecimal="-76.20" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="122" latitudeDecimal="36.95" longitudeDecimal="-76.31" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="197" latitudeDecimal="36.98" longitudeDecimal="-76.39" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="204" latitudeDecimal="36.99" longitudeDecimal="-76.40" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="283" latitudeDecimal="37.03" longitudeDecimal="-76.49" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="295" latitudeDecimal="37.04" longitudeDecimal="-76.51" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="403" latitudeDecimal="37.11" longitudeDecimal="-76.65" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="536" latitudeDecimal="37.19" longitudeDecimal="-76.83" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="581" latitudeDecimal="37.22" longitudeDecimal="-76.89" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="619" latitudeDecimal="37.25" longitudeDecimal="-76.95" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="636" latitudeDecimal="37.26" longitudeDecimal="-76.98" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="725" latitudeDecimal="37.33" longitudeDecimal="-77.12" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="734" latitudeDecimal="37.33" longitudeDecimal="-77.13" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="786" latitudeDecimal="37.41" longitudeDecimal="-77.10" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="932" latitudeDecimal="37.64" longitudeDecimal="-76.99" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="1136" latitudeDecimal="37.97" longitudeDecimal="-76.84" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="1409" latitudeDecimal="38.29" longitudeDecimal="-76.41" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="1660" latitudeDecimal="38.63" longitudeDecimal="-76.09" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="1670" latitudeDecimal="38.64" longitudeDecimal="-76.07" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="1895" latitudeDecimal="38.94" longitudeDecimal="-75.79" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="2110" latitudeDecimal="39.23" longitudeDecimal="-75.52" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="2309" latitudeDecimal="39.51" longitudeDecimal="-75.27" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="2341" latitudeDecimal="39.55" longitudeDecimal="-75.23" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="2388" latitudeDecimal="39.61" longitudeDecimal="-75.17" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="2435" latitudeDecimal="39.68" longitudeDecimal="-75.11" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="2557" latitudeDecimal="39.85" longitudeDecimal="-74.96" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="2609" latitudeDecimal="39.92" longitudeDecimal="-74.90" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="2649" latitudeDecimal="39.97" longitudeDecimal="-74.83" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="2651" latitudeDecimal="39.97" longitudeDecimal="-74.83" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="2707" latitudeDecimal="40.03" longitudeDecimal="-74.74" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="2711" latitudeDecimal="40.04" longitudeDecimal="-74.74" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="2771" latitudeDecimal="40.09" longitudeDecimal="-74.65" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="2773" latitudeDecimal="40.10" longitudeDecimal="-74.65" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="2790" latitudeDecimal="40.11" longitudeDecimal="-74.62" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="2847" latitudeDecimal="40.16" longitudeDecimal="-74.55" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="2855" latitudeDecimal="40.17" longitudeDecimal="-74.54" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="2897" latitudeDecimal="40.20" longitudeDecimal="-74.50" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="2972" latitudeDecimal="40.27" longitudeDecimal="-74.41" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="2992" latitudeDecimal="40.29" longitudeDecimal="-74.39" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="2996" latitudeDecimal="40.29" longitudeDecimal="-74.39" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="3051" latitudeDecimal="40.34" longitudeDecimal="-74.33" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="3096" latitudeDecimal="40.37" longitudeDecimal="-74.28" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="3126" latitudeDecimal="40.40" longitudeDecimal="-74.24" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="3138" latitudeDecimal="40.41" longitudeDecimal="-74.23" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="3174" latitudeDecimal="40.44" longitudeDecimal="-74.19" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="3201" latitudeDecimal="40.46" longitudeDecimal="-74.16" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="3271" latitudeDecimal="40.52" longitudeDecimal="-74.09" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="3283" latitudeDecimal="40.53" longitudeDecimal="-74.09" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="3316" latitudeDecimal="40.56" longitudeDecimal="-74.06" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="3331" latitudeDecimal="40.57" longitudeDecimal="-74.05" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="3376" latitudeDecimal="40.60" longitudeDecimal="-74.02" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="3386" latitudeDecimal="40.61" longitudeDecimal="-74.02" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="3412" latitudeDecimal="40.63" longitudeDecimal="-74.00" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="3424" latitudeDecimal="40.64" longitudeDecimal="-73.99" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="3427" latitudeDecimal="40.64" longitudeDecimal="-73.99" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="3529" latitudeDecimal="40.71" longitudeDecimal="-73.93" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="3660" latitudeDecimal="40.78" longitudeDecimal="-73.87" sequenceNumber="57"/>
+          <nxce:airway sequenceNumber="1">PROUD2</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="2855" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="2897" sequenceNumber="3">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="2972" sequenceNumber="4">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCORF</nxce:sector>
+          <nxce:sector elapsedEntryTime="636" sequenceNumber="2">ZDC33</nxce:sector>
+          <nxce:sector elapsedEntryTime="786" sequenceNumber="3">ZDC14</nxce:sector>
+          <nxce:sector elapsedEntryTime="932" sequenceNumber="4">ZDC11</nxce:sector>
+          <nxce:sector elapsedEntryTime="1670" sequenceNumber="5">ZDC53</nxce:sector>
+          <nxce:sector elapsedEntryTime="2341" sequenceNumber="6">ZDC51</nxce:sector>
+          <nxce:sector elapsedEntryTime="2388" sequenceNumber="7">ZDC19</nxce:sector>
+          <nxce:sector elapsedEntryTime="2855" sequenceNumber="8">ZNYNC1</nxce:sector>
+          <nxce:sector elapsedEntryTime="2897" sequenceNumber="9">ZDC19</nxce:sector>
+          <nxce:sector elapsedEntryTime="2972" sequenceNumber="10">ZNYNC1</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="DAL2322" airline="DAL" arrArpt="KEWR" cdmPart="false" depArpt="KATL" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90133533" major="DAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>DAL2322</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T16:59:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>KATL</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>KEWR</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">ATL</nxce:fix>
+          <nxce:fix elapsedTime="214" sequenceNumber="2">RONII</nxce:fix>
+          <nxce:fix elapsedTime="311" sequenceNumber="3">IGEBE</nxce:fix>
+          <nxce:fix elapsedTime="517" sequenceNumber="4">PLMMR</nxce:fix>
+          <nxce:fix elapsedTime="826" sequenceNumber="5">TENSE</nxce:fix>
+          <nxce:fix elapsedTime="1126" sequenceNumber="6">NWANT</nxce:fix>
+          <nxce:fix elapsedTime="1411" sequenceNumber="7">BURGG</nxce:fix>
+          <nxce:fix elapsedTime="1797" sequenceNumber="8">NYBLK</nxce:fix>
+          <nxce:fix elapsedTime="2081" sequenceNumber="9">MASHI</nxce:fix>
+          <nxce:fix elapsedTime="2228" sequenceNumber="10">KIDDO</nxce:fix>
+          <nxce:fix elapsedTime="2698" sequenceNumber="11">OMENS</nxce:fix>
+          <nxce:fix elapsedTime="2972" sequenceNumber="12">BEARI</nxce:fix>
+          <nxce:fix elapsedTime="3139" sequenceNumber="13">UMBRE</nxce:fix>
+          <nxce:fix elapsedTime="3204" sequenceNumber="14">QUART</nxce:fix>
+          <nxce:fix elapsedTime="3309" sequenceNumber="15">HURLE</nxce:fix>
+          <nxce:fix elapsedTime="3437" sequenceNumber="16">LOOPR</nxce:fix>
+          <nxce:fix elapsedTime="3587" sequenceNumber="17">HVNNN</nxce:fix>
+          <nxce:fix elapsedTime="3823" sequenceNumber="18">BAILZ</nxce:fix>
+          <nxce:fix elapsedTime="3966" sequenceNumber="19">PALEO</nxce:fix>
+          <nxce:fix elapsedTime="4108" sequenceNumber="20">FUBRR</nxce:fix>
+          <nxce:fix elapsedTime="4395" sequenceNumber="21">DQO</nxce:fix>
+          <nxce:fix elapsedTime="4616" sequenceNumber="22">STEFE</nxce:fix>
+          <nxce:fix elapsedTime="4750" sequenceNumber="23">SOMTO</nxce:fix>
+          <nxce:fix elapsedTime="4862" sequenceNumber="24">ARD</nxce:fix>
+          <nxce:fix elapsedTime="4895" sequenceNumber="25">DYLIN</nxce:fix>
+          <nxce:fix elapsedTime="4918" sequenceNumber="26">MERSR</nxce:fix>
+          <nxce:fix elapsedTime="5031" sequenceNumber="27">METRO</nxce:fix>
+          <nxce:fix elapsedTime="5166" sequenceNumber="28">MARRT</nxce:fix>
+          <nxce:fix elapsedTime="5342" sequenceNumber="29">PHLBO</nxce:fix>
+          <nxce:fix elapsedTime="5700" sequenceNumber="30">EWR</nxce:fix>
+          <nxce:waypoint latitudeDecimal="33.64" longitudeDecimal="-84.43" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="214" latitudeDecimal="33.68" longitudeDecimal="-84.18" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="311" latitudeDecimal="33.73" longitudeDecimal="-84.04" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="467" latitudeDecimal="33.89" longitudeDecimal="-83.81" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="471" latitudeDecimal="33.90" longitudeDecimal="-83.81" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="517" latitudeDecimal="33.95" longitudeDecimal="-83.73" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="771" latitudeDecimal="34.24" longitudeDecimal="-83.25" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="826" latitudeDecimal="34.31" longitudeDecimal="-83.14" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="1037" latitudeDecimal="34.56" longitudeDecimal="-82.73" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="1090" latitudeDecimal="34.62" longitudeDecimal="-82.63" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="1126" latitudeDecimal="34.66" longitudeDecimal="-82.56" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="1315" latitudeDecimal="34.90" longitudeDecimal="-82.15" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="1411" latitudeDecimal="35.03" longitudeDecimal="-81.93" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="1537" latitudeDecimal="35.21" longitudeDecimal="-81.64" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="1664" latitudeDecimal="35.39" longitudeDecimal="-81.35" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="1797" latitudeDecimal="35.58" longitudeDecimal="-81.04" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="1868" latitudeDecimal="35.68" longitudeDecimal="-80.88" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="2081" latitudeDecimal="35.97" longitudeDecimal="-80.38" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="2228" latitudeDecimal="36.18" longitudeDecimal="-80.04" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="2253" latitudeDecimal="36.21" longitudeDecimal="-79.98" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="2541" latitudeDecimal="36.61" longitudeDecimal="-79.30" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="2698" latitudeDecimal="36.82" longitudeDecimal="-78.92" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="2855" latitudeDecimal="37.04" longitudeDecimal="-78.54" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="2972" latitudeDecimal="37.20" longitudeDecimal="-78.26" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="3139" latitudeDecimal="37.39" longitudeDecimal="-77.82" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="3204" latitudeDecimal="37.52" longitudeDecimal="-77.71" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="3309" latitudeDecimal="37.73" longitudeDecimal="-77.55" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="3332" latitudeDecimal="37.78" longitudeDecimal="-77.51" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="3437" latitudeDecimal="37.99" longitudeDecimal="-77.34" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="3587" latitudeDecimal="38.29" longitudeDecimal="-77.09" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="3823" latitudeDecimal="38.75" longitudeDecimal="-76.65" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="3966" latitudeDecimal="39.03" longitudeDecimal="-76.37" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="3998" latitudeDecimal="39.09" longitudeDecimal="-76.30" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="4061" latitudeDecimal="39.19" longitudeDecimal="-76.18" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="4108" latitudeDecimal="39.27" longitudeDecimal="-76.09" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="4168" latitudeDecimal="39.35" longitudeDecimal="-75.99" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="4193" latitudeDecimal="39.39" longitudeDecimal="-75.95" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="4279" latitudeDecimal="39.51" longitudeDecimal="-75.80" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="4288" latitudeDecimal="39.53" longitudeDecimal="-75.79" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="4310" latitudeDecimal="39.56" longitudeDecimal="-75.75" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="4330" latitudeDecimal="39.59" longitudeDecimal="-75.72" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="4395" latitudeDecimal="39.68" longitudeDecimal="-75.61" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="4422" latitudeDecimal="39.71" longitudeDecimal="-75.56" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="4469" latitudeDecimal="39.78" longitudeDecimal="-75.49" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="4542" latitudeDecimal="39.87" longitudeDecimal="-75.37" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="4557" latitudeDecimal="39.89" longitudeDecimal="-75.35" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="4592" latitudeDecimal="39.94" longitudeDecimal="-75.30" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="4615" latitudeDecimal="39.96" longitudeDecimal="-75.26" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="4616" latitudeDecimal="39.97" longitudeDecimal="-75.26" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="4644" latitudeDecimal="40.00" longitudeDecimal="-75.22" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="4649" latitudeDecimal="40.01" longitudeDecimal="-75.21" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="4670" latitudeDecimal="40.03" longitudeDecimal="-75.18" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="4686" latitudeDecimal="40.05" longitudeDecimal="-75.16" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="4697" latitudeDecimal="40.06" longitudeDecimal="-75.14" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="4700" latitudeDecimal="40.07" longitudeDecimal="-75.14" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="4741" latitudeDecimal="40.12" longitudeDecimal="-75.08" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="4750" latitudeDecimal="40.13" longitudeDecimal="-75.06" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="4787" latitudeDecimal="40.17" longitudeDecimal="-75.01" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="4862" latitudeDecimal="40.25" longitudeDecimal="-74.91" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="4889" latitudeDecimal="40.28" longitudeDecimal="-74.87" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="4895" latitudeDecimal="40.29" longitudeDecimal="-74.86" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="4913" latitudeDecimal="40.31" longitudeDecimal="-74.83" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="4918" latitudeDecimal="40.31" longitudeDecimal="-74.83" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="4996" latitudeDecimal="40.39" longitudeDecimal="-74.72" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="5031" latitudeDecimal="40.42" longitudeDecimal="-74.67" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="5106" latitudeDecimal="40.53" longitudeDecimal="-74.64" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="5166" latitudeDecimal="40.61" longitudeDecimal="-74.62" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="5272" latitudeDecimal="40.75" longitudeDecimal="-74.58" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="5342" latitudeDecimal="40.83" longitudeDecimal="-74.56" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="5343" latitudeDecimal="40.83" longitudeDecimal="-74.56" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="5413" latitudeDecimal="40.80" longitudeDecimal="-74.46" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="5497" latitudeDecimal="40.76" longitudeDecimal="-74.36" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="5591" latitudeDecimal="40.73" longitudeDecimal="-74.27" sequenceNumber="73"/>
+          <nxce:waypoint elapsedTime="5700" latitudeDecimal="40.69" longitudeDecimal="-74.17" sequenceNumber="74"/>
+          <nxce:airway sequenceNumber="1">PLMMR3</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q22</nxce:airway>
+          <nxce:airway sequenceNumber="3">PHLBO4</nxce:airway>
+          <nxce:center sequenceNumber="1">ZTL</nxce:center>
+          <nxce:center elapsedEntryTime="2253" sequenceNumber="2">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="4592" sequenceNumber="3">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="4615" sequenceNumber="4">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="4644" sequenceNumber="5">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="4741" sequenceNumber="6">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="4787" sequenceNumber="7">ZNY</nxce:center>
+          <nxce:sector sequenceNumber="1">ZTLATL</nxce:sector>
+          <nxce:sector elapsedEntryTime="471" sequenceNumber="2">ZTL16</nxce:sector>
+          <nxce:sector elapsedEntryTime="771" sequenceNumber="3">ZTL32</nxce:sector>
+          <nxce:sector elapsedEntryTime="1090" sequenceNumber="4">ZTL34</nxce:sector>
+          <nxce:sector elapsedEntryTime="1315" sequenceNumber="5">ZTL28</nxce:sector>
+          <nxce:sector elapsedEntryTime="2253" sequenceNumber="6">ZDC07</nxce:sector>
+          <nxce:sector elapsedEntryTime="2855" sequenceNumber="7">ZDC16</nxce:sector>
+          <nxce:sector elapsedEntryTime="3332" sequenceNumber="8">ZDC12</nxce:sector>
+          <nxce:sector elapsedEntryTime="4061" sequenceNumber="9">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="4592" sequenceNumber="10">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="4615" sequenceNumber="11">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="4644" sequenceNumber="12">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="4741" sequenceNumber="13">ZDC18</nxce:sector>
+          <nxce:sector elapsedEntryTime="4787" sequenceNumber="14">ZNYPHL</nxce:sector>
+          <nxce:sector elapsedEntryTime="4913" sequenceNumber="15">ZNYNC1</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+    <fdm:fltdMessage acid="RPA4692" airline="RPA" arrArpt="MVY" cdmPart="false" depArpt="DCA" fdTrigger="AIRSPACE_ASSIGNMENT" flightRef="90145815" major="AAL" msgType="FlightSectors" sensitivity="A" sourceFacility="TFMS" sourceTimeStamp="2024-06-25T00:49:16Z">
+      <fdm:ncsmFlightSectors>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>RPA4692</nxce:aircraftId>
+          <nxce:computerId>
+            <nxce:facilityIdentifier>TFMS</nxce:facilityIdentifier>
+          </nxce:computerId>
+          <nxce:igtd>2024-06-25T18:57:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>DCA</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>MVY</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightTraversalData2>
+          <nxce:fix sequenceNumber="1">DCA</nxce:fix>
+          <nxce:fix elapsedTime="61" sequenceNumber="2">REVGE</nxce:fix>
+          <nxce:fix elapsedTime="92" sequenceNumber="3">BEBLE</nxce:fix>
+          <nxce:fix elapsedTime="124" sequenceNumber="4">COVTO</nxce:fix>
+          <nxce:fix elapsedTime="158" sequenceNumber="5">ALEEX</nxce:fix>
+          <nxce:fix elapsedTime="215" sequenceNumber="6">DOGUE</nxce:fix>
+          <nxce:fix elapsedTime="410" sequenceNumber="7">PHERB</nxce:fix>
+          <nxce:fix elapsedTime="526" sequenceNumber="8">SOOKI</nxce:fix>
+          <nxce:fix elapsedTime="663" sequenceNumber="9">SWANN</nxce:fix>
+          <nxce:fix elapsedTime="816" sequenceNumber="10">BROSS</nxce:fix>
+          <nxce:fix elapsedTime="985" sequenceNumber="11">MYFOO</nxce:fix>
+          <nxce:fix elapsedTime="1106" sequenceNumber="12">NACYN</nxce:fix>
+          <nxce:fix elapsedTime="1209" sequenceNumber="13">BSERK</nxce:fix>
+          <nxce:fix elapsedTime="1324" sequenceNumber="14">HULKK</nxce:fix>
+          <nxce:fix elapsedTime="1501" sequenceNumber="15">RBV</nxce:fix>
+          <nxce:fix elapsedTime="1684" sequenceNumber="16">MYRCA</nxce:fix>
+          <nxce:fix elapsedTime="1815" sequenceNumber="17">CREEL</nxce:fix>
+          <nxce:fix elapsedTime="2152" sequenceNumber="18">RIFLE</nxce:fix>
+          <nxce:fix elapsedTime="2694" sequenceNumber="19">LIBBE</nxce:fix>
+          <nxce:fix elapsedTime="2850" sequenceNumber="20">FLAPE</nxce:fix>
+          <nxce:fix elapsedTime="3300" sequenceNumber="21">MVY</nxce:fix>
+          <nxce:waypoint latitudeDecimal="38.85" longitudeDecimal="-77.04" sequenceNumber="1"/>
+          <nxce:waypoint elapsedTime="59" latitudeDecimal="38.90" longitudeDecimal="-77.07" sequenceNumber="2"/>
+          <nxce:waypoint elapsedTime="61" latitudeDecimal="38.90" longitudeDecimal="-77.07" sequenceNumber="3"/>
+          <nxce:waypoint elapsedTime="72" latitudeDecimal="38.91" longitudeDecimal="-77.08" sequenceNumber="4"/>
+          <nxce:waypoint elapsedTime="84" latitudeDecimal="38.91" longitudeDecimal="-77.10" sequenceNumber="5"/>
+          <nxce:waypoint elapsedTime="92" latitudeDecimal="38.92" longitudeDecimal="-77.11" sequenceNumber="6"/>
+          <nxce:waypoint elapsedTime="104" latitudeDecimal="38.93" longitudeDecimal="-77.12" sequenceNumber="7"/>
+          <nxce:waypoint elapsedTime="106" latitudeDecimal="38.93" longitudeDecimal="-77.12" sequenceNumber="8"/>
+          <nxce:waypoint elapsedTime="124" latitudeDecimal="38.95" longitudeDecimal="-77.13" sequenceNumber="9"/>
+          <nxce:waypoint elapsedTime="148" latitudeDecimal="38.97" longitudeDecimal="-77.15" sequenceNumber="10"/>
+          <nxce:waypoint elapsedTime="158" latitudeDecimal="38.98" longitudeDecimal="-77.16" sequenceNumber="11"/>
+          <nxce:waypoint elapsedTime="166" latitudeDecimal="38.99" longitudeDecimal="-77.15" sequenceNumber="12"/>
+          <nxce:waypoint elapsedTime="169" latitudeDecimal="38.99" longitudeDecimal="-77.15" sequenceNumber="13"/>
+          <nxce:waypoint elapsedTime="215" latitudeDecimal="39.04" longitudeDecimal="-77.10" sequenceNumber="14"/>
+          <nxce:waypoint elapsedTime="217" latitudeDecimal="39.04" longitudeDecimal="-77.10" sequenceNumber="15"/>
+          <nxce:waypoint elapsedTime="238" latitudeDecimal="39.05" longitudeDecimal="-77.06" sequenceNumber="16"/>
+          <nxce:waypoint elapsedTime="248" latitudeDecimal="39.05" longitudeDecimal="-77.04" sequenceNumber="17"/>
+          <nxce:waypoint elapsedTime="339" latitudeDecimal="39.07" longitudeDecimal="-76.88" sequenceNumber="18"/>
+          <nxce:waypoint elapsedTime="410" latitudeDecimal="39.09" longitudeDecimal="-76.74" sequenceNumber="19"/>
+          <nxce:waypoint elapsedTime="448" latitudeDecimal="39.10" longitudeDecimal="-76.67" sequenceNumber="20"/>
+          <nxce:waypoint elapsedTime="453" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="21"/>
+          <nxce:waypoint elapsedTime="457" latitudeDecimal="39.10" longitudeDecimal="-76.66" sequenceNumber="22"/>
+          <nxce:waypoint elapsedTime="492" latitudeDecimal="39.11" longitudeDecimal="-76.59" sequenceNumber="23"/>
+          <nxce:waypoint elapsedTime="526" latitudeDecimal="39.12" longitudeDecimal="-76.52" sequenceNumber="24"/>
+          <nxce:waypoint elapsedTime="559" latitudeDecimal="39.13" longitudeDecimal="-76.45" sequenceNumber="25"/>
+          <nxce:waypoint elapsedTime="565" latitudeDecimal="39.13" longitudeDecimal="-76.44" sequenceNumber="26"/>
+          <nxce:waypoint elapsedTime="619" latitudeDecimal="39.14" longitudeDecimal="-76.33" sequenceNumber="27"/>
+          <nxce:waypoint elapsedTime="661" latitudeDecimal="39.15" longitudeDecimal="-76.23" sequenceNumber="28"/>
+          <nxce:waypoint elapsedTime="663" latitudeDecimal="39.15" longitudeDecimal="-76.23" sequenceNumber="29"/>
+          <nxce:waypoint elapsedTime="688" latitudeDecimal="39.16" longitudeDecimal="-76.17" sequenceNumber="30"/>
+          <nxce:waypoint elapsedTime="695" latitudeDecimal="39.16" longitudeDecimal="-76.16" sequenceNumber="31"/>
+          <nxce:waypoint elapsedTime="733" latitudeDecimal="39.17" longitudeDecimal="-76.07" sequenceNumber="32"/>
+          <nxce:waypoint elapsedTime="737" latitudeDecimal="39.17" longitudeDecimal="-76.06" sequenceNumber="33"/>
+          <nxce:waypoint elapsedTime="816" latitudeDecimal="39.19" longitudeDecimal="-75.88" sequenceNumber="34"/>
+          <nxce:waypoint elapsedTime="842" latitudeDecimal="39.23" longitudeDecimal="-75.84" sequenceNumber="35"/>
+          <nxce:waypoint elapsedTime="886" latitudeDecimal="39.29" longitudeDecimal="-75.77" sequenceNumber="36"/>
+          <nxce:waypoint elapsedTime="926" latitudeDecimal="39.35" longitudeDecimal="-75.71" sequenceNumber="37"/>
+          <nxce:waypoint elapsedTime="944" latitudeDecimal="39.38" longitudeDecimal="-75.68" sequenceNumber="38"/>
+          <nxce:waypoint elapsedTime="961" latitudeDecimal="39.40" longitudeDecimal="-75.65" sequenceNumber="39"/>
+          <nxce:waypoint elapsedTime="985" latitudeDecimal="39.44" longitudeDecimal="-75.61" sequenceNumber="40"/>
+          <nxce:waypoint elapsedTime="1087" latitudeDecimal="39.59" longitudeDecimal="-75.45" sequenceNumber="41"/>
+          <nxce:waypoint elapsedTime="1106" latitudeDecimal="39.61" longitudeDecimal="-75.42" sequenceNumber="42"/>
+          <nxce:waypoint elapsedTime="1127" latitudeDecimal="39.65" longitudeDecimal="-75.38" sequenceNumber="43"/>
+          <nxce:waypoint elapsedTime="1209" latitudeDecimal="39.79" longitudeDecimal="-75.22" sequenceNumber="44"/>
+          <nxce:waypoint elapsedTime="1324" latitudeDecimal="39.97" longitudeDecimal="-74.95" sequenceNumber="45"/>
+          <nxce:waypoint elapsedTime="1402" latitudeDecimal="40.07" longitudeDecimal="-74.75" sequenceNumber="46"/>
+          <nxce:waypoint elapsedTime="1501" latitudeDecimal="40.20" longitudeDecimal="-74.50" sequenceNumber="47"/>
+          <nxce:waypoint elapsedTime="1684" latitudeDecimal="40.35" longitudeDecimal="-73.95" sequenceNumber="48"/>
+          <nxce:waypoint elapsedTime="1815" latitudeDecimal="40.45" longitudeDecimal="-73.55" sequenceNumber="49"/>
+          <nxce:waypoint elapsedTime="1818" latitudeDecimal="40.45" longitudeDecimal="-73.55" sequenceNumber="50"/>
+          <nxce:waypoint elapsedTime="2033" latitudeDecimal="40.61" longitudeDecimal="-72.89" sequenceNumber="51"/>
+          <nxce:waypoint elapsedTime="2069" latitudeDecimal="40.64" longitudeDecimal="-72.79" sequenceNumber="52"/>
+          <nxce:waypoint elapsedTime="2135" latitudeDecimal="40.68" longitudeDecimal="-72.63" sequenceNumber="53"/>
+          <nxce:waypoint elapsedTime="2152" latitudeDecimal="40.69" longitudeDecimal="-72.58" sequenceNumber="54"/>
+          <nxce:waypoint elapsedTime="2187" latitudeDecimal="40.71" longitudeDecimal="-72.49" sequenceNumber="55"/>
+          <nxce:waypoint elapsedTime="2218" latitudeDecimal="40.73" longitudeDecimal="-72.41" sequenceNumber="56"/>
+          <nxce:waypoint elapsedTime="2246" latitudeDecimal="40.75" longitudeDecimal="-72.34" sequenceNumber="57"/>
+          <nxce:waypoint elapsedTime="2344" latitudeDecimal="40.82" longitudeDecimal="-72.10" sequenceNumber="58"/>
+          <nxce:waypoint elapsedTime="2394" latitudeDecimal="40.85" longitudeDecimal="-71.97" sequenceNumber="59"/>
+          <nxce:waypoint elapsedTime="2417" latitudeDecimal="40.86" longitudeDecimal="-71.92" sequenceNumber="60"/>
+          <nxce:waypoint elapsedTime="2445" latitudeDecimal="40.88" longitudeDecimal="-71.85" sequenceNumber="61"/>
+          <nxce:waypoint elapsedTime="2497" latitudeDecimal="40.91" longitudeDecimal="-71.74" sequenceNumber="62"/>
+          <nxce:waypoint elapsedTime="2529" latitudeDecimal="40.93" longitudeDecimal="-71.67" sequenceNumber="63"/>
+          <nxce:waypoint elapsedTime="2547" latitudeDecimal="40.94" longitudeDecimal="-71.63" sequenceNumber="64"/>
+          <nxce:waypoint elapsedTime="2559" latitudeDecimal="40.94" longitudeDecimal="-71.61" sequenceNumber="65"/>
+          <nxce:waypoint elapsedTime="2587" latitudeDecimal="40.95" longitudeDecimal="-71.55" sequenceNumber="66"/>
+          <nxce:waypoint elapsedTime="2619" latitudeDecimal="40.97" longitudeDecimal="-71.49" sequenceNumber="67"/>
+          <nxce:waypoint elapsedTime="2626" latitudeDecimal="40.97" longitudeDecimal="-71.48" sequenceNumber="68"/>
+          <nxce:waypoint elapsedTime="2694" latitudeDecimal="41.00" longitudeDecimal="-71.36" sequenceNumber="69"/>
+          <nxce:waypoint elapsedTime="2741" latitudeDecimal="41.02" longitudeDecimal="-71.27" sequenceNumber="70"/>
+          <nxce:waypoint elapsedTime="2850" latitudeDecimal="41.07" longitudeDecimal="-71.07" sequenceNumber="71"/>
+          <nxce:waypoint elapsedTime="2879" latitudeDecimal="41.09" longitudeDecimal="-71.03" sequenceNumber="72"/>
+          <nxce:waypoint elapsedTime="2893" latitudeDecimal="41.11" longitudeDecimal="-71.01" sequenceNumber="73"/>
+          <nxce:waypoint elapsedTime="2916" latitudeDecimal="41.13" longitudeDecimal="-70.98" sequenceNumber="74"/>
+          <nxce:waypoint elapsedTime="3025" latitudeDecimal="41.22" longitudeDecimal="-70.85" sequenceNumber="75"/>
+          <nxce:waypoint elapsedTime="3071" latitudeDecimal="41.26" longitudeDecimal="-70.80" sequenceNumber="76"/>
+          <nxce:waypoint elapsedTime="3103" latitudeDecimal="41.28" longitudeDecimal="-70.77" sequenceNumber="77"/>
+          <nxce:waypoint elapsedTime="3147" latitudeDecimal="41.31" longitudeDecimal="-70.73" sequenceNumber="78"/>
+          <nxce:waypoint elapsedTime="3191" latitudeDecimal="41.34" longitudeDecimal="-70.69" sequenceNumber="79"/>
+          <nxce:waypoint elapsedTime="3300" latitudeDecimal="41.39" longitudeDecimal="-70.61" sequenceNumber="80"/>
+          <nxce:airway sequenceNumber="1">SOOKI5</nxce:airway>
+          <nxce:airway sequenceNumber="2">Q419</nxce:airway>
+          <nxce:airway sequenceNumber="3">Q430</nxce:airway>
+          <nxce:center sequenceNumber="1">ZDC</nxce:center>
+          <nxce:center elapsedEntryTime="1402" sequenceNumber="2">ZNY</nxce:center>
+          <nxce:center elapsedEntryTime="1818" sequenceNumber="3">ZBW</nxce:center>
+          <nxce:sector sequenceNumber="1">ZDCMT1</nxce:sector>
+          <nxce:sector elapsedEntryTime="448" sequenceNumber="2">ZDCCH1</nxce:sector>
+          <nxce:sector elapsedEntryTime="565" sequenceNumber="3">ZDC17</nxce:sector>
+          <nxce:sector elapsedEntryTime="886" sequenceNumber="4">ZDC19</nxce:sector>
+          <nxce:sector elapsedEntryTime="1402" sequenceNumber="5">ZNY56</nxce:sector>
+          <nxce:sector elapsedEntryTime="1818" sequenceNumber="6">ZBW31</nxce:sector>
+          <nxce:sector elapsedEntryTime="2394" sequenceNumber="7">ZBW32</nxce:sector>
+          <nxce:sector elapsedEntryTime="2547" sequenceNumber="8">ZBW18</nxce:sector>
+          <nxce:sector elapsedEntryTime="2619" sequenceNumber="9">ZBWPVF</nxce:sector>
+          <nxce:sector elapsedEntryTime="2879" sequenceNumber="10">ZBWFMF</nxce:sector>
+        </nxcm:flightTraversalData2>
+      </fdm:ncsmFlightSectors>
+    </fdm:fltdMessage>
+  </fltdOutput>
+</ds:tfmDataService>

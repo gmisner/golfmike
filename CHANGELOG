@@ -1,3 +1,3 @@
--Working TFMS Data
--Working Weather Data
--Added function to convert to dicitonary
+-Broke out functions into separate files
+-Converted everything to pydantic_xml
+
