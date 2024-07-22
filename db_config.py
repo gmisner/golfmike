@@ -1,27 +1,40 @@
 # db_config.py
-
+import sys
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine.url import URL
 
-# URL configuration with the correct endpoint ID
-connection_string = "postgresql://gkmisner:81QgOfuHCwyk@ep-tight-lake-32732521.us-west-2.aws.neon.tech:5432/swim"
+# Add the project root to the PYTHONPATH
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from models import Base  # Import Base from models
+from models.sqlalchemy import (
+    AircraftDBModel,
+    FlightPlanDBModel,
+    TmiUpdatesDBModel,
+    TrackDBModel,
+    StatusDBModel,
+    FxaUpdatesDBModel,
+)
+
+# URL configuration for local PostgreSQL server
+connection_string = URL.create(
+    drivername="postgresql+psycopg2",
+    username="postgres",
+    password="password",
+    host="postgres",
+    port=5432,
+    database="postgres",
+)
 
 engine = create_engine(connection_string)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 
 def init_db():
-    from models.sqlalchemy import (
-        AircraftDBModel,
-        FlightPlanDBModel,
-        TmiUpdatesDBModel,
-        TrackDBModel,
-        StatusDBModel,
-        FxaUpdatesDBModel,
-    )
-
     Base.metadata.create_all(bind=engine)
+    print("Database initialized with tables.")
 
 
 # Run this function to create all tables

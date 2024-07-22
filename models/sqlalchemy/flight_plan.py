@@ -1,19 +1,22 @@
-# models/sqlalchemy/flight_plan.py
-
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from db_config import Base
+from models.base import Base
 
 
 class FlightPlanDBModel(Base):
     """Class representing flight plan information in the database"""
 
-    __tablename__ = "flight_plans"
-    id = Column(String, primary_key=True)
+    __tablename__ = "flight_plan"
+    id = Column(Integer, primary_key=True, index=True)
+    flight_plan_id = Column(String, unique=True, index=True)
+    aircraft_id = Column(String, ForeignKey("aircraft.aircraft_id"))
     sourceId_00e = Column(String)
+    departure_point = Column(String)
+    flight_reference = Column(String)
+    arrival_point = Column(String)
     sourceTime_00e1 = Column(String)
     sourceSeqNo_00e2 = Column(String)
-    flightId_02a = Column(String, ForeignKey("aircraft.aircraft_id"))
+    flightId_02a = Column(String)
     computerId_02d = Column(String)
     eramGufi_316a = Column(String)
     eramGufi_316aNum = Column(Integer)
@@ -50,4 +53,5 @@ class FlightPlanDBModel(Base):
     flightPlanRoute_10a = Column(String)
     departurePoint_26a = Column(String)
     destination_27a = Column(String)
-    aircraft = relationship("AircraftDBModel", back_populates="flight_plans")
+    aircraft = relationship("AircraftDBModel", back_populates="flight_plan")
+    fxa_updates = relationship("FxaUpdatesDBModel", back_populates="flight_plan")

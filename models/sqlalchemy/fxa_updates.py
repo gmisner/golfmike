@@ -1,28 +1,28 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float, ForeignKey
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Float
 from sqlalchemy.orm import relationship
-from db_config import Base
+from models.base import Base
 
 
 class FxaUpdatesDBModel(Base):
     __tablename__ = "fxa_updates"
-    __table_args__ = {"extend_existing": True}  # Ensure this is present
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     aircraft_id = Column(String, ForeignKey("aircraft.aircraft_id"))
+    flight_plan_id = Column(String, ForeignKey("flight_plan.flight_plan_id"))
+    fca_id = Column(String)
+    fca_name = Column(String)
     update_time = Column(DateTime)
-    fcaId = Column(String)
-    fcaName = Column(String)
-    lastUpdate = Column(DateTime)
-    bentryTm = Column(DateTime)
-    createTm = Column(DateTime)
-    eentryTm = Column(DateTime)
-    entryTm = Column(DateTime)
-    exitTm = Column(DateTime)
-    extendedExitTm = Column(DateTime)
-    ientryTm = Column(DateTime)
-    oentryTm = Column(DateTime)
-    entryLat = Column(Float)
-    entryLon = Column(Float)
-    entryHeading = Column(Integer)
-    exitInd = Column(String)
+    last_update = Column(DateTime)
+    bentry_tm = Column(DateTime)
+    create_tm = Column(DateTime)
+    eentry_tm = Column(DateTime)
+    entry_tm = Column(DateTime)
+    exit_tm = Column(DateTime)
+    extended_exit_tm = Column(DateTime)
+    ientry_tm = Column(DateTime)
+    oentry_tm = Column(DateTime)
+    entry_lat = Column(Float)
+    entry_lon = Column(Float)
+    entry_heading = Column(Integer)
+    exit_ind = Column(String)
+    flight_plan = relationship("FlightPlanDBModel", back_populates="fxa_updates")
     aircraft = relationship("AircraftDBModel", back_populates="fxa_updates")

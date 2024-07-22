@@ -27,9 +27,6 @@ PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
 VPN_NAME = "TFMS"
 QUEUE_NAME = "gear.twinhawk.co.TFMS.b70b3338-3b0e-4388-bba0-b49d870a502c.OUT"
 
-# Delay between processing messages (in seconds)
-PROCESSING_DELAY = 5  # Adjust this value as needed
-
 
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
@@ -60,11 +57,7 @@ class MessageHandlerImpl(MessageHandler):
         except Exception as e:
             logger.error(f"Error processing message: {e}")
 
-        # Add a delay to avoid hitting rate limits
-        time.sleep(PROCESSING_DELAY)
 
-
-# Inner classes for error handling
 class ServiceEventHandler(
     ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
 ):

@@ -1,15 +1,18 @@
+from pydantic import BaseModel, Field
 from typing import List, Optional
-from pydantic import BaseModel
+
+
+class FlightDataType(BaseModel):
+    aircraftId: Optional[str]
+    gufi: Optional[str]
+    igtd: Optional[str]
+    departurePoint: Optional[str]
+    arrivalPoint: Optional[str]
+    flightReference: Optional[str]
+    status: Optional[str]
 
 
 class FxaFlight(BaseModel):
-    """
-    FxaFlight _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
     fcaId: Optional[str]
     fcaName: Optional[str]
     lastUpdate: Optional[str]
@@ -28,72 +31,20 @@ class FxaFlight(BaseModel):
 
 
 class FxaFlightData(BaseModel):
-    """
-    FxaFlightData _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
     fxaFlight: List[FxaFlight]
 
 
 class Tmi(BaseModel):
-    """
-    Tmi _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
     updateType: Optional[str]
     lastUpdateTime: Optional[str]
     fcaId: Optional[str]
 
 
 class TmiFlightInfoList(BaseModel):
-    """
-    TmiFlightInfoList _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
     tmi: Optional[Tmi]
     fxaFlightData: Optional[FxaFlightData]
 
 
-class FlightDataType(BaseModel):
-    """
-    FlightDataType _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
-    aircraftId: Optional[str]
-    gufi: Optional[str]
-    igtd: Optional[str]
-    departurePoint: Optional[str]
-    arrivalPoint: Optional[str]
-    flightReference: Optional[str]
-    status: Optional[str]
-
-
 class TmiFlightListModel(BaseModel):
-    """
-    TmiFlightListModel _summary_
-
-    Args:
-        BaseModel (_type_): _description_
-    """
-
-    flight: FlightDataType
-    tmiFlightInfoList: TmiFlightInfoList
-
-    class Config:
-        """
-        _summary_
-        """
-
-        from_attributes = True
+    flight: List[FlightDataType]
+    tmiFlightInfoList: Optional[TmiFlightInfoList]

@@ -1,10 +1,11 @@
 # models/__init__.py
-
-from .sqlalchemy.aircraft import AircraftDBModel
-from .sqlalchemy.flight_plan import FlightPlanDBModel
-from .sqlalchemy.tmi_updates import TmiUpdatesDBModel
-from .sqlalchemy.fxa_updates import FxaUpdatesDBModel
-from .sqlalchemy.status import StatusDBModel
+from models.sqlalchemy.aircraft import AircraftDBModel
+from models.sqlalchemy.flight_plan import FlightPlanDBModel
+from models.sqlalchemy.tmi_updates import TmiUpdatesDBModel
+from models.sqlalchemy.track import TrackDBModel
+from models.sqlalchemy.status import StatusDBModel
+from models.sqlalchemy.fxa_updates import FxaUpdatesDBModel
+from .base import Base
 from .pydantic.flight_plan import FlightPlanModel
 from .pydantic.tmi_updates import TmiUpdatesModel
 from .pydantic.fxa_updates import FxaUpdatesModel

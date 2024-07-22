@@ -1,51 +1,35 @@
 {
-	"name": "BigTitties",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": "..",
-		"args": {
-			"VARIANT": "3.10",
-			"NODE_VERSION": "none",
-			"--workdir": "/workspaces/GolfMike"
-		}
-	},
-	"customizations": {
-		"vscode": {
-			"settings": {
-				"python.defaultInterpreterPath": "/usr/local/bin/python",
-				"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
-				"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-				"python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
-				"postgresql.host": "ep-tight-lake-32732521.us-west-2.aws.neon.tech",
-				"postgresql.port": 5432,
-				"postgresql.database": "swim",
-				"postgresql.user": "gkmisner",
-				"postgresql.password": "81QgOfuHCwyk"
-			},
-			"extensions": [
-				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"ms-python.pylint",
-				"ms-ossdata.vscode-postgresql",
-				"KevinRose.vsc-python-indent",
-				"donjayamanne.python-extension-pack",
-				"ms-azuretools.vscode-docker",
-				"ms-python.black-formatter",
-				"mikoz.black-py",
-				"PKief.material-icon-theme",
-				"njpwerner.autodocstring"
-			]
-		}
-	},
-	"postCreateCommand": "pip install -r /workspaces/GolfMike/.devcontainer/requirements.txt",
-	"remoteUser": "vscode",
-	"features": {
-		"git": "latest",
-		"github-cli": "latest",
-		"sshd": "latest"
-	},
-	"forwardPorts": [
-		5432
-	],
-	"runArgs": ["--dns", "8.8.8.8", "--dns", "8.8.4.4"]
+    "name": "BigTitties",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+                "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+                "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.pylint",
+                "ms-ossdata.vscode-postgresql",
+                "KevinRose.vsc-python-indent",
+                "donjayamanne.python-extension-pack",
+                "ms-azuretools.vscode-docker",
+                "ms-python.black-formatter",
+                "mikoz.black-py",
+                "PKief.material-icon-theme",
+                "njpwerner.autodocstring",
+                "charliermarsh.ruff",
+                "ckolkman.vscode-postgres",
+                "GitLab.gitlab-workflow"
+            ]
+        }
+    },
+    "dockerComposeFile": [
+        "/Users/gmisner/Documents/GolfMike/.devcontainer/docker-compose.yml"
+    ],
+    "service": "bigtitties",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "vscode"
 }

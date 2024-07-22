@@ -1,20 +1,7 @@
 from lxml import etree
-from sqlalchemy import create_engine, insert, exc
-from sqlalchemy.orm import sessionmaker
-from parsers.flight_plan_parser import parse_flight_plan
-from parsers.track_information_parser import parse_track_information
-from parsers.fltd_message_parser import parse_fltd_message
-from parsers.flight_sectors_parser import parse_flight_sectors
-from parsers.status_parser import parse_status
-from parsers.flight_modify_parser import parse_flight_modify
-from parsers.flight_plan_amendment_parser import parse_flight_plan_amendment
-from parsers.tmi_flight_list_parser import parse_tmi_flight_data
-from storers.tmi_updates_storer import store_tmi_flight_list
-from storers.track_storer import store_track
-from storers.fltd_message_storer import store_fltd_message
-from storers.status_storer import store_status
+from parser_storer_registry import get_parser, get_storer
 from utils.logger import main_logger as logger
-from models.pydantic.tmi_flight_list import TmiFlightListModel
+from db_config import SessionLocal  # Import SessionLocal
 
 NAMESPACES = {
     "ns2": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",
@@ -32,45 +19,60 @@ NAMESPACES = {
     "ns14": "http://www.fixm.aero/flight/3.0",
     "ns15": "http://www.fixm.aero/base/3.0",
     "ns16": "http://www.fixm.aero/foundation/3.0",
+    "ds": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",  # Add the ds prefix
+    "fdm": "urn:us:gov:dot:faa:atm:tfm:flightdata",  # Add the fdm prefix
+    "nxce": "urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements",  # Add the nxce prefix
+    "nxcm": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",  # Add the nxcm prefix
+    "xsi": "http://www.w3.org/2001/XMLSchema-instance",  # Add the xsi prefix
 }
-
-# --- Parsing Functions ---
 
 
 def parse_xml_to_pydantic(xml_data: str):
-    """Parses XML data and returns a Pydantic model (or None if parsing fails)."""
+    """Parses XML data and returns a list of Pydantic models (or None if parsing fails)."""
     try:
         logger.debug(xml_data)
-
-        # Parse the XML using lxml
         root = etree.fromstring(xml_data.encode("utf-8"))
 
-        # Extract fiOutput (for ns5:fiMessage messages)
+        parsed_data = []
+
+        # Check for different root elements and parse accordingly
         fi_output = root.find("ns5:fiOutput", namespaces=NAMESPACES)
+        fltd_output = root.find("ds:fltdOutput", namespaces=NAMESPACES)
 
         if fi_output is not None:
             fi_messages = fi_output.findall("ns12:fiMessage", namespaces=NAMESPACES)
-            parsed_data = []
             for fi_message in fi_messages:
-                # Check the message type and parse accordingly
                 msg_type = fi_message.get("msgType")
-                if msg_type == "TMI_FLIGHT_LIST":
-                    tmi_flight_data_list = fi_message.find(
-                        "ns12:tmiFlightDataList", namespaces=NAMESPACES
+                parser = get_parser(msg_type)
+                if parser:
+                    parsed_message = parser(
+                        etree.tostring(fi_message, encoding="unicode")
                     )
-                    if tmi_flight_data_list is not None:
-                        flight_data_elements = tmi_flight_data_list.findall(
-                            "ns12:flightData", namespaces=NAMESPACES
-                        )
-                        for flight_data in flight_data_elements:
-                            parsed_message = parse_tmi_flight_data(flight_data)
-                            if parsed_message:
-                                parsed_data.append(parsed_message)
+                    if parsed_message:
+                        parsed_data.append(parsed_message)
+                else:
+                    logger.warning(f"No parser registered for message type: {msg_type}")
 
-            return parsed_data if parsed_data else None
+        elif fltd_output is not None:
+            fltd_messages = fltd_output.findall(
+                "fdm:fltdMessage", namespaces=NAMESPACES
+            )
+            for fltd_message in fltd_messages:
+                msg_type = fltd_message.get("msgType")
+                parser = get_parser(msg_type)
+                if parser:
+                    parsed_message = parser(
+                        etree.tostring(fltd_message, encoding="unicode")
+                    )
+                    if parsed_message:
+                        parsed_data.append(parsed_message)
+                else:
+                    logger.warning(f"No parser registered for message type: {msg_type}")
 
-        logger.warning("No fiOutput or fiMessage element found in XML.")
-        return None
+        else:
+            logger.warning("No known root element found in XML.")
+
+        return parsed_data if parsed_data else None
 
     except Exception as e:
         logger.error(f"Error parsing XML to Pydantic: {e}", exc_info=True)
@@ -80,20 +82,23 @@ def parse_xml_to_pydantic(xml_data: str):
 
 def parse_and_store_to_database(xml_data: str):
     """Parses XML data and stores it to the database."""
+    session = SessionLocal()
     try:
         logger.debug(xml_data)
 
         # Parse and store the XML data
         parsed_data = parse_xml_to_pydantic(xml_data)
         if parsed_data is not None:
-            if isinstance(parsed_data, list) and all(
-                isinstance(item, TmiFlightListModel) for item in parsed_data
-            ):
-                for message in parsed_data:
-                    store_tmi_flight_list(message)
-            else:
-                logger.error(f"Unknown parsed data type: {type(parsed_data)}")
+            for data in parsed_data:
+                msg_type = data.get("type")
+                storer = get_storer(msg_type)
+                if storer:
+                    storer(session, data.get("data"))
+                else:
+                    logger.warning(f"No storer registered for message type: {msg_type}")
         else:
             logger.error("Failed to parse XML data.")
     except Exception as e:
         logger.error(f"Error parsing and storing XML data: {e}")
+    finally:
+        session.close()

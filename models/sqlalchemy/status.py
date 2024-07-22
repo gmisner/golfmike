@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from db_config import Base
+from models.base import Base
 
 
 class StatusDBModel(Base):

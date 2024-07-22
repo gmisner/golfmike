@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from db_config import Base
+from models.base import Base
 
 
 class FltdMessageDBModel(Base):

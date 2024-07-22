@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from lxml import etree
 from models.pydantic.tmi_flight_list import (
     TmiFlightListModel,
@@ -29,178 +29,204 @@ NAMESPACES = {
 }
 
 
-def parse_tmi_flight_data(flight_data: etree.Element) -> Optional[TmiFlightListModel]:
-    """Parses TMI Flight Data from the XML element."""
+def parse_tmi_flight_list(flight_data_str: str) -> Optional[TmiFlightListModel]:
+    """Parses TMI Flight Data from the XML string."""
     try:
+        flight_data_bytes = flight_data_str.encode("utf-8")
+        root = etree.fromstring(flight_data_bytes)
+
         # Extract flight information
-        flight_info = {}
-        aircraft_id = flight_data.find(
-            "ns9:flight/ns7:aircraftId", namespaces=NAMESPACES
-        )
-        gufi = flight_data.find("ns9:flight/ns7:gufi", namespaces=NAMESPACES)
-        igtd = flight_data.find("ns9:flight/ns7:igtd", namespaces=NAMESPACES)
-        departure_point = flight_data.find(
-            "ns9:flight/ns7:departurePoint/ns7:airport", namespaces=NAMESPACES
-        )
-        arrival_point = flight_data.find(
-            "ns9:flight/ns7:arrivalPoint/ns7:airport", namespaces=NAMESPACES
-        )
-        flight_reference = flight_data.find(
-            "ns9:flightReference", namespaces=NAMESPACES
-        )
-        status = flight_data.find("ns9:status", namespaces=NAMESPACES)
+        flights: List[FlightDataType] = []
+        for flight_data in root.xpath(".//ns12:flightData", namespaces=NAMESPACES):
+            flight_info = {}
+            aircraft_id = flight_data.xpath(".//ns7:aircraftId", namespaces=NAMESPACES)
+            gufi = flight_data.xpath(".//ns7:gufi", namespaces=NAMESPACES)
+            igtd = flight_data.xpath(".//ns7:igtd", namespaces=NAMESPACES)
+            departure_point = flight_data.xpath(
+                ".//ns7:departurePoint/ns7:airport", namespaces=NAMESPACES
+            )
+            arrival_point = flight_data.xpath(
+                ".//ns7:arrivalPoint/ns7:airport", namespaces=NAMESPACES
+            )
+            flight_reference = flight_data.xpath(
+                ".//ns9:flightReference", namespaces=NAMESPACES
+            )
+            status = flight_data.xpath(".//ns9:status", namespaces=NAMESPACES)
 
-        if aircraft_id is not None:
-            flight_info["aircraftId"] = aircraft_id.text
-        if gufi is not None:
-            flight_info["gufi"] = gufi.text
-        if igtd is not None:
-            flight_info["igtd"] = igtd.text
-        if departure_point is not None:
-            flight_info["departurePoint"] = departure_point.text
-        if arrival_point is not None:
-            flight_info["arrivalPoint"] = arrival_point.text
-        if flight_reference is not None:
-            flight_info["flightReference"] = flight_reference.text
-        if status is not None:
-            flight_info["status"] = status.text
+            if aircraft_id:
+                flight_info["aircraftId"] = aircraft_id[0].text
+            if gufi:
+                flight_info["gufi"] = gufi[0].text
+            if igtd:
+                flight_info["igtd"] = igtd[0].text
+            if departure_point:
+                flight_info["departurePoint"] = departure_point[0].text
+            if arrival_point:
+                flight_info["arrivalPoint"] = arrival_point[0].text
+            if flight_reference:
+                flight_info["flightReference"] = flight_reference[0].text
+            if status:
+                flight_info["status"] = status[0].text
 
-        flight = FlightDataType(**flight_info)
+            flight = FlightDataType(**flight_info)
+            flights.append(flight)
 
         # Extract TMI flight info list
-        tmi_flight_info_list = flight_data.find(
-            "ns9:tmiFlightInfoList", namespaces=NAMESPACES
+        tmi_flight_info_list = root.xpath(
+            ".//ns9:tmiFlightInfoList", namespaces=NAMESPACES
         )
         tmi_info = None
         fxa_flight_data = []
-        if tmi_flight_info_list is not None:
-            tmi_element = tmi_flight_info_list.find("ns9:tmi", namespaces=NAMESPACES)
-            if tmi_element is not None:
+        if tmi_flight_info_list:
+            tmi_element = tmi_flight_info_list[0].xpath(
+                ".//ns9:tmi", namespaces=NAMESPACES
+            )
+            if tmi_element:
                 tmi_info = Tmi(
-                    updateType=tmi_element.get("updateType"),
-                    lastUpdateTime=tmi_element.get("lastUpdateTime"),
+                    updateType=tmi_element[0].get("updateType"),
+                    lastUpdateTime=tmi_element[0].get("lastUpdateTime"),
                     fcaId=(
-                        tmi_element.find("ns9:fcaId", namespaces=NAMESPACES).text
-                        if tmi_element.find("ns9:fcaId", namespaces=NAMESPACES)
-                        is not None
+                        tmi_element[0]
+                        .xpath(".//ns9:fcaId", namespaces=NAMESPACES)[0]
+                        .text
+                        if tmi_element[0].xpath(".//ns9:fcaId", namespaces=NAMESPACES)
                         else None
                     ),
                 )
 
-            fxa_flight_data_elements = tmi_flight_info_list.findall(
-                "ns9:fxaFlightData/ns9:fxaFlight", namespaces=NAMESPACES
+            fxa_flight_data_elements = tmi_flight_info_list[0].xpath(
+                ".//ns9:fxaFlightData/ns9:fxaFlight", namespaces=NAMESPACES
             )
             for fxa_flight in fxa_flight_data_elements:
                 fxa_flight_data.append(
                     FxaFlight(
                         fcaId=(
-                            fxa_flight.find(
-                                "ns9:fxaId/ns11:fcaId", namespaces=NAMESPACES
-                            ).text
-                            if fxa_flight.find(
-                                "ns9:fxaId/ns11:fcaId", namespaces=NAMESPACES
+                            fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:fcaId", namespaces=NAMESPACES
+                            )[0].text
+                            if fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:fcaId", namespaces=NAMESPACES
                             )
-                            is not None
                             else None
                         ),
                         fcaName=(
-                            fxa_flight.find(
-                                "ns9:fxaId/ns11:fcaName", namespaces=NAMESPACES
-                            ).text
-                            if fxa_flight.find(
-                                "ns9:fxaId/ns11:fcaName", namespaces=NAMESPACES
+                            fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:fcaName", namespaces=NAMESPACES
+                            )[0].text
+                            if fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:fcaName", namespaces=NAMESPACES
                             )
-                            is not None
                             else None
                         ),
                         lastUpdate=(
-                            fxa_flight.find(
-                                "ns9:fxaId/ns11:lastUpdate", namespaces=NAMESPACES
-                            ).text
-                            if fxa_flight.find(
-                                "ns9:fxaId/ns11:lastUpdate", namespaces=NAMESPACES
+                            fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:lastUpdate", namespaces=NAMESPACES
+                            )[0].text
+                            if fxa_flight.xpath(
+                                ".//ns9:fxaId/ns11:lastUpdate", namespaces=NAMESPACES
                             )
-                            is not None
                             else None
                         ),
                         bentryTm=(
-                            fxa_flight.find("ns9:bentryTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:bentryTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:bentryTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:bentryTm", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         createTm=(
-                            fxa_flight.find("ns9:createTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:createTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:createTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:createTm", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         eentryTm=(
-                            fxa_flight.find("ns9:eentryTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:eentryTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:eentryTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:eentryTm", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         entryTm=(
-                            fxa_flight.find("ns9:entryTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:entryTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:entryTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(".//ns9:entryTm", namespaces=NAMESPACES)
                             else None
                         ),
                         exitTm=(
-                            fxa_flight.find("ns9:exitTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:exitTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:exitTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(".//ns9:exitTm", namespaces=NAMESPACES)
                             else None
                         ),
                         extendedExitTm=(
-                            fxa_flight.find(
-                                "ns9:extendedExitTm", namespaces=NAMESPACES
-                            ).text
-                            if fxa_flight.find(
-                                "ns9:extendedExitTm", namespaces=NAMESPACES
+                            fxa_flight.xpath(
+                                ".//ns9:extendedExitTm", namespaces=NAMESPACES
+                            )[0].text
+                            if fxa_flight.xpath(
+                                ".//ns9:extendedExitTm", namespaces=NAMESPACES
                             )
-                            is not None
                             else None
                         ),
                         ientryTm=(
-                            fxa_flight.find("ns9:ientryTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:ientryTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:ientryTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:ientryTm", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         oentryTm=(
-                            fxa_flight.find("ns9:oentryTm", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:oentryTm", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:oentryTm", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:oentryTm", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         entryLat=(
-                            fxa_flight.find("ns9:entryLat", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:entryLat", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:entryLat", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:entryLat", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         entryLon=(
-                            fxa_flight.find("ns9:entryLon", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:entryLon", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:entryLon", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(
+                                ".//ns9:entryLon", namespaces=NAMESPACES
+                            )
                             else None
                         ),
                         entryHeading=(
-                            fxa_flight.find(
-                                "ns9:entryHeading", namespaces=NAMESPACES
-                            ).text
-                            if fxa_flight.find(
-                                "ns9:entryHeading", namespaces=NAMESPACES
+                            fxa_flight.xpath(
+                                ".//ns9:entryHeading", namespaces=NAMESPACES
+                            )[0].text
+                            if fxa_flight.xpath(
+                                ".//ns9:entryHeading", namespaces=NAMESPACES
                             )
-                            is not None
                             else None
                         ),
                         exitInd=(
-                            fxa_flight.find("ns9:exitInd", namespaces=NAMESPACES).text
-                            if fxa_flight.find("ns9:exitInd", namespaces=NAMESPACES)
-                            is not None
+                            fxa_flight.xpath(".//ns9:exitInd", namespaces=NAMESPACES)[
+                                0
+                            ].text
+                            if fxa_flight.xpath(".//ns9:exitInd", namespaces=NAMESPACES)
                             else None
                         ),
                     )
@@ -210,7 +236,7 @@ def parse_tmi_flight_data(flight_data: etree.Element) -> Optional[TmiFlightListM
             tmi=tmi_info, fxaFlightData=FxaFlightData(fxaFlight=fxa_flight_data)
         )
 
-        return TmiFlightListModel(flight=flight, tmiFlightInfoList=tmi_flight_info)
+        return TmiFlightListModel(flight=flights, tmiFlightInfoList=tmi_flight_info)
     except Exception as e:
         logger.error(f"Error parsing TMI Flight Data: {e}", exc_info=True)
         return None

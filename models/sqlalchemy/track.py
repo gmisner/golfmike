@@ -1,15 +1,16 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from db_config import Base
+from models.base import Base
 
 
 class TrackDBModel(Base):
     __tablename__ = "tracks"
     id = Column(String, primary_key=True)
+    aircraft_id = Column(String, ForeignKey("aircraft.aircraft_id"))
     sourceId_00e = Column(String)
     sourceTime_00e1 = Column(String)
     sourceSeqNo_00e2 = Column(String)
-    flightId_02a = Column(String, ForeignKey("aircraft.aircraft_id"))
+    flightId_02a = Column(String)
     computerId_02d = Column(String)
     sspId_167a = Column(String)
     groundSpeed_05b = Column(String)
@@ -29,4 +30,5 @@ class TrackDBModel(Base):
     targetAlt_172a = Column(String)
     targetAltInvalid_172b = Column(String)
     timeOfTargetData_173a = Column(DateTime)
+    # Define the relationship with AircraftDBModel
     aircraft = relationship("AircraftDBModel", back_populates="track_data")

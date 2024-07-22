@@ -10,3 +10,4 @@ pydantic
 sqlalchemy
 psycopg2
 pydantic_xml
+python-dateutil
