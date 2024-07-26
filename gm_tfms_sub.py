@@ -1,5 +1,5 @@
-# gm_tfms_sub.py
 import time
+import concurrent.futures
 from solace.messaging.messaging_service import (
     MessagingService,
     ReconnectionListener,
@@ -27,35 +27,36 @@ PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
 VPN_NAME = "TFMS"
 QUEUE_NAME = "gear.twinhawk.co.TFMS.b70b3338-3b0e-4388-bba0-b49d870a502c.OUT"
 
+# Thread pool for concurrent message processing
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
 
 class MessageHandlerImpl(MessageHandler):
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
         self.receiver: PersistentMessageReceiver = persistent_receiver
 
     def on_message(self, message: InboundMessage):
-        payload = (
-            message.get_payload_as_string()
-            if message.get_payload_as_string() is not None
-            else message.get_payload_as_bytes()
-        )
-        if isinstance(payload, bytearray):
-            logger.info(
-                f"Received a message of type: {type(payload)}. Decoding to string"
-            )
-            payload = payload.decode()
+        executor.submit(self.process_message, message)
 
-        # LOG THE RECEIVED XML HERE (outside the conditional block):
-        logger.info(f"Received XML: {payload}")
+    def process_message(self, message: InboundMessage):
+        payload = message.get_payload_as_string()  # Try getting string first
+        if payload is None:
+            payload = message.get_payload_as_bytes()  # Get as bytes if not string
+            if isinstance(payload, (bytearray, bytes)):  # Decode if bytes or bytearray
+                logger.info(
+                    f"Received a message of type: {type(payload)}. Decoding to string."
+                )
+                payload = payload.decode()
 
         try:
-            parsed_data = parse_and_store_to_database(payload)
-            if parsed_data:
-                logger.info(f"Stored data for flight: {parsed_data.aircraftId}")
+            success = parse_and_store_to_database(payload)
+            if success:
+                logger.success("Message processed and data stored successfully")
             else:
                 logger.error("Failed to parse and store the XML data")
 
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
+            logger.error(f"Error processing message: {e}", exc_info=True)
 
 
 class ServiceEventHandler(
@@ -110,6 +111,8 @@ messaging_service.add_service_interruption_listener(service_handler)
 # Queue name.
 queue_name = QUEUE_NAME
 durable_non_exclusive_queue = Queue.durable_non_exclusive_queue(queue_name)
+
+persistent_receiver = None  # Initialize persistent_receiver before the try block
 
 try:
     # Build a receiver and bind it to the durable exclusive queue

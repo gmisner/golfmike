@@ -1,10 +1,12 @@
-from sqlalchemy.orm import Session
+from db_config import SessionLocal
+from typing import List
 from models.pydantic.flight_sectors import FlightSectorsModel
 from models.sqlalchemy.aircraft import AircraftDBModel
 from models.sqlalchemy.flight_sectors import FlightSectorsDBModel
 
 
-def store_flight_sectors(session: Session, assignments: List[FlightSectorsModel]):
+def store_flight_sectors(assignments: List[FlightSectorsModel]):
+    session = SessionLocal()
     try:
         for assignment in assignments:
             aircraft = (

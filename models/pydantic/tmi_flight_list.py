@@ -1,50 +1,39 @@
-from pydantic import BaseModel, Field
+# models/pydantic/tmi_flight_list.py
+
+from datetime import datetime
+from pydantic import BaseModel
 from typing import List, Optional
 
 
-class FlightDataType(BaseModel):
-    aircraftId: Optional[str]
-    gufi: Optional[str]
-    igtd: Optional[str]
-    departurePoint: Optional[str]
-    arrivalPoint: Optional[str]
-    flightReference: Optional[str]
-    status: Optional[str]
+class FxaFlightModel(BaseModel):
+    id: Optional[int]
+    aircraft_id: str
+    update_time: datetime
+    fxaId: str
+    fcaId: str
+    fcaName: str
+    lastUpdate: datetime
+    bentryTm: datetime
+    createTm: datetime
+    eentryTm: datetime
+    entryTm: datetime
+    exitTm: datetime
+    extendedExitTm: datetime
+    ientryTm: datetime
+    oentryTm: datetime
+    entryLat: float
+    entryLon: float
+    entryHeading: int
+    exitInd: str
 
 
-class FxaFlight(BaseModel):
-    fcaId: Optional[str]
-    fcaName: Optional[str]
-    lastUpdate: Optional[str]
-    bentryTm: Optional[str]
-    createTm: Optional[str]
-    eentryTm: Optional[str]
-    entryTm: Optional[str]
-    exitTm: Optional[str]
-    extendedExitTm: Optional[str]
-    ientryTm: Optional[str]
-    oentryTm: Optional[str]
-    entryLat: Optional[str]
-    entryLon: Optional[str]
-    entryHeading: Optional[str]
-    exitInd: Optional[str]
+class TMIFlightListModel(BaseModel):
+    aircraft_id: str
+    gufi: str
+    igtd: datetime
+    departure_airport: str
+    arrival_airport: str
+    fxa_flights: List[FxaFlightModel] = []
 
-
-class FxaFlightData(BaseModel):
-    fxaFlight: List[FxaFlight]
-
-
-class Tmi(BaseModel):
-    updateType: Optional[str]
-    lastUpdateTime: Optional[str]
-    fcaId: Optional[str]
-
-
-class TmiFlightInfoList(BaseModel):
-    tmi: Optional[Tmi]
-    fxaFlightData: Optional[FxaFlightData]
-
-
-class TmiFlightListModel(BaseModel):
-    flight: List[FlightDataType]
-    tmiFlightInfoList: Optional[TmiFlightInfoList]
+    class Config:
+        orm_mode = True

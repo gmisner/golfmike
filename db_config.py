@@ -4,6 +4,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
+from utils.logger import main_logger as logger
 
 # Add the project root to the PYTHONPATH
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,9 +14,9 @@ from models.sqlalchemy import (
     AircraftDBModel,
     FlightPlanDBModel,
     TmiUpdatesDBModel,
-    TrackDBModel,
+    TrackInformationDBModel,
     StatusDBModel,
-    FxaUpdatesDBModel,
+    FxaFlightDBModel,
 )
 
 # URL configuration for local PostgreSQL server
@@ -34,7 +35,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    print("Database initialized with tables.")
+    logger.success("Database initialized with tables.")
 
 
 # Run this function to create all tables

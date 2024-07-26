@@ -2,17 +2,17 @@
 from models.sqlalchemy.aircraft import AircraftDBModel
 from models.sqlalchemy.flight_plan import FlightPlanDBModel
 from models.sqlalchemy.tmi_updates import TmiUpdatesDBModel
-from models.sqlalchemy.track import TrackDBModel
+from models.sqlalchemy.track_information import TrackInformationDBModel
 from models.sqlalchemy.status import StatusDBModel
-from models.sqlalchemy.fxa_updates import FxaUpdatesDBModel
+from models.sqlalchemy.fxa_flight import FxaFlightDBModel
 from .base import Base
 from .pydantic.flight_plan import FlightPlanModel
 from .pydantic.tmi_updates import TmiUpdatesModel
-from .pydantic.fxa_updates import FxaUpdatesModel
+from .pydantic.fxa_flight import FxaFlightModel
 from .pydantic.flight_sectors import FlightSectorsModel
-from .pydantic.track import TrackInformation, FltdMessage
+from .pydantic.track_information import TrackInformationModel
 from .pydantic.status import StatusModel
-from .pydantic.tmi_flight_list import TmiFlightListModel
+from .pydantic.tmi_flight_list import TMIFlightListModel
 
 
 __all__ = [
@@ -22,14 +22,14 @@ __all__ = [
     "FlightPlanDBModel",
     "FlightSectorsDBModel",
     "TmiFlightListDBModel",
-    "TrackDBModel",
+    "TrackInformationDBModel",
     "StatusDBModel",
     "AircraftModel",
     "TmiUpdatesModel",
-    "FxaUpdatesModel",
+    "FxaFlightModel",
     "FlightPlanModel",
     "FlightSectorsModel",
-    "TmiFlightListModel",
-    "TrackModel",
+    "TMIFlightListModel",
+    "TrackInformationModel",
     "StatusModel",
 ]
