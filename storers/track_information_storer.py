@@ -1,3 +1,4 @@
+# storers/track_information_storer.py
 from db_config import SessionLocal
 from typing import List
 from models.pydantic.track_information import TrackInformationModel
@@ -8,10 +9,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 def store_track_information(
-    session: SessionLocal,
     track_data_list: List[TrackInformationModel],
     batch_size: int = 100,
 ):
+    session = SessionLocal()
     try:
         # Create a dictionary to cache aircraft records for updates
         aircraft_cache = {}
@@ -42,9 +43,10 @@ def store_track_information(
                         aircraft_cache[track_data.aircraft_id] = aircraft
 
                 # Update existing aircraft fields
-                aircraft.airline = track_data.airline
-                aircraft.aircraft_category = track_data.aircraft_category
-                aircraft.user_category = track_data.user_category
+                if aircraft:
+                    aircraft.airline = track_data.airline
+                    aircraft.aircraft_category = track_data.aircraft_category
+                    aircraft.user_category = track_data.user_category
 
                 # Prepare to add new track information record
                 track_record = TrackInformationDBModel(

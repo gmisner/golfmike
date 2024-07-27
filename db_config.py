@@ -2,7 +2,7 @@
 import sys
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine.url import URL
 from utils.logger import main_logger as logger
 
@@ -29,8 +29,19 @@ connection_string = URL.create(
     database="postgres",
 )
 
-engine = create_engine(connection_string)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create an engine with a connection pool
+engine = create_engine(
+    connection_string,
+    pool_size=20,  # Increase the pool size as needed
+    max_overflow=10,  # Allow overflow connections if needed
+    pool_recycle=1800,  # Recycle connections after 30 minutes
+    pool_timeout=30,  # Timeout for getting a connection from the pool
+)
+
+# Create a scoped session
+SessionLocal = scoped_session(
+    sessionmaker(autocommit=False, autoflush=False, bind=engine)
+)
 
 
 def init_db():
