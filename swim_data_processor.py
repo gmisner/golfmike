@@ -3,6 +3,7 @@ from lxml import etree
 from parser_storer_registry import get_parser, get_storer
 from typing import Union, Tuple
 from utils.logger import main_logger as logger
+from sqlalchemy.exc import SQLAlchemyError
 from db_config import SessionLocal  # Import SessionLocal
 
 NAMESPACES = {
@@ -56,28 +57,33 @@ def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
 
 def parse_and_store_to_database(xml_string: str) -> bool:
     logger.info("Parsing and storing XML data to database")
-    session = SessionLocal()
     try:
-        parsed_data = parse_xml_to_pydantic(xml_string)
-        if parsed_data is not None:
-            msg_type, data = parsed_data
-            # logger.debug(f"Message type: {msg_type}, Data: {data}")
-            storer_func = get_storer(msg_type)
-            if storer_func:
-                logger.debug(f"Using storer function: {storer_func}")
-                storer_func(session, data)
-                session.commit()
-                logger.info(f"Stored data for message type: {msg_type}")
-                return True
+        with SessionLocal() as session:
+            parsed_data = parse_xml_to_pydantic(xml_string)
+            if parsed_data is not None:
+                msg_type, data = parsed_data
+
+                storer_func = get_storer(msg_type)
+                if storer_func:
+                    logger.debug(f"Using storer function: {storer_func}")
+                    try:
+                        storer_func(session, data)
+                        session.commit()  # Commit once after the data has been processed successfully
+                        logger.info(f"Stored data for message type: {msg_type}")
+                        return True
+                    except SQLAlchemyError as e:
+                        session.rollback()  # Rollback on any database error
+                        logger.error(
+                            f"Error storing data for message type {msg_type}: {e}",
+                            exc_info=True,
+                        )
+                        return False
+                else:
+                    logger.error(f"No storer registered for message type: {msg_type}")
+                    return False
             else:
-                logger.error(f"No storer registered for message type: {msg_type}")
+                logger.error("Failed to parse XML data.")
                 return False
-        else:
-            logger.error("Failed to parse XML data.")
-            return False
     except Exception as e:
-        session.rollback()
-        logger.error(f"Error parsing and storing XML data: {e}", exc_info=True)
+        logger.error(f"Unexpected error while processing XML data: {e}", exc_info=True)
         return False
-    finally:
-        session.close()

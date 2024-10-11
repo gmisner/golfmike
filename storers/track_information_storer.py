@@ -1,55 +1,36 @@
-# storers/track_information_storer.py
 from db_config import SessionLocal
-from typing import List
-from models.pydantic.track_information import TrackInformationModel
-from models.sqlalchemy.track_information import TrackInformationDBModel
-from models.sqlalchemy.aircraft import AircraftDBModel
-from utils.logger import main_logger as logger
+from models.sqlalchemy import AircraftDBModel, TrackInformationDBModel
 from sqlalchemy.exc import SQLAlchemyError
+from utils.logger import main_logger as logger
+from typing import List
 
 
 def store_track_information(
-    track_data_list: List[TrackInformationModel],
-    batch_size: int = 100,
+    track_data_list: List[TrackInformationDBModel], batch_size: int = 100
 ):
-    session = SessionLocal()
     try:
-        # Create a dictionary to cache aircraft records for updates
-        aircraft_cache = {}
-        new_aircrafts = []
-        new_track_records = []
+        with SessionLocal() as session:
+            new_aircrafts = []
+            new_tracks = []
 
-        for track_data in track_data_list:  # Iterate over the list
-            try:
-                # Fetch or cache the AircraftDBModel
-                aircraft = aircraft_cache.get(track_data.aircraft_id)
+            for track_data in track_data_list:
+                # Fetch or create aircraft
+                aircraft = (
+                    session.query(AircraftDBModel)
+                    .filter_by(aircraft_id=track_data.aircraft_id)
+                    .first()
+                )
                 if not aircraft:
-                    aircraft = (
-                        session.query(AircraftDBModel)
-                        .filter_by(aircraft_id=track_data.aircraft_id)
-                        .first()
+                    aircraft = AircraftDBModel(
+                        aircraft_id=track_data.aircraft_id,
+                        airline=track_data.airline,
+                        aircraft_category=track_data.aircraft_category,
+                        user_category=track_data.user_category,
                     )
-                    if aircraft:
-                        aircraft_cache[track_data.aircraft_id] = aircraft
-                    else:
-                        # If aircraft doesn't exist, prepare to add a new one
-                        aircraft = AircraftDBModel(
-                            aircraft_id=track_data.aircraft_id,
-                            airline=track_data.airline,
-                            aircraft_category=track_data.aircraft_category,
-                            user_category=track_data.user_category,
-                        )
-                        new_aircrafts.append(aircraft)
-                        aircraft_cache[track_data.aircraft_id] = aircraft
+                    new_aircrafts.append(aircraft)
 
-                # Update existing aircraft fields
-                if aircraft:
-                    aircraft.airline = track_data.airline
-                    aircraft.aircraft_category = track_data.aircraft_category
-                    aircraft.user_category = track_data.user_category
-
-                # Prepare to add new track information record
-                track_record = TrackInformationDBModel(
+                # Create track information entry
+                track = TrackInformationDBModel(
                     aircraft_id=track_data.aircraft_id,
                     gufi=track_data.gufi,
                     speed=track_data.speed,
@@ -60,44 +41,30 @@ def store_track_information(
                     departure_airport=track_data.departure_airport,
                     arrival_airport=track_data.arrival_airport,
                 )
-                new_track_records.append(track_record)
+                new_tracks.append(track)
 
-                if (
-                    len(new_aircrafts) >= batch_size
-                    or len(new_track_records) >= batch_size
-                ):
-                    # Bulk insert new aircraft and track information records
-                    session.bulk_save_objects(new_aircrafts)
-                    session.bulk_save_objects(new_track_records)
-                    session.commit()
-                    logger.debug(
-                        f"Committed batch of {len(new_aircrafts)} aircraft and {len(new_track_records)} track records"
+                if len(new_aircrafts) >= batch_size or len(new_tracks) >= batch_size:
+                    session.add_all(new_aircrafts)
+                    session.add_all(new_tracks)
+                    session.commit()  # Commit the batch
+                    logger.info(
+                        f"Committed batch of {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks"
                     )
-
-                    # Clear the lists after commit
                     new_aircrafts.clear()
-                    new_track_records.clear()
+                    new_tracks.clear()
 
-            except SQLAlchemyError as e:
-                session.rollback()
-                logger.error(
-                    f"Error processing track data: {track_data.aircraft_id}, Error: {e}",
-                    exc_info=True,
+            # Commit remaining records
+            if new_aircrafts or new_tracks:
+                session.add_all(new_aircrafts)
+                session.add_all(new_tracks)
+                session.commit()
+                logger.info(
+                    f"Committed final batch of {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks"
                 )
 
-        # Commit any remaining records in the batch
-        if new_aircrafts or new_track_records:
-            session.bulk_save_objects(new_aircrafts)
-            session.bulk_save_objects(new_track_records)
-            session.commit()
-            logger.debug(
-                f"Committed final batch of {len(new_aircrafts)} aircraft and {len(new_track_records)} track records"
-            )
+            logger.success("All track information stored successfully.")
 
-        logger.success("All track information stored successfully")
-
+    except SQLAlchemyError as e:
+        logger.error(f"SQLAlchemy error occurred: {e}", exc_info=True)
     except Exception as e:
-        session.rollback()
-        logger.error(f"Error storing track information: {e}", exc_info=True)
-    finally:
-        session.close()
+        logger.error(f"Unexpected error occurred: {e}", exc_info=True)

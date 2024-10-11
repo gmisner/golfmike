@@ -1,5 +1,9 @@
+# solace_consumer.py
+import pika
 import time
-import concurrent.futures
+from celery_config import celery
+from tasks import process_xml
+from utils.logger import main_logger as logger
 from solace.messaging.messaging_service import (
     MessagingService,
     ReconnectionListener,
@@ -17,8 +21,7 @@ from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientErro
 from solace.messaging.config.missing_resources_creation_configuration import (
     MissingResourcesCreationStrategy,
 )
-from swim_data_processor import parse_and_store_to_database
-from utils.logger import main_logger as logger
+import concurrent.futures
 
 # Solace message broker connection parameters
 HOST = "tcps://ems1.swim.faa.gov:55443"
@@ -49,12 +52,8 @@ class MessageHandlerImpl(MessageHandler):
                 payload = payload.decode()
 
         try:
-            success = parse_and_store_to_database(payload)
-            if success:
-                logger.success("Message processed and data stored successfully")
-            else:
-                logger.error("Failed to parse and store the XML data")
-
+            task = process_xml.delay(payload)
+            logger.info(f"Started task: {task.id}")
         except Exception as e:
             logger.error(f"Error processing message: {e}", exc_info=True)
 

@@ -1,141 +1,61 @@
-# storers/tmi_flight_list_storer.py
 from db_config import SessionLocal
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from models.sqlalchemy import (
-    TmiUpdatesDBModel,
-    FxaFlightDBModel,
-    AircraftDBModel,
-    FlightPlanDBModel,
-)
+from models.sqlalchemy import AircraftDBModel, FlightPlanDBModel
 from utils.logger import main_logger as logger
-import time
+from sqlalchemy.exc import SQLAlchemyError
 
 
-def store_tmi_flight_list(parsed_data, batch_size=100):
-    session = SessionLocal()
+def store_tmi_flight_list(parsed_data):
     try:
-        new_aircrafts = []
-        new_flight_plans = []
-        new_fxa_flights = []
+        with SessionLocal() as session:
+            for flight in parsed_data:
+                try:
+                    logger.debug(f"Processing flight: {flight}")
 
-        for flight in parsed_data:
-            try:
-                aircraft_id = flight["aircraft_id"]
-                gufi = flight["gufi"]
-                igtd = flight["igtd"]
-                departure_airport = flight["departure_airport"]
-                arrival_airport = flight["arrival_airport"]
-
-                # Fetch or create aircraft
-                aircraft = (
-                    session.query(AircraftDBModel)
-                    .filter_by(aircraft_id=aircraft_id)
-                    .first()
-                )
-                if not aircraft:
-                    aircraft = AircraftDBModel(aircraft_id=aircraft_id)
-                    new_aircrafts.append(aircraft)
-                    logger.debug(f"Prepared to create aircraft with ID {aircraft_id}")
-
-                # Check if flight plan already exists
-                flight_plan = (
-                    session.query(FlightPlanDBModel)
-                    .filter_by(flight_plan_id=gufi)
-                    .first()
-                )
-                if flight_plan:
-                    logger.debug(
-                        f"Flight plan with ID {gufi} already exists. Updating existing flight plan."
+                    # Fetch or create aircraft
+                    aircraft_id = flight["aircraft_id"]
+                    aircraft = (
+                        session.query(AircraftDBModel)
+                        .filter_by(aircraft_id=aircraft_id)
+                        .first()
                     )
-                    flight_plan.igtd = igtd
-                    flight_plan.departure_airport = departure_airport
-                    flight_plan.arrival_airport = arrival_airport
-                else:
-                    # Create new flight plan
-                    flight_plan = FlightPlanDBModel(
-                        flight_plan_id=gufi,
-                        gufi=gufi,
-                        aircraft_id=aircraft_id,
-                        igtd=igtd,
-                        departure_airport=departure_airport,
-                        arrival_airport=arrival_airport,
-                    )
-                    new_flight_plans.append(flight_plan)
-                    logger.debug(
-                        f"Prepared to create flight plan for aircraft ID {aircraft_id} with flight_plan_id {gufi}"
-                    )
+                    if not aircraft:
+                        aircraft = AircraftDBModel(aircraft_id=aircraft_id)
+                        session.add(aircraft)
+                        session.commit()  # Commit each new aircraft to avoid foreign key issues
 
-                # Verify flight plan creation
-                if not flight_plan or not flight_plan.flight_plan_id:
-                    logger.error(
-                        f"Flight plan for aircraft ID {aircraft_id} was not created successfully. Skipping FXA flights."
+                    # Create or update flight plan
+                    gufi = flight["gufi"]
+                    flight_plan = (
+                        session.query(FlightPlanDBModel)
+                        .filter_by(flight_plan_id=gufi)
+                        .first()
                     )
-                    continue
+                    if flight_plan:
+                        logger.debug(f"Updating flight plan {gufi}")
+                        flight_plan.igtd = flight["igtd"]
+                        flight_plan.departure_airport = flight["departure_airport"]
+                        flight_plan.arrival_airport = flight["arrival_airport"]
+                    else:
+                        logger.debug(f"Creating new flight plan {gufi}")
+                        flight_plan = FlightPlanDBModel(
+                            flight_plan_id=gufi,
+                            gufi=gufi,
+                            aircraft_id=aircraft_id,
+                            igtd=flight["igtd"],
+                            departure_airport=flight["departure_airport"],
+                            arrival_airport=flight["arrival_airport"],
+                        )
+                        session.add(flight_plan)
 
-                # Add FXA flight records
-                for fxa_flight in flight["fxa_flights"]:
-                    fxa_flight_model = FxaFlightDBModel(
-                        fxa_id=fxa_flight["fxaId"],
-                        fca_id=fxa_flight.get("fcaId"),
-                        fca_name=fxa_flight["fcaName"],
-                        last_update=fxa_flight["lastUpdate"],
-                        bentry_tm=fxa_flight["bentryTm"],
-                        create_tm=fxa_flight["createTm"],
-                        eentry_tm=fxa_flight["eentryTm"],
-                        entry_tm=fxa_flight["entryTm"],
-                        exit_tm=fxa_flight["exitTm"],
-                        extended_exit_tm=fxa_flight["extendedExitTm"],
-                        ientry_tm=fxa_flight["ientryTm"],
-                        oentry_tm=fxa_flight["oentryTm"],
-                        entry_lat=fxa_flight["entryLat"],
-                        entry_lon=fxa_flight["entryLon"],
-                        entry_heading=fxa_flight["entryHeading"],
-                        exit_ind=fxa_flight["exitInd"],
-                        flight_plan_id=flight_plan.flight_plan_id,
-                        aircraft_id=aircraft_id,
-                    )
-                    new_fxa_flights.append(fxa_flight_model)
-
-                # Commit batches
-                if (
-                    len(new_aircrafts) >= batch_size
-                    or len(new_flight_plans) >= batch_size
-                    or len(new_fxa_flights) >= batch_size
-                ):
-                    session.bulk_save_objects(new_aircrafts)
-                    session.bulk_save_objects(new_flight_plans)
-                    session.bulk_save_objects(new_fxa_flights)
+                    # Commit after each addition/update
                     session.commit()
-                    logger.debug(
-                        f"Committed batch of {len(new_aircrafts)} aircraft, {len(new_flight_plans)} flight plans, and {len(new_fxa_flights)} FXA flights"
+                    logger.debug(f"Successfully committed flight plan {gufi}")
+
+                except SQLAlchemyError as e:
+                    session.rollback()
+                    logger.error(
+                        f"Error processing flight {flight}: {e}", exc_info=True
                     )
-
-                    # Clear the lists after commit
-                    new_aircrafts.clear()
-                    new_flight_plans.clear()
-                    new_fxa_flights.clear()
-
-            except (IntegrityError, SQLAlchemyError) as e:
-                session.rollback()
-                logger.error(
-                    f"Error processing flight data: {flight['aircraft_id']}, Error: {e}",
-                    exc_info=True,
-                )
-
-        # Commit any remaining records in the batch
-        if new_aircrafts or new_flight_plans or new_fxa_flights:
-            session.bulk_save_objects(new_aircrafts)
-            session.bulk_save_objects(new_flight_plans)
-            session.bulk_save_objects(new_fxa_flights)
-            session.commit()
-            logger.debug(
-                f"Committed final batch of {len(new_aircrafts)} aircraft, {len(new_flight_plans)} flight plans, and {len(new_fxa_flights)} FXA flights"
-            )
-
-        logger.success("All TMI flight list data stored successfully")
 
     except Exception as e:
-        session.rollback()
-        logger.error(f"Error storing TMI flight list: {e}", exc_info=True)
-    finally:
-        session.close()
+        logger.error(f"Unexpected error: {e}", exc_info=True)

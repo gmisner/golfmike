@@ -36,4 +36,4 @@ class TMIFlightListModel(BaseModel):
     fxa_flights: List[FxaFlightModel] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

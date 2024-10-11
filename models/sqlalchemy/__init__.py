@@ -1,5 +1,6 @@
 # models/sqlalchemy/__init__.py
 from models.sqlalchemy.aircraft import AircraftDBModel
+from models.sqlalchemy.flight_sectors import FlightSectorsDBModel
 from models.sqlalchemy.flight_plan import FlightPlanDBModel
 from models.sqlalchemy.tmi_updates import TmiUpdatesDBModel
 from models.sqlalchemy.track_information import TrackInformationDBModel

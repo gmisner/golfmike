@@ -1,0 +1,45 @@
+# app.py
+from quart import Quart, jsonify, request
+from celery_config import celery
+from tasks import process_xml
+from sqlalchemy.orm import Session
+from utils.logger import main_logger as logger
+from swim_data_processor import engine
+
+app = Quart(__name__)
+
+
+@app.route("/process", methods=["POST"])
+async def process():
+    try:
+        data = await request.get_json()
+        xml_payload = data.get("xml_payload")
+        if not xml_payload:
+            return jsonify({"error": "No XML payload provided"}), 400
+
+        # Trigger Celery task
+        task = process_xml.delay(xml_payload)
+        logger.info(f"Started Celery task: {task.id}")
+        return jsonify({"task_id": task.id}), 202
+    except Exception as e:
+        logger.error(f"Error processing request: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/result/<task_id>", methods=["GET"])
+async def result(task_id):
+    try:
+        result = process_xml.AsyncResult(task_id)
+        if result.state == "PENDING":
+            return jsonify({"state": result.state}), 202
+        elif result.state == "SUCCESS":
+            return jsonify({"state": result.state, "result": result.result}), 200
+        else:
+            return jsonify({"state": result.state, "result": str(result.info)}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving task result: {e}", exc_info=True)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5500)

@@ -5,12 +5,14 @@ services:
     platform: linux/amd64
     build:
       context: /Users/gmisner/Documents/GolfMike
-      dockerfile: .devcontainer/Dockerfile
+      dockerfile: .devcontainer/Dockerfile  # Corrected path
       args:
         VARIANT: "3.10"
         arch: "amd64"
     environment:
       - WORKDIR=/workspace
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace:cached
     dns:
@@ -18,9 +20,12 @@ services:
       - 8.8.4.4
     container_name: bigtitties
     user: "vscode"
-    command: /bin/bash -c "while sleep 1000; do :; done"
+    command: /bin/bash -c "chmod -R 755 /app && quart run --host 0.0.0.0 --port 5500"
     depends_on:
       - postgres
+      - redis
+    ports:
+      - "5500:5000"  # Ensure port forwarding is correct
 
   postgres:
     platform: linux/arm64
@@ -37,10 +42,46 @@ services:
     ports:
       - "15432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airplane -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 30s
       timeout: 10s
       retries: 5
+
+  redis:
+    platform: linux/arm64
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    platform: linux/arm64
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PATH=/home/vscode/.local/bin:$PATH 
+    command: celery -A celery_config worker --loglevel=debug  # Correct path to Celery app instance
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    command: celery -A celery_config flower --port=5555  # Adjust the path if necessary
+    depends_on:
+      - redis
+      - celery_worker
 
 volumes:
   postgres_data:

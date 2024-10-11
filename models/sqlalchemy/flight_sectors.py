@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from models import Base
+from models.base import Base
 
 
 class FlightSectorsDBModel(Base):
@@ -16,4 +16,6 @@ class FlightSectorsDBModel(Base):
     sectors = Column(JSON)
     airways = Column(JSON)
     centers = Column(JSON)
+
+    # Single relationship linking to AircraftDBModel
     aircraft = relationship("AircraftDBModel", back_populates="airspace_assignments")

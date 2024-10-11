@@ -133,4 +133,5 @@ def extract_fxa_flight_data(fxa_flight, nsmap):
     fxa_flight_data["exitInd"] = fxa_flight.find(
         ".//ns9:exitInd", namespaces=nsmap
     ).text
+    print(fxa_flight_data)
     return fxa_flight_data
