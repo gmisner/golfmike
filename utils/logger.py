@@ -3,16 +3,13 @@ from loguru import logger
 import logging
 
 
-# Intercept standard logging and redirect it to loguru
 class InterceptHandler(logging.Handler):
     def emit(self, record):
-        # Get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
-        # Find caller from where the log message originated
         frame, depth = sys._getframe(6), 6
         while frame.f_code.co_filename == logging.__file__:
             frame = sys._getframe(depth)
@@ -23,16 +20,29 @@ class InterceptHandler(logging.Handler):
         )
 
 
-# Apply the handler to the root logger
+# Apply the InterceptHandler to the root logger
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
 
-# Configure the main logger
+
+# SQLAlchemy-specific handler
+class SQLAlchemyLoguruHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        logger.opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
+
+
+# Configure SQLAlchemy's logger to use the custom Loguru handler
+sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
+sqlalchemy_logger.setLevel(logging.DEBUG)  # Set to desired logging level
+sqlalchemy_logger.addHandler(SQLAlchemyLoguruHandler())
+
+# Configure the main logger (loguru)
 main_logger = logger
-main_logger.remove()
+main_logger.remove()  # Remove default configuration to prevent logging to files
 main_logger.add(
     sys.stderr,
     format="{time:MMMM D, YYYY > HH:mm:ss!UTC} | {level} | {message}",
 )
-
-# Optionally, add a file handler if needed
-# main_logger.add("sqlalchemy_logs.log", rotation="10 MB")

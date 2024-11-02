@@ -2,6 +2,7 @@ from lxml import etree
 from models.pydantic.tmi_flight_list import TMIFlightListModel
 from utils.logger import main_logger as logger
 
+# Namespace mappings
 NAMESPACES = {
     "ds": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
     "fdm": "urn:us:gov:dot:faa:atm:tfm:flightdata",
@@ -25,6 +26,7 @@ NAMESPACES = {
 }
 
 
+# Main parser function
 def parse_tmi_flight_list(xml_bytes: bytes):
     try:
         root = etree.fromstring(xml_bytes)
@@ -62,20 +64,35 @@ def parse_tmi_flight_list(xml_bytes: bytes):
         raise
 
 
+# Extract flight data with checks for missing elements
 def extract_flight_data(flight_data, nsmap):
     flight_info = {}
-    flight_info["aircraft_id"] = flight_data.find(
-        ".//ns7:aircraftId", namespaces=nsmap
-    ).text
-    flight_info["gufi"] = flight_data.find(".//ns7:gufi", namespaces=nsmap).text
-    flight_info["igtd"] = flight_data.find(".//ns7:igtd", namespaces=nsmap).text
-    flight_info["departure_airport"] = flight_data.find(
-        ".//ns7:departurePoint/ns7:airport", namespaces=nsmap
-    ).text
-    flight_info["arrival_airport"] = flight_data.find(
-        ".//ns7:arrivalPoint/ns7:airport", namespaces=nsmap
-    ).text
 
+    # Check each XML element and handle missing elements
+    aircraft_id = flight_data.find(".//ns7:aircraftId", namespaces=nsmap)
+    flight_info["aircraft_id"] = aircraft_id.text if aircraft_id is not None else None
+
+    gufi = flight_data.find(".//ns7:gufi", namespaces=nsmap)
+    flight_info["gufi"] = gufi.text if gufi is not None else None
+
+    igtd = flight_data.find(".//ns7:igtd", namespaces=nsmap)
+    flight_info["igtd"] = igtd.text if igtd is not None else None
+
+    departure_airport = flight_data.find(
+        ".//ns7:departurePoint/ns7:airport", namespaces=nsmap
+    )
+    flight_info["departure_airport"] = (
+        departure_airport.text if departure_airport is not None else None
+    )
+
+    arrival_airport = flight_data.find(
+        ".//ns7:arrivalPoint/ns7:airport", namespaces=nsmap
+    )
+    flight_info["arrival_airport"] = (
+        arrival_airport.text if arrival_airport is not None else None
+    )
+
+    # Extract fxa_flights
     fxa_flights = []
     tmi_flight_info_list = flight_data.find(
         ".//ns9:tmiFlightInfoList", namespaces=nsmap
@@ -91,47 +108,50 @@ def extract_flight_data(flight_data, nsmap):
     return flight_info
 
 
+# Extract individual fxa flight data with safety checks
 def extract_fxa_flight_data(fxa_flight, nsmap):
     fxa_flight_data = {}
+
+    # Check each element in fxa_flight for existence before accessing text
     fxa_id = fxa_flight.find(".//ns9:fxaId", namespaces=nsmap)
-    fxa_flight_data["fxaId"] = fxa_id.find(".//ns11:fcaId", namespaces=nsmap).text
-    fxa_flight_data["fcaName"] = fxa_id.find(".//ns11:fcaName", namespaces=nsmap).text
-    fxa_flight_data["lastUpdate"] = fxa_id.find(
-        ".//ns11:lastUpdate", namespaces=nsmap
-    ).text
-    fxa_flight_data["bentryTm"] = fxa_flight.find(
-        ".//ns9:bentryTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["createTm"] = fxa_flight.find(
-        ".//ns9:createTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["eentryTm"] = fxa_flight.find(
-        ".//ns9:eentryTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["entryTm"] = fxa_flight.find(
-        ".//ns9:entryTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["exitTm"] = fxa_flight.find(".//ns9:exitTm", namespaces=nsmap).text
-    fxa_flight_data["extendedExitTm"] = fxa_flight.find(
-        ".//ns9:extendedExitTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["ientryTm"] = fxa_flight.find(
-        ".//ns9:ientryTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["oentryTm"] = fxa_flight.find(
-        ".//ns9:oentryTm", namespaces=nsmap
-    ).text
-    fxa_flight_data["entryLat"] = float(
-        fxa_flight.find(".//ns9:entryLat", namespaces=nsmap).text
+    if fxa_id is not None:
+        fca_id = fxa_id.find(".//ns11:fcaId", namespaces=nsmap)
+        fxa_flight_data["fcaId"] = fca_id.text if fca_id is not None else None
+
+        fca_name = fxa_id.find(".//ns11:fcaName", namespaces=nsmap)
+        fxa_flight_data["fcaName"] = fca_name.text if fca_name is not None else None
+
+        last_update = fxa_id.find(".//ns11:lastUpdate", namespaces=nsmap)
+        fxa_flight_data["lastUpdate"] = (
+            last_update.text if last_update is not None else None
+        )
+
+    # Handle remaining elements with conditional checks
+    bentry_tm = fxa_flight.find(".//ns9:bentryTm", namespaces=nsmap)
+    fxa_flight_data["bentryTm"] = bentry_tm.text if bentry_tm is not None else None
+
+    create_tm = fxa_flight.find(".//ns9:createTm", namespaces=nsmap)
+    fxa_flight_data["createTm"] = create_tm.text if create_tm is not None else None
+
+    eentry_tm = fxa_flight.find(".//ns9:eentryTm", namespaces=nsmap)
+    fxa_flight_data["eentryTm"] = eentry_tm.text if eentry_tm is not None else None
+
+    entry_lat = fxa_flight.find(".//ns9:entryLat", namespaces=nsmap)
+    fxa_flight_data["entryLat"] = (
+        float(entry_lat.text) if entry_lat is not None else None
     )
-    fxa_flight_data["entryLon"] = float(
-        fxa_flight.find(".//ns9:entryLon", namespaces=nsmap).text
+
+    entry_lon = fxa_flight.find(".//ns9:entryLon", namespaces=nsmap)
+    fxa_flight_data["entryLon"] = (
+        float(entry_lon.text) if entry_lon is not None else None
     )
-    fxa_flight_data["entryHeading"] = int(
-        fxa_flight.find(".//ns9:entryHeading", namespaces=nsmap).text
+
+    entry_heading = fxa_flight.find(".//ns9:entryHeading", namespaces=nsmap)
+    fxa_flight_data["entryHeading"] = (
+        int(entry_heading.text) if entry_heading is not None else None
     )
-    fxa_flight_data["exitInd"] = fxa_flight.find(
-        ".//ns9:exitInd", namespaces=nsmap
-    ).text
-    print(fxa_flight_data)
+
+    exit_ind = fxa_flight.find(".//ns9:exitInd", namespaces=nsmap)
+    fxa_flight_data["exitInd"] = exit_ind.text if exit_ind is not None else None
+
     return fxa_flight_data

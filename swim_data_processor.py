@@ -32,19 +32,23 @@ NAMESPACES = {
 def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
     try:
         # Convert the XML string to bytes
+        logger.debug("Converting XML string to bytes.")
         xml_bytes = xml_string.encode("utf-8")
 
+        # Parse the XML
         root = etree.fromstring(xml_bytes)
-        logger.debug("Root of XML parsed")
+        logger.debug("Root of XML parsed successfully.")
 
+        # Extract message type from XML
         msg_type = root.xpath("//@msgType", namespaces=NAMESPACES)[0]
-        logger.debug(f"Message type: {msg_type}")
+        logger.debug(f"Extracted message type: {msg_type}")
 
+        # Get the appropriate parser function based on message type
         parser_func = get_parser(msg_type)
         if parser_func:
             logger.debug(f"Using parser function: {parser_func}")
             parsed_data = parser_func(xml_bytes)
-            # logger.debug(f"Parsed data: {parsed_data}")
+            logger.debug(f"Parsed data successfully for message type: {msg_type}")
             return msg_type, parsed_data
         else:
             logger.error(f"No parser registered for message type: {msg_type}")
@@ -56,25 +60,33 @@ def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
 
 
 def parse_and_store_to_database(xml_string: str) -> bool:
-    logger.info("Parsing and storing XML data to database")
+    logger.info("Starting parse_and_store_to_database function.")
     try:
-        with SessionLocal() as session:
+        with SessionLocal() as session:  # Open session using SessionLocal
+            logger.info("Database session created.")
             parsed_data = parse_xml_to_pydantic(xml_string)
             if parsed_data is not None:
                 msg_type, data = parsed_data
+                logger.debug(f"Parsed data for message type: {msg_type}")
 
+                # Get the appropriate storer function based on message type
                 storer_func = get_storer(msg_type)
                 if storer_func:
                     logger.debug(f"Using storer function: {storer_func}")
                     try:
-                        storer_func(session, data)
-                        session.commit()  # Commit once after the data has been processed successfully
-                        logger.info(f"Stored data for message type: {msg_type}")
+                        # Pass the session and data to the storer function
+                        logger.debug("Storing data to database.")
+                        storer_func(data, session=session)  # Corrected argument order
+                        session.commit()  # Commit after storer_func completes
+                        logger.info(
+                            f"Stored data successfully for message type: {msg_type}"
+                        )
                         return True
                     except SQLAlchemyError as e:
-                        session.rollback()  # Rollback on any database error
+                        # Rollback the session in case of an error
+                        session.rollback()
                         logger.error(
-                            f"Error storing data for message type {msg_type}: {e}",
+                            f"SQLAlchemy error while committing data: {e}",
                             exc_info=True,
                         )
                         return False
@@ -85,5 +97,10 @@ def parse_and_store_to_database(xml_string: str) -> bool:
                 logger.error("Failed to parse XML data.")
                 return False
     except Exception as e:
-        logger.error(f"Unexpected error while processing XML data: {e}", exc_info=True)
+        logger.error(
+            f"Unexpected error occurred during parse_and_store_to_database: {e}",
+            exc_info=True,
+        )
         return False
+    finally:
+        logger.info("Finished parse_and_store_to_database function.")

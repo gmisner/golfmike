@@ -1,12 +1,13 @@
 # app.py
 from quart import Quart, jsonify, request
-from celery_config import celery
+from celery_app import app as celery_app  # Import the Celery app
 from tasks import process_xml
-from sqlalchemy.orm import Session
 from utils.logger import main_logger as logger
-from swim_data_processor import engine
 
 app = Quart(__name__)
+
+# Optional: Link Celery app to Quart app
+app.celery_app = celery_app
 
 
 @app.route("/process", methods=["POST"])
@@ -29,7 +30,7 @@ async def process():
 @app.route("/result/<task_id>", methods=["GET"])
 async def result(task_id):
     try:
-        result = process_xml.AsyncResult(task_id)
+        result = celery_app.AsyncResult(task_id)  # Use Celery app to get task result
         if result.state == "PENDING":
             return jsonify({"state": result.state}), 202
         elif result.state == "SUCCESS":
