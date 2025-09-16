@@ -26,6 +26,150 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def create_simple_api(app: Flask) -> None:
     """Add simple flight tracking endpoints to the Flask app"""
 
+    @app.route("/home", methods=["GET"])
+    def home_page():
+        """Serve the simplified homepage"""
+        try:
+            with open("static/home.html", "r") as f:
+                return f.read()
+        except FileNotFoundError:
+            return "Homepage not found", 404
+
+    @app.route("/search", methods=["GET"])
+    def search_page():
+        """Handle search form submission and redirect to search results page"""
+        query = request.args.get("q", "").strip()
+        if query:
+            return f'<script>window.location.href = "/search.html?q={query}";</script>'
+        else:
+            return '<script>window.location.href = "/";</script>'
+
+    @app.route("/api/autocomplete", methods=["GET"])
+    def autocomplete():
+        """Provide autocomplete suggestions based on aircraft database"""
+        query = request.args.get("q", "").strip().upper()
+        limit = request.args.get("limit", "10")
+
+        if not query or len(query) < 2:
+            return jsonify([])
+
+        try:
+            session = SessionLocal()
+
+            # Search across multiple fields for comprehensive autocomplete
+            suggestions = []
+
+            # Search aircraft IDs (tail numbers)
+            aircraft_query = text(
+                """
+                SELECT DISTINCT aircraft_id, 'aircraft' as type, aircraft_id as display_text
+                FROM flight_plan 
+                WHERE aircraft_id ILIKE :query
+                ORDER BY aircraft_id
+                LIMIT :limit
+            """
+            )
+            aircraft_results = session.execute(
+                aircraft_query, {"query": f"%{query}%", "limit": int(limit)}
+            )
+            for row in aircraft_results:
+                suggestions.append(
+                    {
+                        "text": row.aircraft_id,
+                        "type": "aircraft",
+                        "display": f"✈️ {row.aircraft_id}",
+                        "category": "Aircraft",
+                    }
+                )
+
+            # Search departure airports
+            dep_query = text(
+                """
+                SELECT DISTINCT departure_airport, 'departure' as type
+                FROM flight_plan 
+                WHERE departure_airport ILIKE :query
+                ORDER BY departure_airport
+                LIMIT :limit
+            """
+            )
+            dep_results = session.execute(
+                dep_query, {"query": f"%{query}%", "limit": int(limit)}
+            )
+            for row in dep_results:
+                suggestions.append(
+                    {
+                        "text": row.departure_airport,
+                        "type": "airport",
+                        "display": f"🛫 {row.departure_airport}",
+                        "category": "Departure Airport",
+                    }
+                )
+
+            # Search arrival airports
+            arr_query = text(
+                """
+                SELECT DISTINCT arrival_airport, 'arrival' as type
+                FROM flight_plan 
+                WHERE arrival_airport ILIKE :query
+                ORDER BY arrival_airport
+                LIMIT :limit
+            """
+            )
+            arr_results = session.execute(
+                arr_query, {"query": f"%{query}%", "limit": int(limit)}
+            )
+            for row in arr_results:
+                suggestions.append(
+                    {
+                        "text": row.arrival_airport,
+                        "type": "airport",
+                        "display": f"🛬 {row.arrival_airport}",
+                        "category": "Arrival Airport",
+                    }
+                )
+
+            # Search upcoming flights
+            upcoming_query = text(
+                """
+                SELECT DISTINCT aircraft_id, 'upcoming' as type
+                FROM upcoming_flights 
+                WHERE aircraft_id ILIKE :query
+                ORDER BY aircraft_id
+                LIMIT :limit
+            """
+            )
+            upcoming_results = session.execute(
+                upcoming_query, {"query": f"%{query}%", "limit": int(limit)}
+            )
+            for row in upcoming_results:
+                suggestions.append(
+                    {
+                        "text": row.aircraft_id,
+                        "type": "upcoming",
+                        "display": f"📅 {row.aircraft_id}",
+                        "category": "Upcoming Flight",
+                    }
+                )
+
+            session.close()
+
+            # Remove duplicates and limit results
+            seen = set()
+            unique_suggestions = []
+            for suggestion in suggestions:
+                key = suggestion["text"]
+                if key not in seen:
+                    seen.add(key)
+                    unique_suggestions.append(suggestion)
+                    if len(unique_suggestions) >= int(limit):
+                        break
+
+            return jsonify(unique_suggestions)
+
+        except Exception as e:
+            logger.error(f"Autocomplete error: {e}")
+            return jsonify([])
+
     @app.route("/api/flights/current", methods=["GET"])
     def get_current_flights():
         """Get all currently active flights"""
@@ -1156,7 +1300,7 @@ def create_simple_api(app: Flask) -> None:
                         {
                             "time": oooi_row.off_time.isoformat(),
                             "title": "OFF — Takeoff",
-                            "description": "Aircraft airborne",
+                            "description": f"Aircraft airborne from {flight_data.get('departure_airport', 'departure airport')}",
                             "badge_class": "bg-success",
                             "type": "operational",
                         }
@@ -1166,7 +1310,7 @@ def create_simple_api(app: Flask) -> None:
                         {
                             "time": oooi_row.on_time.isoformat(),
                             "title": "ON — Landing",
-                            "description": "Aircraft landed",
+                            "description": f"Aircraft landed at {flight_data.get('arrival_airport', 'arrival airport')}",
                             "badge_class": "bg-warning",
                             "type": "operational",
                         }
@@ -1185,10 +1329,66 @@ def create_simple_api(app: Flask) -> None:
             # Add significant track events (altitude changes, speed changes)
             if track_rows and len(track_rows) > 1:
                 prev_point = None
+                takeoff_detected = False
+                landing_detected = False
+
                 for i, point in enumerate(track_rows):
                     if prev_point and point.time_at_position:
-                        # Check for significant altitude changes (>5000 ft)
+                        # Check for takeoff (rapid altitude increase from low altitude)
                         if (
+                            not takeoff_detected
+                            and point.altitude
+                            and prev_point.altitude
+                            and prev_point.altitude < 1000  # Starting from low altitude
+                            and point.altitude > 3000  # Rapid climb
+                            and (point.altitude - prev_point.altitude)
+                            > 2000  # Significant climb
+                        ):
+                            takeoff_detected = True
+                            time_str = (
+                                point.time_at_position.isoformat()
+                                if hasattr(point.time_at_position, "isoformat")
+                                else str(point.time_at_position)
+                            )
+                            timeline.append(
+                                {
+                                    "time": time_str,
+                                    "title": "Takeoff Detected",
+                                    "description": f"Aircraft climbing to {point.altitude:,} ft",
+                                    "badge_class": "bg-success",
+                                    "type": "flight",
+                                }
+                            )
+
+                        # Check for landing (rapid altitude decrease to low altitude)
+                        elif (
+                            not landing_detected
+                            and point.altitude
+                            and prev_point.altitude
+                            and prev_point.altitude
+                            > 3000  # Starting from high altitude
+                            and point.altitude < 1000  # Rapid descent
+                            and (prev_point.altitude - point.altitude)
+                            > 2000  # Significant descent
+                        ):
+                            landing_detected = True
+                            time_str = (
+                                point.time_at_position.isoformat()
+                                if hasattr(point.time_at_position, "isoformat")
+                                else str(point.time_at_position)
+                            )
+                            timeline.append(
+                                {
+                                    "time": time_str,
+                                    "title": "Landing Detected",
+                                    "description": f"Aircraft descending to {point.altitude:,} ft",
+                                    "badge_class": "bg-warning",
+                                    "type": "flight",
+                                }
+                            )
+
+                        # Check for significant altitude changes (>5000 ft)
+                        elif (
                             point.altitude
                             and prev_point.altitude
                             and abs(point.altitude - prev_point.altitude) > 5000

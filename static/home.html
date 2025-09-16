@@ -19,56 +19,6 @@
       height: 24px;
       fill: currentColor;
     }
-    
-    /* Autocomplete styles */
-    .autocomplete-container {
-      position: relative;
-    }
-    
-    .autocomplete-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: white;
-      border: 1px solid #dee2e6;
-      border-top: none;
-      border-radius: 0 0 0.375rem 0.375rem;
-      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      z-index: 1000;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .autocomplete-item {
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      border-bottom: 1px solid #f8f9fa;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .autocomplete-item:hover {
-      background-color: #f8f9fa;
-    }
-    
-    .autocomplete-item:last-child {
-      border-bottom: none;
-    }
-    
-    .autocomplete-item .text {
-      font-weight: 500;
-    }
-    
-    .autocomplete-item .category {
-      font-size: 0.75rem;
-      color: #6c757d;
-    }
-    
-    .autocomplete-item.highlighted {
-      background-color: #e3f2fd;
-    }
   </style>
 </head>
 <body class="layout-fluid">
@@ -84,7 +34,8 @@
         </a>
       </h1>
       <div class="navbar-nav flex-row order-md-last">
-        <a href="#map" class="btn btn-primary">Live Map</a>
+        <a href="/" class="btn btn-outline-primary">Dashboard</a>
+        <a href="#map" class="btn btn-primary ms-2">Live Map</a>
       </div>
     </div>
   </header>
@@ -92,23 +43,20 @@
   <!-- Search-first Hero -->
   <section class="hero">
     <div class="container-xl">
-      <div class="row justify-content-center">
-        <div class="col-12 col-lg-8 col-xl-6 text-center">
+      <div class="row align-items-center gy-3">
+        <div class="col-12 col-lg-9">
           <h2 class="mb-2">Track flights in real time</h2>
-          <p class="lead text-secondary mb-4">Search by flight #, tail #, airport, or route.</p>
-          <form class="row g-2 justify-content-center" action="/search" method="GET" id="hero-search">
-            <div class="col-12 col-md-8">
-              <div class="autocomplete-container">
-                <input name="q" id="q" type="text" class="form-control form-control-lg" placeholder="e.g. SWA123 · N560PB · KLAX → KDVT" aria-label="Search flights, airports, operators" required autocomplete="off">
-                <div class="autocomplete-dropdown" id="autocomplete-dropdown" style="display: none;"></div>
-              </div>
+          <p class="lead text-secondary mb-3">Search by flight #, tail #, airport, or route.</p>
+          <form class="row g-2" action="/search" method="GET" id="hero-search">
+            <div class="col-12 col-md-9">
+              <input name="q" id="q" type="text" class="form-control form-control-lg" placeholder="e.g. SWA123 · N560PB · KLAX → KDVT" aria-label="Search flights, airports, operators" required>
             </div>
-            <div class="col-12 col-md-4 d-grid">
+            <div class="col-12 col-md-3 d-grid">
               <button class="btn btn-primary btn-lg" type="submit">Search</button>
             </div>
           </form>
           <!-- Inline helper links kept minimal -->
-          <div class="small text-secondary mt-3">Examples: N560PB · KLAX → KDVT · KPHX</div>
+          <div class="small text-secondary mt-2">Examples: N560PB · KLAX → KDVT · KPHX</div>
         </div>
       </div>
     </div>
@@ -117,9 +65,9 @@
   <!-- Search Results -->
   <section class="search-results" id="search-results" style="display: none;">
     <div class="container-xl">
-      <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-          <h3 class="mb-3 text-center">Search Results</h3>
+      <div class="row">
+        <div class="col-12">
+          <h3 class="mb-3">Search Results</h3>
           <div id="results-container">
             <!-- Results will be populated here -->
           </div>
@@ -131,153 +79,17 @@
   <!-- Optional minimal footer -->
   <footer class="footer footer-transparent mt-4">
     <div class="container-xl">
-      <div class="text-secondary text-center">© 2025 GolfMike Flight Tracker</div>
+      <div class="text-secondary">© 2025 GolfMike Flight Tracker</div>
     </div>
   </footer>
 
   <script>
-    // Autocomplete functionality
-    let autocompleteTimeout;
-    let currentSuggestions = [];
-    let selectedIndex = -1;
-
-    document.getElementById('q').addEventListener('input', function(e) {
-      const query = e.target.value.trim();
-      
-      // Clear previous timeout
-      clearTimeout(autocompleteTimeout);
-      
-      // Hide dropdown if query is too short
-      if (query.length < 2) {
-        hideAutocomplete();
-        return;
-      }
-      
-      // Debounce the autocomplete request
-      autocompleteTimeout = setTimeout(() => {
-        fetchAutocompleteSuggestions(query);
-      }, 300);
-    });
-
-    document.getElementById('q').addEventListener('keydown', function(e) {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      const items = dropdown.querySelectorAll('.autocomplete-item');
-      
-      if (items.length === 0) return;
-      
-      switch(e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-          updateHighlight();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          selectedIndex = Math.max(selectedIndex - 1, -1);
-          updateHighlight();
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (selectedIndex >= 0 && selectedIndex < items.length) {
-            const selectedItem = items[selectedIndex];
-            const text = selectedItem.dataset.text;
-            document.getElementById('q').value = text;
-            hideAutocomplete();
-            // Trigger search
-            document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-          } else {
-            // Normal form submission
-            document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-          }
-          break;
-        case 'Escape':
-          hideAutocomplete();
-          break;
-      }
-    });
-
-    // Hide autocomplete when clicking outside
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.autocomplete-container')) {
-        hideAutocomplete();
-      }
-    });
-
-    function fetchAutocompleteSuggestions(query) {
-      fetch(`/api/autocomplete?q=${encodeURIComponent(query)}&limit=8`)
-        .then(response => response.json())
-        .then(suggestions => {
-          currentSuggestions = suggestions;
-          displayAutocompleteSuggestions(suggestions);
-        })
-        .catch(error => {
-          console.error('Autocomplete error:', error);
-          hideAutocomplete();
-        });
-    }
-
-    function displayAutocompleteSuggestions(suggestions) {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      
-      if (suggestions.length === 0) {
-        hideAutocomplete();
-        return;
-      }
-      
-      let html = '';
-      suggestions.forEach((suggestion, index) => {
-        html += `
-          <div class="autocomplete-item" data-text="${suggestion.text}" data-index="${index}">
-            <span class="text">${suggestion.display}</span>
-            <span class="category">${suggestion.category}</span>
-          </div>
-        `;
-      });
-      
-      dropdown.innerHTML = html;
-      dropdown.style.display = 'block';
-      selectedIndex = -1;
-      
-      // Add click handlers
-      dropdown.querySelectorAll('.autocomplete-item').forEach((item, index) => {
-        item.addEventListener('click', function() {
-          const text = this.dataset.text;
-          document.getElementById('q').value = text;
-          hideAutocomplete();
-          // Trigger search
-          document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-        });
-      });
-    }
-
-    function updateHighlight() {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      const items = dropdown.querySelectorAll('.autocomplete-item');
-      
-      items.forEach((item, index) => {
-        if (index === selectedIndex) {
-          item.classList.add('highlighted');
-        } else {
-          item.classList.remove('highlighted');
-        }
-      });
-    }
-
-    function hideAutocomplete() {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      dropdown.style.display = 'none';
-      selectedIndex = -1;
-    }
-
     // Enhanced search functionality with API integration
     document.getElementById('hero-search').addEventListener('submit', function(e){
       e.preventDefault();
       const q = document.getElementById('q').value.trim();
       
       if (!q) return;
-      
-      // Hide autocomplete
-      hideAutocomplete();
       
       // Show loading state
       const resultsContainer = document.getElementById('results-container');

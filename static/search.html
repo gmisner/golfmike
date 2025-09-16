@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Search Results — GolfMike Flight Tracker</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    .search-results { margin-top: 2rem; }
+    .flight-card { margin-bottom: 1rem; }
+    .flight-card .card-body { padding: 1rem; }
+    .flight-info { display: flex; justify-content: space-between; align-items: center; }
+    .flight-route { font-size: 0.9rem; color: #6c757d; }
+    .flight-status { font-size: 0.8rem; }
+    .aircraft-icon {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body class="layout-fluid">
+  <!-- Navbar -->
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <h1 class="navbar-brand navbar-brand-autodark pe-3">
+        <a href="/" class="text-decoration-none">
+          <svg class="aircraft-icon me-2" viewBox="0 0 24 24">
+            <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+          </svg>
+          GolfMike Flight Tracker
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last">
+        <a href="/" class="btn btn-outline-primary">Home</a>
+        <a href="#map" class="btn btn-primary ms-2">Live Map</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Search Results -->
+  <section class="search-results">
+    <div class="container-xl">
+      <div class="row">
+        <div class="col-12">
+          <div class="page-header d-print-none">
+            <div class="container-xl">
+              <div class="row g-2 align-items-center">
+                <div class="col">
+                  <h2 class="page-title">Search Results</h2>
+                  <div class="page-pretitle" id="search-query">Searching...</div>
+                </div>
+                <div class="col-auto ms-auto d-print-none">
+                  <a href="/" class="btn btn-outline-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M10 10l4 4m0 -4l-4 4"/>
+                      <path d="M12 2l3.09 6.26l6.91 1.01l-5 4.87l1.18 6.88l-6.18 -3.25l-6.18 3.25l1.18 -6.88l-5 -4.87l6.91 -1.01z"/>
+                    </svg>
+                    New Search
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div id="results-container">
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Searching...</span>
+              </div>
+              <div class="mt-2">Searching...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Get search query from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+    
+    if (query) {
+      document.getElementById('search-query').textContent = `Results for "${query}"`;
+      performSearch(query);
+    } else {
+      document.getElementById('results-container').innerHTML = `
+        <div class="alert alert-warning">
+          <h4 class="alert-title">No Search Query</h4>
+          <div>Please provide a search query.</div>
+        </div>
+      `;
+    }
+
+    function performSearch(query) {
+      const resultsContainer = document.getElementById('results-container');
+      
+      fetch(`/api/flights/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          displaySearchResults(data, query);
+        })
+        .catch(error => {
+          console.error('Search error:', error);
+          resultsContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <h4 class="alert-title">Search Error</h4>
+              <div>Unable to search for "${query}". Please try again.</div>
+            </div>
+          `;
+        });
+    }
+
+    function displaySearchResults(data, query) {
+      const resultsContainer = document.getElementById('results-container');
+      
+      if (!data || data.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+              </svg>
+            </div>
+            <p class="empty-title">No flights found</p>
+            <p class="empty-subtitle text-secondary">
+              No flights found for "${query}". Try a different search term.
+            </p>
+            <div class="empty-action">
+              <a href="/" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M10 10l4 4m0 -4l-4 4"/>
+                  <path d="M12 2l3.09 6.26l6.91 1.01l-5 4.87l1.18 6.88l-6.18 -3.25l-6.18 3.25l1.18 -6.88l-5 -4.87l6.91 -1.01z"/>
+                </svg>
+                New Search
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div class="row">
+          <div class="col-12 mb-3">
+            <div class="text-muted">Found ${data.length} result${data.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="row">
+      `;
+      
+      data.forEach(flight => {
+        const statusColor = getStatusColor(flight.status);
+        const statusText = getStatusText(flight.status);
+        const flightType = flight.flight_type || 'current';
+        
+        html += `
+          <div class="col-md-6 col-lg-4">
+            <div class="card flight-card">
+              <div class="card-body">
+                <div class="flight-info">
+                  <div>
+                    <h4 class="card-title mb-1">${flight.aircraft_id || 'Unknown'}</h4>
+                    <div class="flight-route">
+                      ${flight.departure_airport || 'N/A'} → ${flight.arrival_airport || 'N/A'}
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-${statusColor}">${statusText}</span>
+                    <div class="flight-status mt-1">${flightType}</div>
+                  </div>
+                </div>
+                
+                ${flight.aircraft_type ? `<div class="mt-2"><small class="text-muted">${flight.aircraft_type}</small></div>` : ''}
+                
+                ${flight.aircraft_operator ? `<div class="mt-1"><small class="text-muted">${flight.aircraft_operator}</small></div>` : ''}
+                
+                ${flight.scheduled_departure ? `<div class="mt-1"><small class="text-muted">Departs: ${new Date(flight.scheduled_departure).toLocaleString()}</small></div>` : ''}
+                
+                <div class="mt-3">
+                  <a href="/flight-detail.html?aircraft_id=${flight.aircraft_id}" class="btn btn-sm btn-outline-primary">
+                    View Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `</div>`;
+      resultsContainer.innerHTML = html;
+    }
+
+    function getStatusColor(status) {
+      const statusMap = {
+        'active': 'success',
+        'departed': 'primary',
+        'arrived': 'secondary',
+        'scheduled': 'info',
+        'cancelled': 'danger',
+        'delayed': 'warning'
+      };
+      return statusMap[status] || 'secondary';
+    }
+
+    function getStatusText(status) {
+      const statusMap = {
+        'active': 'In Flight',
+        'departed': 'Departed',
+        'arrived': 'Arrived',
+        'scheduled': 'Scheduled',
+        'cancelled': 'Cancelled',
+        'delayed': 'Delayed'
+      };
+      return statusMap[status] || 'Unknown';
+    }
+  </script>
+  <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+</body>
+</html>

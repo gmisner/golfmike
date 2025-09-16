@@ -274,8 +274,8 @@ class FlightDetailPage {
             const timelineItem = document.createElement('div');
             timelineItem.className = 'timeline-item';
             
-            // Get icon based on event type
-            const icon = this.getTimelineIcon(event.type || 'operational');
+            // Get icon based on event type and title
+            const icon = this.getTimelineIcon(event.type || 'operational', event.title || '');
             
             timelineItem.innerHTML = `
                 <div class="timeline-time">${this.formatTime(event.time)}</div>
@@ -297,7 +297,38 @@ class FlightDetailPage {
         });
     }
 
-    getTimelineIcon(eventType) {
+    getTimelineIcon(eventType, eventTitle = '') {
+        // Check for specific event types based on title
+        if (eventTitle.includes('Takeoff') || eventTitle.includes('OFF')) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+                <path d="M12 2l2 4l4 1l-2 2l1 4l-4 -2l-4 2l1 -4l-2 -2l4 -1z"/>
+            </svg>`;
+        }
+        
+        if (eventTitle.includes('Landing') || eventTitle.includes('ON')) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+                <path d="M12 2l2 4l4 1l-2 2l1 4l-4 -2l-4 2l1 -4l-2 -2l4 -1z"/>
+            </svg>`;
+        }
+        
+        if (eventTitle.includes('Pushback') || eventTitle.includes('OUT')) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+            </svg>`;
+        }
+        
+        if (eventTitle.includes('At Block') || eventTitle.includes('IN')) {
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+            </svg>`;
+        }
+
         const icons = {
             'operational': `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -305,7 +336,7 @@ class FlightDetailPage {
             </svg>`,
             'flight': `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                <path d="M12 2l3.09 6.26l6.91 1.01l-5 4.87l1.18 6.88l-6.18 -3.25l-6.18 3.25l1.18 -6.88l-5 -4.87l6.91 -1.01z"/>
+                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
             </svg>`,
             'weather': `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
