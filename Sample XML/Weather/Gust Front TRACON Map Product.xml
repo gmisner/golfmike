@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itws_msg>
+  <packet_header>
+    <packet_header_msgno>4405691</packet_header_msgno>
+    <packet_header_product>12</packet_header_product>
+    <packet_header_packet_index>1</packet_header_packet_index>
+    <packet_header_packets_in_msg>1</packet_header_packets_in_msg>
+    <packet_header_packetsize>108</packet_header_packetsize>
+  </packet_header>
+  <product_header>
+    <product_header_msg_id>
+      <product_msg_id>9833</product_msg_id>
+      <product_msg_name>Gust Front TRACON Map Product</product_msg_name>
+    </product_header_msg_id>
+    <product_header_site_id>0</product_header_site_id>
+    <product_header_node>0</product_header_node>
+    <product_header_byte_count>96</product_header_byte_count>
+    <product_header_product_type>2</product_header_product_type>
+    <product_header_product_status>0</product_header_product_status>
+    <product_header_itws_sites>ATL</product_header_itws_sites>
+    <product_header_airports>ATL</product_header_airports>
+    <product_header_source_id>ATL</product_header_source_id>
+    <product_header_source_type>1</product_header_source_type>
+    <product_header_acquisition_type>1</product_header_acquisition_type>
+    <product_header_latency_classification>4</product_header_latency_classification>
+    <product_header_latency_start_seconds gregorian="2025-09-15 16:59:12">1757955552</product_header_latency_start_seconds>
+    <product_header_latency_start_milliseconds>56</product_header_latency_start_milliseconds>
+    <product_header_generation_time_seconds gregorian="2025-09-15 16:59:12">1757955552</product_header_generation_time_seconds>
+    <product_header_generation_time_milliseconds>76</product_header_generation_time_milliseconds>
+    <product_header_expiration_time_seconds gregorian="2025-09-15 17:02:10">1757955730</product_header_expiration_time_seconds>
+    <product_header_expiration_time_milliseconds>0</product_header_expiration_time_milliseconds>
+    <product_header_received_time_seconds gregorian="2025-09-15 16:59:11">1757955551</product_header_received_time_seconds>
+    <product_header_received_time_microseconds>62309</product_header_received_time_microseconds>
+    <product_header_enqueue_time_seconds>1757955551</product_header_enqueue_time_seconds>
+    <product_header_enqueue_time_milliseconds>065</product_header_enqueue_time_milliseconds>
+    <product_header_archive_only>0</product_header_archive_only>
+    <product_header_displayable>0</product_header_displayable>
+  </product_header>
+  <gft_map>
+    <gft_latitude precision="0.000001" unit="degrees">33640444</gft_latitude>
+    <gft_longitude precision="0.000001" unit="degrees">-84426944</gft_longitude>
+    <gft_rotation unit="degrees" precision="0.001">-3000</gft_rotation>
+    <gft_num_radars>1</gft_num_radars>
+    <gft_radar count="1">
+      <gft_rdr_id>ATL</gft_rdr_id>
+      <gft_rdr_base_seconds gregorian="2025-09-15 16:56:10" unit="epoch_time">1757955370</gft_rdr_base_seconds>
+      <gft_rdr_reference_seconds unit="epoch_time" gregorian="2025-09-15 16:59:10">1757955550</gft_rdr_reference_seconds>
+      <gft_rdr_num_detections>0</gft_rdr_num_detections>
+    </gft_radar>
+  </gft_map>
+</itws_msg>

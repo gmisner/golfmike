@@ -18,16 +18,24 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0  # Backend URL for storing task results
       - PYTHONPATH=/workspace  # Add workspace to PYTHONPATH for module resolution
       - PATH=/home/vscode/.local/bin:$PATH  # Add local bin to PATH
+      - CELERY_WORKER_CONCURRENCY=2  # Limit concurrency per worker
     working_dir: /workspace  # Set working directory inside the container
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=debug"  # Increased log level to DEBUG
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"  # Optimized worker settings
     user: "vscode"  # Run the container as user "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     depends_on:
       - redis  # Ensure Redis starts before Celery worker
       - postgres  # Ensure Postgres starts before Celery worker
     networks:
       - golfmike_network
+    restart: unless-stopped
 
   # Add another Celery Worker
   celery_worker_2:
@@ -43,16 +51,24 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=debug"
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     depends_on:
       - redis
       - postgres
     networks:
       - golfmike_network
+    restart: unless-stopped
 
   # Add another Celery Worker
   celery_worker_3:
@@ -68,16 +84,24 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=debug"
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     depends_on:
       - redis
       - postgres
     networks:
       - golfmike_network
+    restart: unless-stopped
   
   # Add another Celery Worker
   celery_worker_4:
@@ -93,16 +117,56 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=debug"
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     depends_on:
       - redis
       - postgres
     networks:
       - golfmike_network
+    restart: unless-stopped
+
+  # Web API service
+  web_api:
+    platform: linux/arm64
+    container_name: golfmike-api
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python app_flask.py"
+    user: "vscode"
+    ports:
+      - "5500:5500"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
 
   # Flower service for monitoring Celery tasks
   flower:
@@ -124,8 +188,16 @@ services:
     image: redis:alpine  # Use a lightweight Redis image
     ports:
       - "6379:6379"  # Expose Redis on port 6379
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
     networks:
       - golfmike_network
+    restart: unless-stopped
 
   # Postgres service for database storage
   postgres:
@@ -187,6 +259,7 @@ services:
     working_dir: /workspace  # Set working directory inside the container
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
+    command: /bin/bash -c "cd /workspace && python solace_consumer_wrapper.py"  # Run Solace consumer with auto-restart wrapper
     user: "vscode"  # Run the container as user "vscode"
     depends_on:
       - redis  # Ensure Redis starts before this container

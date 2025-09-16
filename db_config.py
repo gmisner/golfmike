@@ -22,14 +22,18 @@ connection_string = URL.create(
     database="postgres",
 )
 
-# Create an engine with autocommit enabled at the connection level
+# Create an engine with optimized connection pooling
 engine = create_engine(
     connection_string,
-    pool_size=20,  # Increase the pool size as needed
-    max_overflow=10,  # Allow overflow connections if needed
-    pool_recycle=1800,  # Recycle connections after 30 minutes
-    pool_timeout=30,  # Timeout for getting a connection from the pool
-    echo=True,  # Enable logging for queries
+    pool_size=10,  # Base pool size (2x number of workers)
+    max_overflow=20,  # Allow more overflow for burst traffic
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_timeout=10,  # Faster timeout for getting connections
+    pool_pre_ping=True,  # Validate connections before use
+    echo=False,  # Disable query logging in production
+    connect_args={
+        "options": "-c default_transaction_isolation=read\\ committed"
+    },  # Optimize transaction isolation
 )
 
 # Create a scoped session

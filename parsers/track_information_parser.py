@@ -258,8 +258,8 @@ def parse_track_information(xml_data: str) -> List[TrackInformationModel]:
                             "aircraftCategory", ""
                         ),
                         "user_category": user_category,
-                        "latitude": latitude if latitude is not None else "",
-                        "longitude": longitude if longitude is not None else "",
+                        "latitude": latitude if latitude is not None else None,
+                        "longitude": longitude if longitude is not None else None,
                         "etd": (
                             etd_elem.get("timeValue") if etd_elem is not None else None
                         ),

@@ -1,7 +1,7 @@
 from typing import Optional, List, Union
 from pydantic import BaseModel, Field, ValidationError
 import xmltodict
-import logging
+from utils.logger import main_logger as logger
 from sqlalchemy import create_engine, Column, String, DateTime, Integer, Float
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.engine.url import URL
@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+# Logger is already imported as 'logger'
 
 # URL configuration with the correct endpoint ID
 connection_string = URL.create(
@@ -639,82 +639,92 @@ def parse_and_store_to_database(xml_data):
             flight_data_dict = parsed_data.dict()
 
             if isinstance(parsed_data, TmiFlightListModel):
-                tmi_data_list = flight_data_dict.pop('tmiFlightInfoList', [])
-                fxa_flight_data = flight_data_dict.pop('fxaFlightData', [])
+                tmi_data_list = flight_data_dict.pop("tmiFlightInfoList", [])
+                fxa_flight_data = flight_data_dict.pop("fxaFlightData", [])
 
                 with Session() as session:
                     # Store or update aircraft data
                     aircraft_data = {
-                        'aircraft_id': flight_data_dict['aircraftId'],
-                        'gufi': flight_data_dict['gufi'],
-                        'flight_reference': flight_data_dict['flightReference'],
-                        'status': flight_data_dict['status'],
+                        "aircraft_id": flight_data_dict["aircraftId"],
+                        "gufi": flight_data_dict["gufi"],
+                        "flight_reference": flight_data_dict["flightReference"],
+                        "status": flight_data_dict["status"],
                     }
                     stmt = insert(AircraftDBModel.__table__).values(**aircraft_data)
                     update_dict = {c.name: c for c in stmt.excluded}
                     update_stmt = stmt.on_conflict_do_update(
-                        index_elements=['aircraft_id'],
-                        set_=update_dict
+                        index_elements=["aircraft_id"], set_=update_dict
                     )
                     session.execute(update_stmt)
-                    
+
                     # Store flight plan
-                    departure_point = flight_data_dict.get('departurePoint')
-                    arrival_point = flight_data_dict.get('arrivalPoint')
-                    departure_airport = departure_point.get('airport') if departure_point else None
-                    arrival_airport = arrival_point.get('airport') if arrival_point else None
+                    departure_point = flight_data_dict.get("departurePoint")
+                    arrival_point = flight_data_dict.get("arrivalPoint")
+                    departure_airport = (
+                        departure_point.get("airport") if departure_point else None
+                    )
+                    arrival_airport = (
+                        arrival_point.get("airport") if arrival_point else None
+                    )
                     flight_plan_data = {
-                        'aircraft_id': flight_data_dict['aircraftId'],
-                        'departure_airport': departure_airport,
-                        'arrival_airport': arrival_airport,
-                        'igtd': flight_data_dict.get('igtd'),
+                        "aircraft_id": flight_data_dict["aircraftId"],
+                        "departure_airport": departure_airport,
+                        "arrival_airport": arrival_airport,
+                        "igtd": flight_data_dict.get("igtd"),
                     }
-                    stmt = insert(FlightPlanDBModel.__table__).values(**flight_plan_data)
+                    stmt = insert(FlightPlanDBModel.__table__).values(
+                        **flight_plan_data
+                    )
                     update_dict = {c.name: c for c in stmt.excluded}
                     update_stmt = stmt.on_conflict_do_update(
-                        index_elements=['aircraft_id'],
-                        set_=update_dict
+                        index_elements=["aircraft_id"], set_=update_dict
                     )
                     session.execute(update_stmt)
 
                     # Store TMI updates
                     for tmi in tmi_data_list:
-                        update_time = flight_data_dict.get('sourceTimeStamp') or datetime.now().isoformat()
+                        update_time = (
+                            flight_data_dict.get("sourceTimeStamp")
+                            or datetime.now().isoformat()
+                        )
                         tmi_data = {
-                            'aircraft_id': flight_data_dict['aircraftId'],
-                            'update_time': update_time,
-                            'update_type': tmi['updateType'],
-                            'last_update_time': tmi['lastUpdateTime'],
-                            'fca_id': tmi['fcaId'],
+                            "aircraft_id": flight_data_dict["aircraftId"],
+                            "update_time": update_time,
+                            "update_type": tmi["updateType"],
+                            "last_update_time": tmi["lastUpdateTime"],
+                            "fca_id": tmi["fcaId"],
                         }
                         stmt = insert(TmiUpdatesDBModel.__table__).values(**tmi_data)
                         update_dict = {c.name: c for c in stmt.excluded}
                         update_stmt = stmt.on_conflict_do_update(
-                            index_elements=['aircraft_id', 'update_time'],
-                            set_=update_dict
+                            index_elements=["aircraft_id", "update_time"],
+                            set_=update_dict,
                         )
                         session.execute(update_stmt)
 
                     # Store FXA updates
                     for fxa in fxa_flight_data:
-                        update_time = flight_data_dict.get('sourceTimeStamp') or datetime.now().isoformat()
+                        update_time = (
+                            flight_data_dict.get("sourceTimeStamp")
+                            or datetime.now().isoformat()
+                        )
                         fxa_data = {
-                            'aircraft_id': flight_data_dict['aircraftId'],
-                            'update_time': update_time,
-                            'fxa_id': fxa['fxaId'],
-                            'entry_time': fxa['entryTm'],
-                            'create_time': fxa['createTm'],
-                            'exit_time': fxa['exitTm'],
-                            'entry_lat': fxa['entryLat'],
-                            'entry_lon': fxa['entryLon'],
-                            'entry_heading': fxa['entryHeading'],
-                            'exit_ind': fxa['exitInd'],
+                            "aircraft_id": flight_data_dict["aircraftId"],
+                            "update_time": update_time,
+                            "fxa_id": fxa["fxaId"],
+                            "entry_time": fxa["entryTm"],
+                            "create_time": fxa["createTm"],
+                            "exit_time": fxa["exitTm"],
+                            "entry_lat": fxa["entryLat"],
+                            "entry_lon": fxa["entryLon"],
+                            "entry_heading": fxa["entryHeading"],
+                            "exit_ind": fxa["exitInd"],
                         }
                         stmt = insert(FxaUpdatesDBModel.__table__).values(**fxa_data)
                         update_dict = {c.name: c for c in stmt.excluded}
                         update_stmt = stmt.on_conflict_do_update(
-                            index_elements=['aircraft_id', 'update_time'],
-                            set_=update_dict
+                            index_elements=["aircraft_id", "update_time"],
+                            set_=update_dict,
                         )
                         session.execute(update_stmt)
 
@@ -729,6 +739,7 @@ def parse_and_store_to_database(xml_data):
             session.rollback()
     else:
         logger.error("Failed to parse XML data.")
+
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)

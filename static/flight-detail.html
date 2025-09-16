@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Flight Detail — GolfMike Flight Tracker</title>
+    <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      .route-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .map-placeholder { aspect-ratio: 16 / 9; background: #f0f2f6; display:flex; align-items:center; justify-content:center; border-radius: .5rem; }
+      .map-container { aspect-ratio: 16 / 9; border-radius: .5rem; overflow: hidden; }
+      @media (min-width: 992px){ .sticky-sidebar{ position: sticky; top: 1rem; } }
+      .flight-status-arrived { background-color: #28a745 !important; }
+      .flight-status-enroute { background-color: #007bff !important; }
+      .flight-status-delayed { background-color: #fd7e14 !important; }
+      .flight-status-scheduled { background-color: #6c757d !important; }
+    </style>
+  </head>
+  <body class="layout-fluid">
+    <!-- Top navbar -->
+    <header class="navbar navbar-expand-md d-print-none">
+      <div class="container-xl">
+        <h1 class="navbar-brand navbar-brand-autodark pe-3">
+          <a href="/">GolfMike Flight Tracker</a>
+        </h1>
+
+        <div class="navbar-nav flex-row order-md-last">
+          <div class="nav-item d-none d-md-flex me-3">
+            <div class="input-icon">
+              <span class="input-icon-addon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
+              </span>
+              <input type="text" class="form-control" placeholder="Search flights, airports, aircraft…" id="global-search">
+            </div>
+          </div>
+          <a href="/flight-plan.html" class="btn btn-outline-primary">Flight Plans</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page header / hero -->
+    <div class="page-header">
+      <div class="container-xl">
+        <div class="row align-items-center gy-2">
+          <div class="col">
+            <h2 class="page-title mb-1" id="flight-title">
+              <span id="aircraft-id">N560PB</span> <span class="text-secondary">·</span> 
+              <span id="route">KLAX → KDVT</span>
+            </h2>
+            <div class="text-secondary" id="flight-details">
+              <span id="flight-date">05 Sep 2025</span> · 
+              <span id="departure-time">00:10Z</span> departure · 
+              <span id="flight-type">General Aviation</span>
+            </div>
+          </div>
+          <div class="col-auto d-flex align-items-center gap-2">
+            <span class="badge" id="status-badge">Arrived</span>
+            <div class="btn-list">
+              <a class="btn btn-outline" href="#" id="alert-btn">Set alert</a>
+              <a class="btn btn-outline" href="#" id="share-btn">Share</a>
+              <a class="btn btn-primary" href="#" id="download-btn">Download CSV</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="page-body">
+      <div class="container-xl">
+        <div class="row g-3">
+          <!-- Primary column -->
+          <div class="col-12 col-lg-8">
+            <!-- Map / Hero card -->
+            <div class="card">
+              <div class="card-body p-0">
+                <div id="flight-map" class="map-container"></div>
+              </div>
+              <div class="card-footer small text-secondary">
+                Filed Route: <span class="route-code" id="filed-route">KLAX DCT KEGGS … KDVT</span>
+              </div>
+            </div>
+
+            <!-- Key stats -->
+            <div class="row g-3 mt-1" id="oooi-stats">
+              <div class="col-6 col-md-3">
+                <div class="card card-sm">
+                  <div class="card-body">
+                    <div class="text-secondary">OUT</div>
+                    <div class="h3 mb-0" id="out-time">00:22Z</div>
+                    <div class="text-secondary small" id="out-schedule">Sched 00:15Z</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="card card-sm">
+                  <div class="card-body">
+                    <div class="text-secondary">OFF</div>
+                    <div class="h3 mb-0" id="off-time">00:35Z</div>
+                    <div class="text-secondary small" id="off-runway">RWY 25R</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="card card-sm">
+                  <div class="card-body">
+                    <div class="text-secondary">ON</div>
+                    <div class="h3 mb-0" id="on-time">02:19Z</div>
+                    <div class="text-secondary small" id="on-runway">RWY 07R</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="card card-sm">
+                  <div class="card-body">
+                    <div class="text-secondary">IN</div>
+                    <div class="h3 mb-0" id="in-time">02:25Z</div>
+                    <div class="text-secondary small" id="block-time">Block 2:03</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="card mt-2">
+              <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+                  <li class="nav-item"><a href="#tab-timeline" class="nav-link active" data-bs-toggle="tab">Timeline</a></li>
+                  <li class="nav-item"><a href="#tab-track" class="nav-link" data-bs-toggle="tab">Track Log</a></li>
+                  <li class="nav-item"><a href="#tab-weather" class="nav-link" data-bs-toggle="tab">Weather</a></li>
+                  <li class="nav-item"><a href="#tab-notams" class="nav-link" data-bs-toggle="tab">NOTAMs</a></li>
+                </ul>
+              </div>
+              <div class="card-body tab-content">
+                <!-- Timeline -->
+                <div class="tab-pane active show" id="tab-timeline">
+                  <div class="timeline" id="flight-timeline">
+                    <!-- Timeline items will be populated by JavaScript -->
+                  </div>
+                </div>
+
+                <!-- Track Log -->
+                <div class="tab-pane" id="tab-track">
+                  <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                      <thead>
+                        <tr>
+                          <th>Time (Z)</th><th>Lat</th><th>Lon</th><th>Alt</th><th>GS</th><th>Remark</th>
+                        </tr>
+                      </thead>
+                      <tbody id="track-log-rows">
+                        <!-- Track log rows will be populated by JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Weather -->
+                <div class="tab-pane" id="tab-weather">
+                  <div class="row g-3" id="weather-data">
+                    <!-- Weather data will be populated by JavaScript -->
+                  </div>
+                </div>
+
+                <!-- NOTAMs -->
+                <div class="tab-pane" id="tab-notams">
+                  <ul class="list-group list-group-flush" id="notams-list">
+                    <!-- NOTAMs will be populated by JavaScript -->
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="col-12 col-lg-4">
+            <div class="sticky-sidebar">
+              <!-- Aircraft Details -->
+              <div class="card">
+                <div class="card-header">
+                  <strong>Aircraft</strong>
+                </div>
+                <div class="card-body" id="aircraft-details">
+                  <div class="d-flex align-items-center">
+                    <span class="avatar me-2" id="aircraft-avatar">PB</span>
+                    <div>
+                      <div class="fw-bold" id="aircraft-reg">N560PB</div>
+                      <div class="text-secondary" id="aircraft-type">HS-125 (Hawker 800XP)</div>
+                    </div>
+                  </div>
+                  <div class="row g-2 mt-2">
+                    <div class="col-6">
+                      <div class="text-secondary small">Owner</div>
+                      <div id="aircraft-owner">Private</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-secondary small">Equip</div>
+                      <div id="aircraft-equipment">ADS-B Out</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Flights -->
+              <div class="card mt-2">
+                <div class="card-header"><strong>Recent Flights</strong></div>
+                <div class="list-group list-group-flush" id="recent-flights">
+                  <!-- Recent flights will be populated by JavaScript -->
+                </div>
+              </div>
+
+              <!-- Upgrade CTA -->
+              <div class="card mt-2">
+                <div class="card-body">
+                  <div class="text-secondary">Upgrade for historical track exports, alerts, and more.</div>
+                  <a class="btn btn-primary w-100 mt-2" href="#">Go Pro</a>
+                </div>
+              </div>
+            </div> <!-- /sticky -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer footer-transparent d-print-none mt-4">
+      <div class="container-xl">
+        <div class="row text-center align-items-center">
+          <div class="col-12 col-lg text-secondary">
+            © 2025 GolfMike Flight Tracker
+          </div>
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item"><a href="#">Terms</a></li>
+              <li class="list-inline-item"><a href="#">Privacy</a></li>
+              <li class="list-inline-item"><a href="#">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/js/flight-detail.js"></script>
+  </body>
+</html>
+
+

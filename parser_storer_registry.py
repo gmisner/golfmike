@@ -10,6 +10,7 @@ from storers.tmi_flight_list_storer import store_tmi_flight_list
 from storers.flight_sectors_storer import store_flight_sectors
 from parsers.track_information_parser import parse_track_information
 from storers.track_information_storer import store_track_information
+from functools import lru_cache
 
 # A dictionary to store parsers based on message type
 PARSERS = {
@@ -32,6 +33,7 @@ def register_parser(msg_type, parser_func):
     PARSERS[msg_type] = parser_func
 
 
+@lru_cache(maxsize=128)
 def get_parser(msg_type):
     """Retrieves the parser function for a given message type."""
     return PARSERS.get(msg_type)
@@ -42,6 +44,7 @@ def register_storer(msg_type, storer_func):
     STORERS[msg_type] = storer_func
 
 
+@lru_cache(maxsize=128)
 def get_storer(msg_type):
     """Retrieves the storer function for a given message type."""
     return STORERS.get(msg_type)

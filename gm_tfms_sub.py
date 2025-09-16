@@ -21,11 +21,11 @@ from swim_data_processor import parse_and_store_to_database
 from utils.logger import main_logger as logger
 
 # Solace message broker connection parameters
-HOST = "tcps://ems1.swim.faa.gov:55443"
+HOST = "tcps://ems2.swim.faa.gov:55443"
 USERNAME = "gear.twinhawk.co"
 PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
 VPN_NAME = "TFMS"
-QUEUE_NAME = "gear.twinhawk.co.TFMS.b70b3338-3b0e-4388-bba0-b49d870a502c.OUT"
+QUEUE_NAME = "gear.twinhawk.co.TFMS.39cf9ef5-e72e-4d5c-bd12-f700b6b725c3.OUT"
 
 # Thread pool for concurrent message processing
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)

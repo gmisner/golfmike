@@ -1,8 +1,6 @@
-import logging
 import requests
 from tenacity import retry, wait_fixed, stop_after_attempt
-
-logger = logging.getLogger(__name__)
+from utils.logger import main_logger as logger
 
 
 @retry(wait=wait_fixed(2), stop=stop_after_attempt(5))

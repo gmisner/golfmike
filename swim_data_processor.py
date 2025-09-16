@@ -5,6 +5,12 @@ from typing import Union, Tuple
 from utils.logger import main_logger as logger
 from sqlalchemy.exc import SQLAlchemyError
 from db_config import SessionLocal  # Import SessionLocal
+from error_handling import (
+    retry_with_backoff,
+    handle_database_errors,
+    track_errors,
+    db_circuit_breaker,
+)
 
 NAMESPACES = {
     "ds": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
@@ -31,71 +37,82 @@ NAMESPACES = {
 
 def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
     try:
-        # Convert the XML string to bytes
-        logger.debug("Converting XML string to bytes.")
+        # Convert the XML string to bytes once
         xml_bytes = xml_string.encode("utf-8")
+        logger.debug("Converting XML string to bytes.")
 
-        # Parse the XML
-        root = etree.fromstring(xml_bytes)
+        # Parse the XML with optimized parser
+        parser = etree.XMLParser(recover=True, huge_tree=True)
+        root = etree.fromstring(xml_bytes, parser=parser)
         logger.debug("Root of XML parsed successfully.")
 
-        # Extract message type from XML
-        msg_type = root.xpath("//@msgType", namespaces=NAMESPACES)[0]
+        # Extract message type from XML with error handling
+        msg_type_elements = root.xpath("//@msgType", namespaces=NAMESPACES)
+        if not msg_type_elements:
+            logger.error("No msgType attribute found in XML")
+            return None
+
+        msg_type = msg_type_elements[0]
         logger.debug(f"Extracted message type: {msg_type}")
 
         # Get the appropriate parser function based on message type
         parser_func = get_parser(msg_type)
-        if parser_func:
-            logger.debug(f"Using parser function: {parser_func}")
-            parsed_data = parser_func(xml_bytes)
-            logger.debug(f"Parsed data successfully for message type: {msg_type}")
-            return msg_type, parsed_data
-        else:
+        if not parser_func:
             logger.error(f"No parser registered for message type: {msg_type}")
             return None
+
+        logger.debug(f"Using parser function: {parser_func}")
+        parsed_data = parser_func(xml_bytes)
+        logger.debug(f"Parsed data successfully for message type: {msg_type}")
+        return msg_type, parsed_data
+
+    except etree.XMLSyntaxError as e:
+        logger.error(f"XML syntax error: {e}")
+        logger.error(f"Problematic XML (excerpt): {xml_string[:500]}")
+        return None
     except Exception as e:
         logger.error(f"Error parsing XML to Pydantic: {e}", exc_info=True)
         logger.error(f"Problematic XML (excerpt): {xml_string[:500]}")
         return None
 
 
+@retry_with_backoff(max_retries=3, base_delay=1.0, max_delay=30.0)
+@handle_database_errors
+@track_errors("database_operation")
 def parse_and_store_to_database(xml_string: str) -> bool:
-    logger.info("Starting parse_and_store_to_database function.")
+    logger.debug("Starting parse_and_store_to_database function.")
+    session = None
     try:
-        with SessionLocal() as session:  # Open session using SessionLocal
-            logger.info("Database session created.")
-            parsed_data = parse_xml_to_pydantic(xml_string)
-            if parsed_data is not None:
-                msg_type, data = parsed_data
-                logger.debug(f"Parsed data for message type: {msg_type}")
+        # Parse XML first to avoid unnecessary database connection
+        parsed_data = parse_xml_to_pydantic(xml_string)
+        if parsed_data is None:
+            logger.error("Failed to parse XML data.")
+            return False
 
-                # Get the appropriate storer function based on message type
-                storer_func = get_storer(msg_type)
-                if storer_func:
-                    logger.debug(f"Using storer function: {storer_func}")
-                    try:
-                        # Pass the session and data to the storer function
-                        logger.debug("Storing data to database.")
-                        storer_func(data, session=session)  # Corrected argument order
-                        session.commit()  # Commit after storer_func completes
-                        logger.info(
-                            f"Stored data successfully for message type: {msg_type}"
-                        )
-                        return True
-                    except SQLAlchemyError as e:
-                        # Rollback the session in case of an error
-                        session.rollback()
-                        logger.error(
-                            f"SQLAlchemy error while committing data: {e}",
-                            exc_info=True,
-                        )
-                        return False
-                else:
-                    logger.error(f"No storer registered for message type: {msg_type}")
-                    return False
-            else:
-                logger.error("Failed to parse XML data.")
-                return False
+        msg_type, data = parsed_data
+        logger.debug(f"Parsed data for message type: {msg_type}")
+
+        # Get the appropriate storer function based on message type
+        storer_func = get_storer(msg_type)
+        if not storer_func:
+            logger.error(f"No storer registered for message type: {msg_type}")
+            return False
+
+        # Use circuit breaker for database operations
+        def _store_data():
+            nonlocal session
+            session = SessionLocal()
+            logger.debug("Database session created.")
+
+            # Pass the session and data to the storer function
+            logger.debug("Storing data to database.")
+            storer_func(data, session=session)
+            session.commit()
+            logger.info(f"Stored data successfully for message type: {msg_type}")
+            return True
+
+        return db_circuit_breaker.call(_store_data)
+
     except Exception as e:
         logger.error(
             f"Unexpected error occurred during parse_and_store_to_database: {e}",
@@ -103,4 +120,6 @@ def parse_and_store_to_database(xml_string: str) -> bool:
         )
         return False
     finally:
-        logger.info("Finished parse_and_store_to_database function.")
+        if session:
+            session.close()
+        logger.debug("Finished parse_and_store_to_database function.")
