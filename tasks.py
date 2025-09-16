@@ -3,7 +3,8 @@ from utils.logger import main_logger as logger
 from db_config import SessionLocal
 from sqlalchemy.exc import SQLAlchemyError
 from swim_data_processor import parse_and_store_to_database
-import solace_consumer
+
+# import solace_consumer  # Moved to consumers/traffic_consumer.py
 from aviation_weather_fetcher import AviationWeatherFetcher
 from datetime import datetime, timedelta
 from models.sqlalchemy.weather import METARData, TAFData, WeatherAlert
@@ -61,12 +62,75 @@ def test_db():
 # Start Solace consumer task, assigned to the 'solace' queue
 @shared_task(name="tasks.start_solace_consumer", queue="solace")
 def start_solace_consumer():
+    """Start the Solace consumer (legacy task - consumers now run as Docker services)"""
     logger.info("Starting the Solace consumer using Celery...")
     try:
-        solace_consumer.run()  # This is where the consumer starts
-        logger.info("Solace consumer started successfully.")
+        # Note: This task is now legacy - consumers run as Docker services
+        # Import and run the traffic consumer directly
+        import subprocess
+        import sys
+
+        result = subprocess.run(
+            [sys.executable, "consumers/traffic_consumer.py"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            logger.error(f"Traffic consumer failed: {result.stderr}")
+        else:
+            logger.info("Traffic consumer started successfully")
     except Exception as e:
         logger.error(f"Error running solace consumer: {e}", exc_info=True)
+
+
+# Process flight plan XML task
+@shared_task(name="tasks.process_flight_plan_xml", queue="message_processing")
+def process_flight_plan_xml(xml_string):
+    """Process flight plan XML data from Solace queue"""
+    logger.info("Processing flight plan XML data...")
+    try:
+        from parsers.flight_plan_parser import FlightPlanXMLParser
+        from storers.upcoming_flight_storer import UpcomingFlightStorer
+        from db_config import SessionLocal
+
+        # Parse the XML data
+        parser = FlightPlanXMLParser()
+        flight_plan_data = parser.parse_flight_plan_xml(xml_string)
+
+        if flight_plan_data:
+            # Store the flight plan data
+            storer = UpcomingFlightStorer()
+            session = SessionLocal()
+
+            try:
+                success = storer.store_flight_plan(flight_plan_data, session)
+                if success:
+                    logger.info(
+                        f"Successfully processed flight plan for aircraft: {flight_plan_data.get('aircraft_id')}"
+                    )
+                else:
+                    logger.error("Failed to store flight plan data")
+            finally:
+                session.close()
+        else:
+            logger.warning("Failed to parse flight plan XML data")
+
+    except Exception as e:
+        logger.error(f"Error processing flight plan XML: {e}", exc_info=True)
+        raise
+
+
+# Start flight plan consumer task
+@shared_task(name="tasks.start_flight_plan_consumer", queue="solace")
+def start_flight_plan_consumer():
+    logger.info("Starting the flight plan consumer using Celery...")
+    try:
+        import flight_plan_consumer
+
+        flight_plan_consumer.run()  # This is where the flight plan consumer starts
+        logger.info("Flight plan consumer started successfully.")
+    except Exception as e:
+        logger.error(f"Error running flight plan consumer: {e}", exc_info=True)
 
 
 # Weather data fetch task, runs every 15 minutes
@@ -82,36 +146,57 @@ def start_solace_consumer():
 def fetch_aviation_weather(station_ids=None, bbox=None):
     """
     Fetch weather data from AviationWeather.gov API and store in database
-    
+
     Args:
         station_ids: List of ICAO station IDs to fetch data for
         bbox: Bounding box as "west,south,east,north" for regional data
     """
     logger.info("🌤️  Starting AviationWeather.gov data fetch task...")
-    
+
     try:
         fetcher = AviationWeatherFetcher()
-        
+
         # Default to major US airports if no specific request
         if not station_ids and not bbox:
             station_ids = [
-                'KLAX', 'KJFK', 'KORD', 'KDFW', 'KATL', 'KSEA', 'KDEN', 
-                'KIAH', 'KLAS', 'KMIA', 'KBOS', 'KPHX', 'KMSP', 'KDTW',
-                'KPHL', 'KCLT', 'KMCO', 'KTPA', 'KPDX', 'KSLC'
+                "KLAX",
+                "KJFK",
+                "KORD",
+                "KDFW",
+                "KATL",
+                "KSEA",
+                "KDEN",
+                "KIAH",
+                "KLAS",
+                "KMIA",
+                "KBOS",
+                "KPHX",
+                "KMSP",
+                "KDTW",
+                "KPHL",
+                "KCLT",
+                "KMCO",
+                "KTPA",
+                "KPDX",
+                "KSLC",
             ]
-        
+
         results = fetcher.fetch_and_store_all(station_ids=station_ids, bbox=bbox)
-        
+
         total_records = sum(results.values())
-        logger.info(f"✅ AviationWeather.gov fetch complete: {total_records} total records stored")
-        
+        logger.info(
+            f"✅ AviationWeather.gov fetch complete: {total_records} total records stored"
+        )
+
         return {
             "status": "success",
             "records_stored": results,
             "total_records": total_records,
-            "timestamp": logger.info("Weather fetch completed at %s", str(datetime.now()))
+            "timestamp": logger.info(
+                "Weather fetch completed at %s", str(datetime.now())
+            ),
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Error in aviation weather fetch task: {e}", exc_info=True)
         raise
@@ -130,39 +215,46 @@ def fetch_aviation_weather(station_ids=None, bbox=None):
 def fetch_flight_weather(departure_airport, arrival_airport, route_airports=None):
     """
     Fetch weather data for a specific flight route
-    
+
     Args:
         departure_airport: ICAO code of departure airport
-        arrival_airport: ICAO code of arrival airport  
+        arrival_airport: ICAO code of arrival airport
         route_airports: List of ICAO codes for airports along the route
     """
-    logger.info(f"🌤️  Fetching weather for flight route: {departure_airport} → {arrival_airport}")
-    
+    logger.info(
+        f"🌤️  Fetching weather for flight route: {departure_airport} → {arrival_airport}"
+    )
+
     try:
         fetcher = AviationWeatherFetcher()
-        
+
         # Collect all airports for this route
         airports = [departure_airport, arrival_airport]
         if route_airports:
             airports.extend(route_airports)
-        
+
         # Remove duplicates
         airports = list(set(airports))
-        
+
         results = fetcher.fetch_and_store_all(station_ids=airports)
-        
-        logger.info(f"✅ Flight weather fetch complete for {departure_airport} → {arrival_airport}: {sum(results.values())} records")
-        
+
+        logger.info(
+            f"✅ Flight weather fetch complete for {departure_airport} → {arrival_airport}: {sum(results.values())} records"
+        )
+
         return {
             "status": "success",
             "route": f"{departure_airport} → {arrival_airport}",
             "airports": airports,
             "records_stored": results,
-            "total_records": sum(results.values())
+            "total_records": sum(results.values()),
         }
-        
+
     except Exception as e:
-        logger.error(f"❌ Error fetching flight weather for {departure_airport} → {arrival_airport}: {e}", exc_info=True)
+        logger.error(
+            f"❌ Error fetching flight weather for {departure_airport} → {arrival_airport}: {e}",
+            exc_info=True,
+        )
         raise
 
 
@@ -179,50 +271,63 @@ def fetch_flight_weather(departure_airport, arrival_airport, route_airports=None
 def cleanup_old_weather_data(days_to_keep=30):
     """
     Clean up old weather data to prevent database bloat
-    
+
     Args:
         days_to_keep: Number of days of weather data to retain (default: 30)
     """
-    logger.info(f"🧹 Starting cleanup of weather data older than {days_to_keep} days...")
-    
+    logger.info(
+        f"🧹 Starting cleanup of weather data older than {days_to_keep} days..."
+    )
+
     try:
         session = SessionLocal()
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
-        
+
         # Clean up old METAR data
-        metar_deleted = session.query(METARData).filter(
-            METARData.observation_time < cutoff_date
-        ).delete()
-        
+        metar_deleted = (
+            session.query(METARData)
+            .filter(METARData.observation_time < cutoff_date)
+            .delete()
+        )
+
         # Clean up old TAF data
-        taf_deleted = session.query(TAFData).filter(
-            TAFData.issue_time < cutoff_date
-        ).delete()
-        
+        taf_deleted = (
+            session.query(TAFData).filter(TAFData.issue_time < cutoff_date).delete()
+        )
+
         # Clean up old weather alerts (keep ITWS alerts longer)
-        alert_cutoff = datetime.now() - timedelta(days=days_to_keep * 2)  # Keep ITWS alerts for 60 days
-        alert_deleted = session.query(WeatherAlert).filter(
-            WeatherAlert.issued_at < alert_cutoff,
-            WeatherAlert.alert_type.like('ITWS_%') == False  # Don't delete ITWS alerts
-        ).delete()
-        
+        alert_cutoff = datetime.now() - timedelta(
+            days=days_to_keep * 2
+        )  # Keep ITWS alerts for 60 days
+        alert_deleted = (
+            session.query(WeatherAlert)
+            .filter(
+                WeatherAlert.issued_at < alert_cutoff,
+                WeatherAlert.alert_type.like("ITWS_%")
+                == False,  # Don't delete ITWS alerts
+            )
+            .delete()
+        )
+
         session.commit()
-        
+
         total_deleted = metar_deleted + taf_deleted + alert_deleted
-        logger.info(f"✅ Weather data cleanup complete: {total_deleted} records deleted")
+        logger.info(
+            f"✅ Weather data cleanup complete: {total_deleted} records deleted"
+        )
         logger.info(f"   - METARs: {metar_deleted}")
         logger.info(f"   - TAFs: {taf_deleted}")
         logger.info(f"   - Weather Alerts: {alert_deleted}")
-        
+
         return {
             "status": "success",
             "total_deleted": total_deleted,
             "metar_deleted": metar_deleted,
             "taf_deleted": taf_deleted,
             "alert_deleted": alert_deleted,
-            "cutoff_date": cutoff_date.isoformat()
+            "cutoff_date": cutoff_date.isoformat(),
         }
-        
+
     except Exception as e:
         session.rollback()
         logger.error(f"❌ Error in weather data cleanup: {e}", exc_info=True)

@@ -125,32 +125,29 @@ def create_simple_api(app: Flask) -> None:
 
             # If q parameter is provided, do a general search
             if query_param:
+                # Search both current flights and upcoming flights
                 query = """
                     SELECT DISTINCT
-                        fp.aircraft_id,
-                        fp.gufi,
-                        fp.departure_airport,
-                        fp.arrival_airport,
-                        fp.igtd,
-                        ti.latitude,
-                        ti.longitude,
-                        ti.altitude,
-                        ti.speed,
-                        ti.time_at_position
-                    FROM flight_plan fp
-                    LEFT JOIN (
-                        SELECT DISTINCT ON (aircraft_id) 
-                            aircraft_id, latitude, longitude, altitude, speed, time_at_position
-                        FROM track_information 
-                        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-                        AND latitude != '' AND longitude != ''
-                        ORDER BY aircraft_id, time_at_position DESC
-                    ) ti ON fp.aircraft_id = ti.aircraft_id
-                    WHERE fp.aircraft_id ILIKE :query
-                       OR fp.departure_airport ILIKE :query
-                       OR fp.arrival_airport ILIKE :query
-                       OR fp.gufi ILIKE :query
-                    ORDER BY fp.igtd DESC
+                        uf.aircraft_id,
+                        uf.gufi,
+                        uf.departure_airport,
+                        uf.arrival_airport,
+                        uf.departure_time as scheduled_departure,
+                        NULL as latitude,
+                        NULL as longitude,
+                        NULL as altitude,
+                        NULL as speed,
+                        NULL as time_at_position,
+                        'upcoming' as flight_type
+                    FROM upcoming_flights uf
+                    WHERE (uf.aircraft_id ILIKE :query
+                       OR uf.departure_airport ILIKE :query
+                       OR uf.arrival_airport ILIKE :query
+                       OR uf.gufi ILIKE :query
+                       OR uf.flight_reference ILIKE :query)
+                    AND uf.departure_time > NOW()
+                    AND uf.status IN ('PLANNED', 'ACTIVE')
+                    ORDER BY scheduled_departure DESC
                     LIMIT 20
                 """
                 params = {"query": f"%{query_param}%"}
@@ -178,9 +175,17 @@ def create_simple_api(app: Flask) -> None:
                     "gufi": row.gufi,
                     "departure_airport": row.departure_airport,
                     "arrival_airport": row.arrival_airport,
-                    "scheduled_departure": row.igtd.isoformat() if row.igtd else None,
+                    "scheduled_departure": (
+                        row.scheduled_departure.isoformat()
+                        if row.scheduled_departure
+                        else None
+                    ),
                     "scheduled_arrival": None,  # No ETA column in this table
                 }
+
+                # Add flight type if available
+                if hasattr(row, "flight_type"):
+                    flight["flight_type"] = row.flight_type
 
                 # Add position data if available (when using q parameter)
                 if hasattr(row, "latitude") and hasattr(row, "longitude"):
@@ -647,35 +652,41 @@ def create_simple_api(app: Flask) -> None:
                 )
 
             # Convert IATA codes to ICAO codes for weather lookup
-            def iata_to_icao(iata_code):
-                """Convert 3-letter IATA code to 4-letter ICAO code"""
-                if not iata_code or len(iata_code) != 3:
-                    return iata_code
+            def iata_to_icao(airport_code):
+                """Convert 3-letter IATA code to 4-letter ICAO code, or return ICAO code as-is"""
+                if not airport_code:
+                    return airport_code
 
-                # Common IATA to ICAO conversions
-                iata_to_icao_map = {
-                    "YYC": "CYYC",  # Calgary
-                    "TPA": "KTPA",  # Tampa
-                    "PHX": "KPHX",  # Phoenix
-                    "JFK": "KJFK",  # New York JFK
-                    "DTW": "KDTW",  # Detroit
-                    "BOS": "KBOS",  # Boston
-                    "BWI": "KBWI",  # Baltimore
-                    "CHS": "KCHS",  # Charleston
-                    "HPN": "KHPN",  # White Plains
-                    "EIDW": "EIDW",  # Dublin (already ICAO)
-                    "PWK": "KPWK",  # Chicago Executive
-                    "MDW": "KMDW",  # Chicago Midway
-                    "SKBO": "SKBO",  # Bogota (already ICAO)
-                    "YUL": "CYUL",  # Montreal
-                    "BDL": "KBDL",  # Hartford
-                    "DEN": "KDEN",  # Denver
-                    "RDU": "KRDU",  # Raleigh-Durham
-                    "GRR": "KGRR",  # Grand Rapids
-                    "PVD": "KPVD",  # Providence
-                }
+                airport_code = airport_code.upper()
 
-                return iata_to_icao_map.get(iata_code.upper(), f"K{iata_code.upper()}")
+                # If it's already a 4-letter ICAO code, return as-is
+                if len(airport_code) == 4:
+                    return airport_code
+
+                # If it's a 3-letter IATA code, convert to ICAO
+                if len(airport_code) == 3:
+                    # Common IATA to ICAO conversions
+                    iata_to_icao_map = {
+                        "YYC": "CYYC",  # Calgary
+                        "TPA": "KTPA",  # Tampa
+                        "PHX": "KPHX",  # Phoenix
+                        "JFK": "KJFK",  # New York JFK
+                        "DTW": "KDTW",  # Detroit
+                        "BOS": "KBOS",  # Boston
+                        "BWI": "KBWI",  # Baltimore
+                        "CHS": "KCHS",  # Charleston
+                        "HPN": "KHPN",  # White Plains
+                        "YUL": "CYUL",  # Montreal
+                        "BDL": "KBDL",  # Hartford
+                        "DEN": "KDEN",  # Denver
+                        "RDU": "KRDU",  # Raleigh-Durham
+                        "GRR": "KGRR",  # Grand Rapids
+                        "PVD": "KPVD",  # Providence
+                    }
+                    return iata_to_icao_map.get(airport_code, f"K{airport_code}")
+
+                # Return as-is for any other format
+                return airport_code
 
             # Get METAR data for departure and arrival airports
             if (
@@ -751,6 +762,21 @@ def create_simple_api(app: Flask) -> None:
                             departure_metar = departure_metar_result.fetchone()
 
                             if departure_metar:
+                                # Convert Celsius to Fahrenheit
+                                temp_c = departure_metar.temperature
+                                temp_f = (
+                                    round((temp_c * 9 / 5) + 32, 1)
+                                    if temp_c is not None
+                                    else None
+                                )
+
+                                dewpoint_c = departure_metar.dewpoint
+                                dewpoint_f = (
+                                    round((dewpoint_c * 9 / 5) + 32, 1)
+                                    if dewpoint_c is not None
+                                    else None
+                                )
+
                                 weather_data["departure_metar"] = {
                                     "station_id": departure_metar.station_id,
                                     "observation_time": (
@@ -759,8 +785,14 @@ def create_simple_api(app: Flask) -> None:
                                         else None
                                     ),
                                     "raw_text": departure_metar.raw_text,
-                                    "temperature": departure_metar.temperature,
-                                    "dewpoint": departure_metar.dewpoint,
+                                    "temperature": {
+                                        "celsius": temp_c,
+                                        "fahrenheit": temp_f,
+                                    },
+                                    "dewpoint": {
+                                        "celsius": dewpoint_c,
+                                        "fahrenheit": dewpoint_f,
+                                    },
                                     "wind_direction": departure_metar.wind_direction,
                                     "wind_speed": departure_metar.wind_speed,
                                     "visibility": departure_metar.visibility,
@@ -803,6 +835,21 @@ def create_simple_api(app: Flask) -> None:
                             arrival_metar = arrival_metar_result.fetchone()
 
                             if arrival_metar:
+                                # Convert Celsius to Fahrenheit
+                                temp_c = arrival_metar.temperature
+                                temp_f = (
+                                    round((temp_c * 9 / 5) + 32, 1)
+                                    if temp_c is not None
+                                    else None
+                                )
+
+                                dewpoint_c = arrival_metar.dewpoint
+                                dewpoint_f = (
+                                    round((dewpoint_c * 9 / 5) + 32, 1)
+                                    if dewpoint_c is not None
+                                    else None
+                                )
+
                                 weather_data["arrival_metar"] = {
                                     "station_id": arrival_metar.station_id,
                                     "observation_time": (
@@ -811,8 +858,14 @@ def create_simple_api(app: Flask) -> None:
                                         else None
                                     ),
                                     "raw_text": arrival_metar.raw_text,
-                                    "temperature": arrival_metar.temperature,
-                                    "dewpoint": arrival_metar.dewpoint,
+                                    "temperature": {
+                                        "celsius": temp_c,
+                                        "fahrenheit": temp_f,
+                                    },
+                                    "dewpoint": {
+                                        "celsius": dewpoint_c,
+                                        "fahrenheit": dewpoint_f,
+                                    },
                                     "wind_direction": arrival_metar.wind_direction,
                                     "wind_speed": arrival_metar.wind_speed,
                                     "visibility": arrival_metar.visibility,
@@ -1083,16 +1136,19 @@ def create_simple_api(app: Flask) -> None:
                 "weather": weather_data,
             }
 
-            # Build timeline from OOOI data
+            # Build comprehensive timeline from multiple data sources
             timeline = []
+
+            # Add OOOI events
             if oooi_row:
                 if oooi_row.out_time:
                     timeline.append(
                         {
                             "time": oooi_row.out_time.isoformat(),
                             "title": "OUT — Pushback",
-                            "description": "Gate departure",
+                            "description": "Aircraft pushed back from gate",
                             "badge_class": "bg-primary",
+                            "type": "operational",
                         }
                     )
                 if oooi_row.off_time:
@@ -1101,7 +1157,8 @@ def create_simple_api(app: Flask) -> None:
                             "time": oooi_row.off_time.isoformat(),
                             "title": "OFF — Takeoff",
                             "description": "Aircraft airborne",
-                            "badge_class": "bg-primary",
+                            "badge_class": "bg-success",
+                            "type": "operational",
                         }
                     )
                 if oooi_row.on_time:
@@ -1110,7 +1167,8 @@ def create_simple_api(app: Flask) -> None:
                             "time": oooi_row.on_time.isoformat(),
                             "title": "ON — Landing",
                             "description": "Aircraft landed",
-                            "badge_class": "bg-success",
+                            "badge_class": "bg-warning",
+                            "type": "operational",
                         }
                     )
                 if oooi_row.in_time:
@@ -1118,10 +1176,101 @@ def create_simple_api(app: Flask) -> None:
                         {
                             "time": oooi_row.in_time.isoformat(),
                             "title": "IN — At Block",
-                            "description": "At gate/stand",
-                            "badge_class": "bg-success",
+                            "description": "Aircraft at gate/stand",
+                            "badge_class": "bg-secondary",
+                            "type": "operational",
                         }
                     )
+
+            # Add significant track events (altitude changes, speed changes)
+            if track_rows and len(track_rows) > 1:
+                prev_point = None
+                for i, point in enumerate(track_rows):
+                    if prev_point and point.time_at_position:
+                        # Check for significant altitude changes (>5000 ft)
+                        if (
+                            point.altitude
+                            and prev_point.altitude
+                            and abs(point.altitude - prev_point.altitude) > 5000
+                        ):
+                            # Handle both datetime objects and strings
+                            time_str = (
+                                point.time_at_position.isoformat()
+                                if hasattr(point.time_at_position, "isoformat")
+                                else str(point.time_at_position)
+                            )
+                            timeline.append(
+                                {
+                                    "time": time_str,
+                                    "title": f"Altitude Change — {point.altitude:,} ft",
+                                    "description": f"Climb/descent from {prev_point.altitude:,} ft",
+                                    "badge_class": "bg-info",
+                                    "type": "flight",
+                                }
+                            )
+
+                        # Check for significant speed changes (>100 kts)
+                        if (
+                            point.speed
+                            and prev_point.speed
+                            and abs(point.speed - prev_point.speed) > 100
+                        ):
+                            # Handle both datetime objects and strings
+                            time_str = (
+                                point.time_at_position.isoformat()
+                                if hasattr(point.time_at_position, "isoformat")
+                                else str(point.time_at_position)
+                            )
+                            timeline.append(
+                                {
+                                    "time": time_str,
+                                    "title": f"Speed Change — {point.speed} kts",
+                                    "description": f"Speed change from {prev_point.speed} kts",
+                                    "badge_class": "bg-info",
+                                    "type": "flight",
+                                }
+                            )
+
+                    prev_point = point
+
+            # Add weather alert events (deduplicate by time and type)
+            if weather_data.get("weather_alerts"):
+                seen_alerts = set()
+                for alert in weather_data["weather_alerts"]:
+                    if alert.get("valid_from"):
+                        alert_key = f"{alert['valid_from']}_{alert.get('alert_type', 'Unknown')}"
+                        if alert_key not in seen_alerts:
+                            seen_alerts.add(alert_key)
+                            timeline.append(
+                                {
+                                    "time": alert["valid_from"],
+                                    "title": f"Weather Alert — {alert.get('alert_type', 'Unknown')}",
+                                    "description": alert.get(
+                                        "summary", "Weather alert issued"
+                                    ),
+                                    "badge_class": (
+                                        "bg-warning"
+                                        if alert.get("severity") == "MODERATE"
+                                        else "bg-danger"
+                                    ),
+                                    "type": "weather",
+                                }
+                            )
+
+            # Add flight plan events
+            if flight_row and flight_row.igtd:
+                timeline.append(
+                    {
+                        "time": flight_row.igtd.isoformat(),
+                        "title": "Flight Plan Filed",
+                        "description": f"Route: {flight_row.departure_airport} → {flight_row.arrival_airport}",
+                        "badge_class": "bg-secondary",
+                        "type": "planning",
+                    }
+                )
+
+            # Sort timeline by time
+            timeline.sort(key=lambda x: x["time"])
 
             flight_data["timeline"] = timeline
 
@@ -1176,4 +1325,70 @@ def create_simple_api(app: Flask) -> None:
 
         except Exception as e:
             logger.error("Error getting recent flights: " + str(e))
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/api/flights/<aircraft_id>/upcoming", methods=["GET"])
+    def get_upcoming_flights(aircraft_id):
+        """Get upcoming flights for an aircraft"""
+        try:
+            session = SessionLocal()
+
+            # Query upcoming flights from the upcoming_flights table
+            query = text(
+                """
+                SELECT 
+                    aircraft_id,
+                    gufi,
+                    flight_reference,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time,
+                    aircraft_type,
+                    aircraft_operator,
+                    route_text,
+                    status,
+                    source_facility,
+                    created_at
+                FROM upcoming_flights 
+                WHERE aircraft_id = :aircraft_id 
+                AND departure_time > NOW()
+                AND status IN ('PLANNED', 'ACTIVE')
+                ORDER BY departure_time ASC
+                LIMIT 10
+            """
+            )
+
+            result = session.execute(query, {"aircraft_id": aircraft_id.upper()})
+            rows = result.fetchall()
+
+            upcoming_flights = [
+                {
+                    "gufi": row.gufi,
+                    "flight_reference": row.flight_reference,
+                    "departure_airport": row.departure_airport,
+                    "arrival_airport": row.arrival_airport,
+                    "departure_time": (
+                        row.departure_time.isoformat() if row.departure_time else None
+                    ),
+                    "arrival_time": (
+                        row.arrival_time.isoformat() if row.arrival_time else None
+                    ),
+                    "aircraft_type": row.aircraft_type,
+                    "aircraft_operator": row.aircraft_operator,
+                    "route_text": row.route_text,
+                    "status": row.status,
+                    "source_facility": row.source_facility,
+                    "created_at": (
+                        row.created_at.isoformat() if row.created_at else None
+                    ),
+                }
+                for row in rows
+            ]
+
+            session.close()
+            return jsonify(upcoming_flights)
+
+        except Exception as e:
+            logger.error("Error getting upcoming flights: " + str(e))
             return jsonify({"error": "Internal server error"}), 500

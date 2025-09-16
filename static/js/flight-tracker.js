@@ -521,7 +521,7 @@ class FlightTracker {
         }
     }
 
-    searchFlights() {
+    async searchFlights() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
         
         if (!searchTerm) {
@@ -529,28 +529,214 @@ class FlightTracker {
             return;
         }
 
-        // Check if search term matches a specific aircraft ID exactly
-        const allFlights = this.currentFlights || [];
-        const exactMatch = allFlights.find(flight => 
-            flight.aircraft_id.toLowerCase() === searchTerm
-        );
+        // Show loading state
+        this.showSearchLoading();
 
-        if (exactMatch) {
-            // If exact match found, redirect to flight detail page
-            this.showFlightDetails(exactMatch.aircraft_id);
-            return;
+        try {
+            // Search both current and upcoming flights
+            const [currentFlights, upcomingFlights] = await Promise.all([
+                this.searchCurrentFlights(searchTerm),
+                this.searchUpcomingFlights(searchTerm)
+            ]);
+
+            // Check if search term matches a specific aircraft ID exactly
+            const exactCurrentMatch = currentFlights.find(flight => 
+                flight.aircraft_id.toLowerCase() === searchTerm
+            );
+            const exactUpcomingMatch = upcomingFlights.find(flight => 
+                flight.aircraft_id.toLowerCase() === searchTerm
+            );
+
+            if (exactCurrentMatch || exactUpcomingMatch) {
+                // If exact match found, redirect to flight detail page
+                const aircraftId = exactCurrentMatch?.aircraft_id || exactUpcomingMatch?.aircraft_id;
+                this.showFlightDetails(aircraftId);
+                return;
+            }
+
+            // Combine and display results
+            this.displaySearchResults(currentFlights, upcomingFlights);
+
+        } catch (error) {
+            console.error('Search error:', error);
+            this.showSearchError();
         }
+    }
 
-        // Otherwise, filter flights based on search term
-        const filteredFlights = allFlights.filter(flight => 
+    async searchCurrentFlights(searchTerm) {
+        // Filter current flights based on search term
+        const allFlights = this.currentFlights || [];
+        return allFlights.filter(flight => 
             flight.aircraft_id.toLowerCase().includes(searchTerm) ||
             flight.departure_airport.toLowerCase().includes(searchTerm) ||
             flight.arrival_airport.toLowerCase().includes(searchTerm) ||
             (flight.gufi && flight.gufi.toLowerCase().includes(searchTerm))
         );
+    }
 
-        this.renderFlights(filteredFlights);
-        this.updateMap(filteredFlights);
+    async searchUpcomingFlights(searchTerm) {
+        try {
+            // Search upcoming flights via API
+            const response = await fetch(`/api/flights/search?aircraft_id=${encodeURIComponent(searchTerm)}`);
+            if (!response.ok) {
+                throw new Error('Failed to search upcoming flights');
+            }
+            
+            const upcomingFlights = await response.json();
+            
+            // Filter upcoming flights based on search term
+            return upcomingFlights.filter(flight => 
+                flight.flight_type === 'UPCOMING' && (
+                    flight.aircraft_id.toLowerCase().includes(searchTerm) ||
+                    flight.departure_airport.toLowerCase().includes(searchTerm) ||
+                    flight.arrival_airport.toLowerCase().includes(searchTerm) ||
+                    (flight.flight_reference && flight.flight_reference.toLowerCase().includes(searchTerm))
+                )
+            );
+        } catch (error) {
+            console.error('Error searching upcoming flights:', error);
+            return [];
+        }
+    }
+
+    displaySearchResults(currentFlights, upcomingFlights) {
+        // Create combined results with type indicators
+        const combinedResults = [
+            ...currentFlights.map(flight => ({ ...flight, flight_type: 'CURRENT' })),
+            ...upcomingFlights.map(flight => ({ ...flight, flight_type: 'UPCOMING' }))
+        ];
+
+        if (combinedResults.length === 0) {
+            this.showNoResults();
+            return;
+        }
+
+        // Render the combined results
+        this.renderSearchResults(combinedResults);
+        this.updateMap(currentFlights); // Only show current flights on map
+    }
+
+    renderSearchResults(flights) {
+        const flightsList = document.getElementById('flights-list');
+        if (!flightsList) return;
+
+        // Group flights by type
+        const currentFlights = flights.filter(f => f.flight_type === 'CURRENT');
+        const upcomingFlights = flights.filter(f => f.flight_type === 'UPCOMING');
+
+        let html = '';
+
+        // Current flights section
+        if (currentFlights.length > 0) {
+            html += `
+                <div class="search-section">
+                    <h6 class="text-primary mb-2">
+                        <i class="ti ti-plane-departure me-1"></i>
+                        Current Flights (${currentFlights.length})
+                    </h6>
+                    ${currentFlights.map(flight => this.createFlightListItem(flight)).join('')}
+                </div>
+            `;
+        }
+
+        // Upcoming flights section
+        if (upcomingFlights.length > 0) {
+            html += `
+                <div class="search-section mt-3">
+                    <h6 class="text-info mb-2">
+                        <i class="ti ti-calendar me-1"></i>
+                        Upcoming Flights (${upcomingFlights.length})
+                    </h6>
+                    ${upcomingFlights.map(flight => this.createUpcomingFlightListItem(flight)).join('')}
+                </div>
+            `;
+        }
+
+        flightsList.innerHTML = html;
+    }
+
+    createUpcomingFlightListItem(flight) {
+        const departureTime = flight.departure_time ? 
+            new Date(flight.departure_time).toLocaleString() : 'TBD';
+        const arrivalTime = flight.arrival_time ? 
+            new Date(flight.arrival_time).toLocaleString() : 'TBD';
+        
+        return `
+            <div class="list-group-item list-group-item-action" 
+                 onclick="flightTracker.showFlightDetails('${flight.aircraft_id}')"
+                 style="cursor: pointer;">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <span class="badge bg-info">UPCOMING</span>
+                    </div>
+                    <div class="col">
+                        <div class="fw-bold">${flight.aircraft_id}</div>
+                        <div class="text-muted small">
+                            ${flight.departure_airport || 'TBD'} → ${flight.arrival_airport || 'TBD'}
+                        </div>
+                        <div class="text-muted small">
+                            <i class="ti ti-clock me-1"></i>
+                            Dep: ${departureTime}
+                        </div>
+                        ${flight.aircraft_type ? `
+                            <div class="text-muted small">
+                                <i class="ti ti-plane me-1"></i>
+                                ${flight.aircraft_type}
+                            </div>
+                        ` : ''}
+                        ${flight.aircraft_operator ? `
+                            <div class="text-muted small">
+                                <i class="ti ti-building me-1"></i>
+                                ${flight.aircraft_operator}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="col-auto">
+                        <i class="ti ti-chevron-right text-muted"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    showSearchLoading() {
+        const flightsList = document.getElementById('flights-list');
+        if (flightsList) {
+            flightsList.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Searching...</span>
+                    </div>
+                    <div class="mt-2 text-muted">Searching flights...</div>
+                </div>
+            `;
+        }
+    }
+
+    showNoResults() {
+        const flightsList = document.getElementById('flights-list');
+        if (flightsList) {
+            flightsList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="ti ti-search-off text-muted" style="font-size: 2rem;"></i>
+                    <div class="mt-2 text-muted">No flights found</div>
+                    <div class="small text-muted">Try searching by aircraft ID, airport, or route</div>
+                </div>
+            `;
+        }
+    }
+
+    showSearchError() {
+        const flightsList = document.getElementById('flights-list');
+        if (flightsList) {
+            flightsList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="ti ti-alert-circle text-warning" style="font-size: 2rem;"></i>
+                    <div class="mt-2 text-muted">Search error</div>
+                    <div class="small text-muted">Please try again</div>
+                </div>
+            `;
+        }
     }
 
     clearSearch() {

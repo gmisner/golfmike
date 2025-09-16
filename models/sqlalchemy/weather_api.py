@@ -65,7 +65,7 @@ class METARDataAPI(Base):
     wind_gust = Column(Integer)  # knots
 
     # Visibility
-    visibility = Column(Float)  # statute miles
+    visibility = Column(String(10))  # statute miles (can be "10+" etc)
     visibility_units = Column(String(10))
 
     # Temperature and pressure
@@ -292,5 +292,3 @@ class WeatherObservationAPI(Base):
         Index("idx_weather_obs_api_observation_time", "observation_time"),
         Index("idx_weather_obs_api_data_source", "data_source"),
     )
-
-

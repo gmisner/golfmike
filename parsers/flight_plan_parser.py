@@ -1,82 +1,180 @@
-from lxml import etree
-from dateutil.parser import isoparse
-from typing import Optional
-from models.pydantic.flight_plan import FlightPlanModel
+"""
+Flight Plan XML Parser for Solace Queue Data
+Parses flight plan XML data from the FDPS Solace queue
+"""
+
+import xml.etree.ElementTree as ET
+from datetime import datetime
+from typing import Dict, Any, Optional
 from utils.logger import main_logger as logger
 
 
-def parse_flight_plan(flight_data: etree.Element) -> Optional[FlightPlanModel]:
+class FlightPlanXMLParser:
+    """Parser for flight plan XML data from Solace queues"""
+
+    def __init__(self):
+        self.logger = logger
+
+    def parse_flight_plan_xml(self, xml_data: str) -> Optional[Dict[str, Any]]:
+        """
+        Parse flight plan XML data and extract relevant information
+
+        Args:
+            xml_data: Raw XML string from Solace queue
+
+        Returns:
+            Dictionary containing parsed flight plan data or None if parsing fails
+        """
+        try:
+            root = ET.fromstring(xml_data)
+            self.logger.debug(f"Parsing flight plan XML with root tag: {root.tag}")
+
+            # Initialize result dictionary
+            flight_plan_data = {
+                "aircraft_id": None,
+                "gufi": None,
+                "flight_reference": None,
+                "departure_airport": None,
+                "arrival_airport": None,
+                "departure_time": None,
+                "arrival_time": None,
+                "aircraft_type": None,
+                "aircraft_operator": None,
+                "route_text": None,
+                "filed_route": None,
+                "status": "PLANNED",
+                "source_facility": None,
+                "source_timestamp": None,
+                "flight_plan_data": xml_data,
+            }
+
+            # Simple approach: iterate through all elements and extract what we need
+            current_context = None
+            found_tags = set()
+            for elem in root.iter():
+                tag = elem.tag
+                text = elem.text.strip() if elem.text else ""
+                found_tags.add(tag)
+
+                # Track context for aerodrome elements
+                if tag.endswith("departureLocation"):
+                    current_context = "departure"
+                elif tag.endswith("arrivalLocation"):
+                    current_context = "arrival"
+
+                if not text:
+                    continue
+
+                # Extract aircraft ID
+                if tag.endswith("aircraftId"):
+                    flight_plan_data["aircraft_id"] = text.upper()
+
+                # Extract GUFI
+                elif tag.endswith("gufi"):
+                    flight_plan_data["gufi"] = text
+
+                # Extract flight reference
+                elif tag.endswith("flightReference") or tag.endswith("flightNumber"):
+                    flight_plan_data["flight_reference"] = text
+
+                # Extract departure/arrival airport
+                elif tag.endswith("locationIndicator"):
+                    if current_context == "departure":
+                        flight_plan_data["departure_airport"] = text.upper()
+                    elif current_context == "arrival":
+                        flight_plan_data["arrival_airport"] = text.upper()
+
+                # Extract departure time
+                elif tag.endswith("departureTime") or tag.endswith("igtd"):
+                    flight_plan_data["departure_time"] = self._parse_datetime(text)
+
+                # Extract arrival time
+                elif tag.endswith("arrivalTime") or tag.endswith("iata"):
+                    flight_plan_data["arrival_time"] = self._parse_datetime(text)
+
+                # Extract aircraft type
+                elif tag.endswith("aircraftType") or tag.endswith("aircraftModel"):
+                    flight_plan_data["aircraft_type"] = text
+
+                # Extract operator
+                elif tag.endswith("operator") or tag.endswith("airline"):
+                    flight_plan_data["aircraft_operator"] = text
+
+                # Extract route
+                elif tag.endswith("route") or tag.endswith("routeText"):
+                    flight_plan_data["route_text"] = text
+
+                # Extract status
+                elif tag.endswith("status") or tag.endswith("flightStatus"):
+                    flight_plan_data["status"] = text.upper()
+
+                # Extract source facility
+                elif tag.endswith("sourceFacility") or tag.endswith("facility"):
+                    flight_plan_data["source_facility"] = text
+
+                # Extract timestamp
+                elif tag.endswith("timestamp") or tag.endswith("timeStamp"):
+                    flight_plan_data["source_timestamp"] = self._parse_datetime(text)
+
+            # Log successful parsing
+            self.logger.info(
+                f"Successfully parsed flight plan for aircraft: {flight_plan_data['aircraft_id']}"
+            )
+            self.logger.debug(f"Flight plan data: {flight_plan_data}")
+            self.logger.debug(f"Found tags: {sorted(found_tags)}")
+
+            return flight_plan_data
+
+        except ET.ParseError as e:
+            self.logger.error(f"XML parsing error: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Error parsing flight plan XML: {e}", exc_info=True)
+            return None
+
+    def _parse_datetime(self, datetime_str: str) -> Optional[datetime]:
+        """
+        Parse datetime string in various formats
+
+        Args:
+            datetime_str: String representation of datetime
+
+        Returns:
+            Parsed datetime object or None if parsing fails
+        """
+        if not datetime_str:
+            return None
+
+        # Common datetime formats to try
+        formats = [
+            "%Y-%m-%dT%H:%M:%S.%fZ",  # ISO format with microseconds
+            "%Y-%m-%dT%H:%M:%SZ",  # ISO format without microseconds
+            "%Y-%m-%dT%H:%M:%S",  # ISO format without timezone
+            "%Y-%m-%d %H:%M:%S",  # Standard format
+            "%Y%m%d%H%M%S",  # Compact format
+            "%Y-%m-%d",  # Date only
+        ]
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(datetime_str.strip(), fmt)
+            except ValueError:
+                continue
+
+        self.logger.warning(f"Could not parse datetime: {datetime_str}")
+        return None
+
+
+# Function interface for backward compatibility
+def parse_flight_plan(xml_data: str) -> Optional[Dict[str, Any]]:
     """
-    parse_flight_plan _summary_
+    Parse flight plan XML data - function interface for backward compatibility
 
     Args:
-        flight_data (etree.Element): _description_
+        xml_data: Raw XML string from Solace queue
 
     Returns:
-        Optional[FlightPlanModel]: _description_
+        Dictionary containing parsed flight plan data or None if parsing fails
     """
-    try:
-        flight_plan_amendment_dict = {}
-
-        for element in flight_data.iterchildren():
-            tag = etree.QName(element).localname
-            if tag == "qualifiedAircraftId":
-                for child in element.iterchildren():
-                    child_tag = etree.QName(child).localname
-                    if child_tag == "computerId":
-                        for grand_child in child.iterchildren():
-                            grand_child_tag = etree.QName(grand_child).localname
-                            flight_plan_amendment_dict[grand_child_tag] = (
-                                grand_child.text
-                            )
-                    flight_plan_amendment_dict[child_tag] = child.text
-
-                for k, v in element.attrib.items():
-                    flight_plan_amendment_dict[k] = v
-            elif tag == "amendmentData":
-                for child in element.iterchildren():
-                    child_tag = etree.QName(child).localname
-                    if child_tag == "newFlightAircraftSpecs":
-                        for k, v in child.attrib.items():
-                            flight_plan_amendment_dict[k] = v
-                        flight_plan_amendment_dict[child_tag] = child.text
-                    elif child_tag == "newSpeed":
-                        for grand_child in child.iterchildren():
-                            grand_child_tag = etree.QName(grand_child).localname
-                            flight_plan_amendment_dict[grand_child_tag] = (
-                                grand_child.text
-                            )
-                    elif child_tag == "newCoordinationTime":
-                        for k, v in child.attrib.items():
-                            flight_plan_amendment_dict[k] = v
-                        flight_plan_amendment_dict[child_tag] = child.text
-                    else:
-                        flight_plan_amendment_dict[child_tag] = child.text
-            else:
-                flight_plan_amendment_dict[tag] = element.text
-
-        # Convert datetimes
-        for key in flight_plan_amendment_dict:
-            if key.endswith("Time") or key == "igtd" or key == "lastUpdate":
-                if flight_plan_amendment_dict[key]:
-                    flight_plan_amendment_dict[key] = isoparse(
-                        flight_plan_amendment_dict[key]
-                    )
-
-        # Add required fields to flight_plan_amendment_dict (you need to determine these based on your XML)
-        # For example:
-        flight_plan_amendment_dict["sourceId_00e"] = "some_source_id"
-        flight_plan_amendment_dict["sourceTime_00e1"] = "some_source_time"
-        flight_plan_amendment_dict["sourceSeqNo_00e2"] = "some_source_seq_no"
-        flight_plan_amendment_dict["flightId_02a"] = flight_plan_amendment_dict[
-            "aircraftId"
-        ]
-        flight_plan_amendment_dict["typeOfAircraft_03c"] = flight_plan_amendment_dict[
-            "newFlightAircraftSpecs"
-        ]
-        # ... add other required fields ...
-
-        return FlightPlanModel(**flight_plan_amendment_dict)
-    except Exception as e:
-        logger.error(f"Error parsing flight plan: {e}", exc_info=True)
-        return None
+    parser = FlightPlanXMLParser()
+    return parser.parse_flight_plan_xml(xml_data)

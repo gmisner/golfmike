@@ -1,0 +1,274 @@
+networks:
+  golfmike_network:
+    name: golfmike_network
+    driver: bridge
+
+services:
+  # Redis service for message brokering - optimized
+  redis:
+    container_name: redis
+    image: redis:7-alpine  # Use latest stable Redis with Alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000 --tcp-keepalive 60
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Postgres service for database storage - optimized
+  postgres:
+    platform: linux/arm64
+    image: postgres:15-alpine  # Use Alpine variant for smaller size
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "postgres"
+      PGDATA: "/data/postgres"
+      # Performance optimizations
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    command: [
+      "postgres",
+      "-c", "log_statement=none",  # Reduce logging in production
+      "-c", "shared_buffers=64MB",
+      "-c", "effective_cache_size=256MB",
+      "-c", "maintenance_work_mem=32MB",
+      "-c", "checkpoint_completion_target=0.9",
+      "-c", "wal_buffers=4MB",
+      "-c", "default_statistics_target=100",
+      "-c", "random_page_cost=1.1",
+      "-c", "effective_io_concurrency=200"
+    ]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - /Users/gmisner/Documents/GolfMike/initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.2'
+    networks:
+      - golfmike_network
+
+  # Database initialization service - run once
+  db_init:
+    platform: linux/arm64
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python -c 'from db_config import init_db; init_db()'"
+    user: "vscode"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - golfmike_network
+    restart: "no"  # Run once only
+
+  # Web API service - optimized
+  web_api:
+    platform: linux/arm64
+    container_name: golfmike-api
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python app_flask.py"
+    user: "vscode"
+    ports:
+      - "5500:5500"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.2'
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5500/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery worker service - optimized with better resource management
+  celery_worker:
+    platform: linux/arm64
+    container_name: veggie-1
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+      - CELERY_WORKER_CONCURRENCY=2
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+      - CELERY_TASK_ACKS_LATE=True
+      - CELERY_WORKER_DISABLE_RATE_LIMITS=True
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --optimization=fair"
+    user: "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+
+  # Second Celery worker - optimized
+  celery_worker_2:
+    platform: linux/arm64
+    container_name: veggie-2
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+      - CELERY_WORKER_CONCURRENCY=2
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+      - CELERY_TASK_ACKS_LATE=True
+      - CELERY_WORKER_DISABLE_RATE_LIMITS=True
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q weather_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --optimization=fair"
+    user: "vscode"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+
+  # Solace consumer service - optimized
+  bigtitties:
+    platform: linux/arm64
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python solace_consumer_wrapper.py"
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Flower service for monitoring - optimized
+  flower:
+    image: mher/flower:latest
+    container_name: flower-pot
+    platform: linux/arm64
+    command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555", "--basic_auth=admin:password"]
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.05'
+
+volumes:
+  postgres_data:
+    driver: local
+

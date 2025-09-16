@@ -356,3 +356,4 @@ docker network inspect golfmike_default
 - Database read replicas
 - Caching strategies
 - CDN for static assets
+

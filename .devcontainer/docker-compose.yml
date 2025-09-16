@@ -3,6 +3,14 @@ networks:
     name: golfmike_network
     driver: bridge
 
+# Centralized logging configuration
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+    labels: "service"
+
 services:
   # Celery worker service to process background tasks
   celery_worker:
@@ -24,6 +32,7 @@ services:
       - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"  # Optimized worker settings
     user: "vscode"  # Run the container as user "vscode"
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -57,6 +66,7 @@ services:
       - /Users/gmisner/Documents/GolfMike:/workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -90,6 +100,7 @@ services:
       - /Users/gmisner/Documents/GolfMike:/workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -123,6 +134,7 @@ services:
       - /Users/gmisner/Documents/GolfMike:/workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
     user: "vscode"
+    logging: *default-logging
     deploy:
       resources:
         limits:
@@ -148,6 +160,7 @@ services:
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+    logging: *default-logging
     working_dir: /workspace
     volumes:
       - /Users/gmisner/Documents/GolfMike:/workspace
@@ -245,27 +258,77 @@ services:
     networks:
       - golfmike_network
   
-  # Custom container named "bigtitties" for running a specific Python script
-  bigtitties:
-    platform: linux/amd64  # Specify the platform for compatibility
+  # Traffic Consumer (TFM)
+  traffic_consumer:
+    platform: linux/amd64
     build:
-      context: /Users/gmisner/Documents/GolfMike  # Build context for Dockerfile
-      dockerfile: .devcontainer/Dockerfile  # Path to Dockerfile
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
       args:
-        VARIANT: "3.10"  # Python version to use in the container
+        VARIANT: "3.10"
     environment:
-      - PYTHONPATH=/workspace  # Add workspace to PYTHONPATH for module resolution
-      - PATH=/home/vscode/.local/bin:$PATH  # Add local bin to PATH
-    working_dir: /workspace  # Set working directory inside the container
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
-    command: /bin/bash -c "cd /workspace && python solace_consumer_wrapper.py"  # Run Solace consumer with auto-restart wrapper
-    user: "vscode"  # Run the container as user "vscode"
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python consumers/traffic_consumer.py"
+    user: "vscode"
     depends_on:
-      - redis  # Ensure Redis starts before this container
-      - postgres  # Ensure Postgres starts before this container
+      - redis
+      - postgres
     networks:
       - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+  # Weather Consumer (ITWS)
+  weather_consumer:
+    platform: linux/amd64
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python consumers/weather_consumer.py"
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+  # Flight Plan Consumer (FDPS)
+  flight_plan_consumer:
+    platform: linux/amd64
+    build:
+      context: /Users/gmisner/Documents/GolfMike
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - /Users/gmisner/Documents/GolfMike:/workspace
+    command: /bin/bash -c "cd /workspace && python consumers/flight_plan_consumer.py"
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
 
 volumes:
   postgres_data:

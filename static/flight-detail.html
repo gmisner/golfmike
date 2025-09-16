@@ -15,6 +15,74 @@
       .flight-status-enroute { background-color: #007bff !important; }
       .flight-status-delayed { background-color: #fd7e14 !important; }
       .flight-status-scheduled { background-color: #6c757d !important; }
+      
+      /* Timeline styling */
+      .timeline {
+        position: relative;
+        padding-left: 2rem;
+      }
+      
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+      }
+      
+      .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+      }
+      
+      .timeline-time {
+        position: absolute;
+        left: -2rem;
+        top: 0;
+        font-size: 0.75rem;
+        color: #6c757d;
+        white-space: nowrap;
+        min-width: 3rem;
+        text-align: right;
+      }
+      
+      .timeline-badge {
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.5rem;
+        z-index: 1;
+      }
+      
+      .timeline-content {
+        margin-left: 1rem;
+        flex: 1;
+      }
+      
+      .timeline-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      
+      .timeline-meta {
+        margin-top: 0.5rem;
+      }
+      
+      .timeline-badge svg {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
     </style>
   </head>
   <body class="layout-fluid">
@@ -200,6 +268,11 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Upcoming Flights -->
+              <div class="card mt-2" id="upcoming-flights">
+                <!-- Upcoming flights will be populated by JavaScript -->
               </div>
 
               <!-- Recent Flights -->

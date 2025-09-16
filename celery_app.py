@@ -13,6 +13,8 @@ app.conf.update(
     task_routes={
         "tasks.process_xml": {"queue": "message_processing"},
         "tasks.start_solace_consumer": {"queue": "solace"},
+        "tasks.process_flight_plan_xml": {"queue": "message_processing"},
+        "tasks.start_flight_plan_consumer": {"queue": "solace"},
     },
     # Task execution settings
     task_acks_late=True,  # Acknowledge the task only after it's executed

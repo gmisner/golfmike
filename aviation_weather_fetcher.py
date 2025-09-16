@@ -208,10 +208,10 @@ class AviationWeatherFetcher:
                 try:
                     # Check if METAR already exists
                     existing = (
-                        session.query(METARData)
+                        session.query(METARDataAPI)
                         .filter(
-                            METARData.station_id == metar.get("icaoId"),
-                            METARData.observation_time
+                            METARDataAPI.station_id == metar.get("icaoId"),
+                            METARDataAPI.observation_time
                             == self._parse_datetime(metar.get("obsTime")),
                         )
                         .first()
@@ -221,7 +221,7 @@ class AviationWeatherFetcher:
                         continue  # Skip duplicates
 
                     # Create new METAR record
-                    metar_record = METARData(
+                    metar_record = METARDataAPI(
                         station_id=metar.get("icaoId"),
                         observation_time=self._parse_datetime(metar.get("obsTime")),
                         raw_text=metar.get("rawOb"),
@@ -270,10 +270,10 @@ class AviationWeatherFetcher:
                 try:
                     # Check if TAF already exists
                     existing = (
-                        session.query(TAFData)
+                        session.query(TAFDataAPI)
                         .filter(
-                            TAFData.station_id == taf.get("icaoId"),
-                            TAFData.issue_time
+                            TAFDataAPI.station_id == taf.get("icaoId"),
+                            TAFDataAPI.issue_time
                             == self._parse_datetime(taf.get("issueTime")),
                         )
                         .first()
@@ -283,7 +283,7 @@ class AviationWeatherFetcher:
                         continue  # Skip duplicates
 
                     # Create new TAF record
-                    taf_record = TAFData(
+                    taf_record = TAFDataAPI(
                         station_id=taf.get("icaoId"),
                         issue_time=self._parse_datetime(taf.get("issueTime")),
                         valid_from=self._parse_datetime(taf.get("validTimeFrom")),
@@ -329,8 +329,8 @@ class AviationWeatherFetcher:
 
                     # Check if alert already exists
                     existing = (
-                        session.query(WeatherAlert)
-                        .filter(WeatherAlert.alert_id == alert_id)
+                        session.query(WeatherAlertAPI)
+                        .filter(WeatherAlertAPI.alert_id == alert_id)
                         .first()
                     )
 
@@ -338,7 +338,7 @@ class AviationWeatherFetcher:
                         continue  # Skip duplicates
 
                     # Create new alert record
-                    alert_record = WeatherAlert(
+                    alert_record = WeatherAlertAPI(
                         alert_id=alert_id,
                         alert_type=f"AWS_{alert.get('hazard', 'UNKNOWN')}",
                         severity="MODERATE",  # Default severity

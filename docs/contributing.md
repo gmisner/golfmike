@@ -98,3 +98,4 @@ Thank you for your interest in contributing to GolfMike! We welcome contribution
 - Review closed issues for similar questions
 
 Thank you for contributing to GolfMike!
+
