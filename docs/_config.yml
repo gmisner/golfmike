@@ -1,0 +1,36 @@
+title: GolfMike - Flight Tracking System
+description: A comprehensive flight tracking and weather monitoring system that integrates with FAA SWIM
+baseurl: "/golfmike"
+url: "https://gmisner.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Architecture
+    url: /architecture
+  - title: API Documentation
+    url: /api
+  - title: Docker Setup
+    url: /docker-setup
+  - title: GitHub
+    url: https://github.com/gmisner/golfmike
+
+# Social links
+social:
+  - name: GitHub
+    url: https://github.com/gmisner/golfmike
+
+# Footer
+footer:
+  - name: License
+    url: https://github.com/gmisner/golfmike/blob/main/LICENSE
+  - name: Issues
+    url: https://github.com/gmisner/golfmike/issues
+  - name: Releases
+    url: https://github.com/gmisner/golfmike/releases
