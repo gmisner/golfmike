@@ -268,150 +268,117 @@ def create_simple_api(app: Flask) -> None:
         """Search flights by various criteria"""
         try:
             session = SessionLocal()
+            q = request.args.get("q", "").strip()
+            departure = request.args.get("departure", "").strip()
+            arrival = request.args.get("arrival", "").strip()
 
-            departure = request.args.get("departure")
-            arrival = request.args.get("arrival")
-            query_param = request.args.get("q", "").strip()
-
-            # If q parameter is provided, do a general search
-            if query_param:
-                # Search both current flights and upcoming flights
-                query = """
-                    SELECT DISTINCT
-                        uf.aircraft_id,
-                        uf.gufi,
-                        uf.departure_airport,
-                        uf.arrival_airport,
-                        uf.departure_time as scheduled_departure,
-                        NULL as latitude,
-                        NULL as longitude,
-                        NULL as altitude,
-                        NULL as speed,
-                        NULL as time_at_position,
-                        'upcoming' as flight_type
-                    FROM upcoming_flights uf
-                    WHERE (uf.aircraft_id ILIKE :query
-                       OR uf.departure_airport ILIKE :query
-                       OR uf.arrival_airport ILIKE :query
-                       OR uf.gufi ILIKE :query
-                       OR uf.flight_reference ILIKE :query)
-                    AND uf.departure_time > NOW()
-                    AND uf.status IN ('PLANNED', 'ACTIVE')
-                    ORDER BY scheduled_departure DESC
-                    LIMIT 20
-                """
-                params = {"query": f"%{query_param}%"}
+            if q:
+                # Search flights table (has status + airports) joined with latest position
+                sql = text("""
+                    SELECT
+                        f.aircraft_id,
+                        f.gufi,
+                        f.departure_airport,
+                        f.arrival_airport,
+                        LOWER(CASE f.current_status
+                            WHEN 'IN_FLIGHT' THEN 'active'
+                            WHEN 'ACTIVE'    THEN 'active'
+                            WHEN 'COMPLETED' THEN 'arrived'
+                            WHEN 'CANCELLED' THEN 'cancelled'
+                            WHEN 'CANCELED'  THEN 'cancelled'
+                            WHEN 'DIVERTED'  THEN 'diverted'
+                            WHEN 'PLANNED'   THEN 'scheduled'
+                            ELSE f.current_status
+                        END) AS status,
+                        f.scheduled_departure,
+                        ti.latitude,
+                        ti.longitude,
+                        ti.altitude,
+                        ti.speed,
+                        ti.time_at_position
+                    FROM flights f
+                    LEFT JOIN LATERAL (
+                        SELECT latitude, longitude, altitude, speed, time_at_position
+                        FROM track_information
+                        WHERE aircraft_id = f.aircraft_id
+                          AND latitude IS NOT NULL AND longitude IS NOT NULL
+                        ORDER BY time_at_position DESC
+                        LIMIT 1
+                    ) ti ON true
+                    WHERE (
+                        f.aircraft_id ILIKE :q
+                        OR f.departure_airport ILIKE :q
+                        OR f.arrival_airport ILIKE :q
+                        OR f.gufi ILIKE :q
+                    )
+                    ORDER BY
+                        CASE f.current_status
+                            WHEN 'ACTIVE'    THEN 1
+                            WHEN 'IN_FLIGHT' THEN 2
+                            WHEN 'PLANNED'   THEN 3
+                            ELSE 4
+                        END,
+                        f.scheduled_departure DESC NULLS LAST
+                    LIMIT 30
+                """)
+                rows = session.execute(sql, {"q": f"%{q}%"}).fetchall()
             else:
-                # Original specific search by departure/arrival
-                query = "SELECT aircraft_id, gufi, departure_airport, arrival_airport, igtd FROM flight_plan WHERE 1=1"
-                params = {}
+                sql = text("""
+                    SELECT
+                        f.aircraft_id,
+                        f.gufi,
+                        f.departure_airport,
+                        f.arrival_airport,
+                        LOWER(CASE f.current_status
+                            WHEN 'IN_FLIGHT' THEN 'active'
+                            WHEN 'ACTIVE'    THEN 'active'
+                            WHEN 'COMPLETED' THEN 'arrived'
+                            WHEN 'CANCELLED' THEN 'cancelled'
+                            WHEN 'CANCELED'  THEN 'cancelled'
+                            WHEN 'DIVERTED'  THEN 'diverted'
+                            WHEN 'PLANNED'   THEN 'scheduled'
+                            ELSE f.current_status
+                        END) AS status,
+                        f.scheduled_departure,
+                        NULL::float AS latitude,
+                        NULL::float AS longitude,
+                        NULL::int   AS altitude,
+                        NULL::int   AS speed,
+                        NULL        AS time_at_position
+                    FROM flights f
+                    WHERE 1=1
+                      AND (:dep = '' OR f.departure_airport ILIKE :dep)
+                      AND (:arr = '' OR f.arrival_airport   ILIKE :arr)
+                    ORDER BY f.scheduled_departure DESC NULLS LAST
+                    LIMIT 50
+                """)
+                rows = session.execute(sql, {
+                    "dep": f"%{departure}%" if departure else "",
+                    "arr": f"%{arrival}%"   if arrival   else "",
+                }).fetchall()
 
-                if departure:
-                    query += " AND departure_airport ILIKE :departure"
-                    params["departure"] = f"%{departure}%"
-
-                if arrival:
-                    query += " AND arrival_airport ILIKE :arrival"
-                    params["arrival"] = f"%{arrival}%"
-
-                query += " LIMIT 100"
-
-            result = session.execute(text(query), params)
-            flights = []
-
-            for row in result:
-                flight = {
-                    "aircraft_id": row.aircraft_id,
-                    "gufi": row.gufi,
+            results = []
+            for row in rows:
+                entry = {
+                    "aircraft_id":      row.aircraft_id,
+                    "gufi":             row.gufi,
                     "departure_airport": row.departure_airport,
-                    "arrival_airport": row.arrival_airport,
-                    "scheduled_departure": (
-                        row.scheduled_departure.isoformat()
-                        if row.scheduled_departure
-                        else None
-                    ),
-                    "scheduled_arrival": None,  # No ETA column in this table
+                    "arrival_airport":  row.arrival_airport,
+                    "status":           row.status,
                 }
-
-                # Add flight type if available
-                if hasattr(row, "flight_type"):
-                    flight["flight_type"] = row.flight_type
-
-                # Add position data if available (when using q parameter)
-                if hasattr(row, "latitude") and hasattr(row, "longitude"):
-                    if row.latitude and row.longitude:
-                        flight["position"] = {
-                            "latitude": float(row.latitude) if row.latitude else None,
-                            "longitude": (
-                                float(row.longitude) if row.longitude else None
-                            ),
-                            "altitude": row.altitude,
-                            "speed": row.speed,
-                            "timestamp": row.time_at_position,
-                        }
-
-                flights.append(flight)
-
-            # If no results found and we have a query parameter, try searching in track_information
-            if len(flights) == 0 and query_param:
-                fallback_query = """
-                    SELECT DISTINCT
-                        aircraft_id,
-                        NULL as gufi,
-                        NULL as departure_airport,
-                        NULL as arrival_airport,
-                        NULL as igtd,
-                        latitude,
-                        longitude,
-                        altitude,
-                        speed,
-                        time_at_position
-                    FROM track_information 
-                    WHERE aircraft_id ILIKE :query
-                    AND latitude IS NOT NULL AND longitude IS NOT NULL
-                    AND latitude != '' AND longitude != ''
-                    ORDER BY time_at_position DESC
-                    LIMIT 20
-                """
-                fallback_result = session.execute(
-                    text(fallback_query), {"query": f"%{query_param}%"}
-                )
-
-                for row in fallback_result:
-                    flight = {
-                        "aircraft_id": row.aircraft_id,
-                        "gufi": row.gufi,
-                        "departure_airport": row.departure_airport,
-                        "arrival_airport": row.arrival_airport,
-                        "scheduled_departure": (
-                            row.igtd.isoformat() if row.igtd else None
-                        ),
-                        "scheduled_arrival": None,
+                if row.latitude and row.longitude:
+                    entry["position"] = {
+                        "latitude":  float(row.latitude),
+                        "longitude": float(row.longitude),
+                        "altitude":  row.altitude,
+                        "speed":     row.speed,
+                        "timestamp": row.time_at_position,
                     }
-
-                    # Add position data
-                    if row.latitude and row.longitude:
-                        flight["position"] = {
-                            "latitude": float(row.latitude) if row.latitude else None,
-                            "longitude": (
-                                float(row.longitude) if row.longitude else None
-                            ),
-                            "altitude": row.altitude,
-                            "speed": row.speed,
-                            "timestamp": row.time_at_position,
-                        }
-
-                    flights.append(flight)
+                results.append(entry)
 
             session.close()
-
-            # Return different response format based on search type
-            if query_param:
-                return jsonify(
-                    {"query": query_param, "count": len(flights), "flights": flights}
-                )
-            else:
-                return jsonify({"flights": flights, "count": len(flights)})
+            # Frontend renderResults() expects a plain array
+            return jsonify(results)
 
         except Exception as e:
             logger.error("Error searching flights", exc_info=True)
