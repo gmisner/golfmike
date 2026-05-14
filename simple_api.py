@@ -5,13 +5,20 @@ Simple API endpoints for the frontend - works with existing database structure
 import os
 
 from flask import Flask, jsonify, request
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from sqlalchemy import text
 from utils.logger import main_logger as logger
 import json
 
 from db_config import SessionLocal
+
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    _LIMITER_AVAILABLE = True
+except ImportError:
+    Limiter = None
+    get_remote_address = None
+    _LIMITER_AVAILABLE = False
 
 # ── API key auth ───────────────────────────────────────────────────────────────
 # Set GOLFMIKE_API_KEYS to a comma-separated list of valid bearer tokens.
@@ -32,14 +39,22 @@ def create_simple_api(app: Flask) -> None:
     """Add simple flight tracking endpoints to the Flask app"""
 
     # ── Rate limiter (Redis backend, keyed by API key) ─────────────────────
-    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
-    limiter = Limiter(
-        key_func=lambda: _get_api_key() or get_remote_address(),
-        app=app,
-        storage_uri=redis_url,
-        default_limits=["500/hour", "60/minute"],
-        strategy="fixed-window",
-    )
+    if _LIMITER_AVAILABLE:
+        redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+        limiter = Limiter(
+            key_func=lambda: _get_api_key() or get_remote_address(),
+            app=app,
+            storage_uri=redis_url,
+            default_limits=["500/hour", "60/minute"],
+            strategy="fixed-window",
+        )
+    else:
+        logger.warning("flask_limiter not installed — rate limiting disabled. Run: pip install flask-limiter")
+        # Stub so @limiter.limit() decorators below don't crash
+        class _NoopLimiter:
+            def limit(self, *a, **kw):
+                return lambda f: f
+        limiter = _NoopLimiter()
 
     # ── Auth gate for all /v1/ routes ──────────────────────────────────────
     @app.before_request
