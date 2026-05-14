@@ -19,7 +19,13 @@ import os
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 
-import apprise
+try:
+    import apprise as _apprise_lib
+    _APPRISE_AVAILABLE = True
+except ImportError:
+    _apprise_lib = None
+    _APPRISE_AVAILABLE = False
+
 from sqlalchemy.orm import Session
 
 from models.sqlalchemy.flight_overlay import NotificationSubscriptionDBModel
@@ -28,8 +34,11 @@ from utils.logger import main_logger as logger
 
 # ── Global broadcast channels (from env) ──────────────────────────────────────
 
-def _build_global_apprise() -> apprise.Apprise:
-    ap = apprise.Apprise()
+def _build_global_apprise():
+    if not _APPRISE_AVAILABLE:
+        logger.warning("apprise not installed — notifications disabled. Run: pip install apprise")
+        return None
+    ap = _apprise_lib.Apprise()
     raw = os.getenv("APPRISE_URLS", "")
     for url in (u.strip() for u in raw.split(",") if u.strip()):
         ap.add(url)
@@ -41,7 +50,7 @@ _global_ap = _build_global_apprise()
 
 # ── Core send helpers ─────────────────────────────────────────────────────────
 
-def _send(ap: apprise.Apprise, title: str, body: str) -> bool:
+def _send(ap, title: str, body: str) -> bool:
     if not ap:
         return False
     try:
@@ -175,7 +184,9 @@ def send_flight_event(
         if not _subscription_matches(sub, event_type, event_data):
             continue
 
-        ap = apprise.Apprise()
+        if not _APPRISE_AVAILABLE:
+            continue
+        ap = _apprise_lib.Apprise()
         ap.add(sub.apprise_url)
         sent = _send(ap, title, body)
 
