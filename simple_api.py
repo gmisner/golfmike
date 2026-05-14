@@ -2,29 +2,56 @@
 Simple API endpoints for the frontend - works with existing database structure
 """
 
+import os
+
 from flask import Flask, jsonify, request
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.engine.url import URL
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from sqlalchemy import text
 from utils.logger import main_logger as logger
 import json
 
-# Database connection
-connection_string = URL.create(
-    drivername="postgresql+psycopg2",
-    username="postgres",
-    password="password",
-    host="postgres",
-    port=5432,
-    database="postgres",
-)
+from db_config import SessionLocal
 
-engine = create_engine(connection_string)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# ── API key auth ───────────────────────────────────────────────────────────────
+# Set GOLFMIKE_API_KEYS to a comma-separated list of valid bearer tokens.
+# If the env var is empty or unset all /v1/ requests are rejected.
+_RAW_KEYS = os.getenv("GOLFMIKE_API_KEYS", "")
+_VALID_KEYS: set[str] = {k.strip() for k in _RAW_KEYS.split(",") if k.strip()}
+
+
+def _get_api_key() -> str:
+    """Extract API key from X-API-Key header or ?api_key= query param."""
+    return (
+        request.headers.get("X-API-Key", "")
+        or request.args.get("api_key", "")
+    )
 
 
 def create_simple_api(app: Flask) -> None:
     """Add simple flight tracking endpoints to the Flask app"""
+
+    # ── Rate limiter (Redis backend, keyed by API key) ─────────────────────
+    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+    limiter = Limiter(
+        key_func=lambda: _get_api_key() or get_remote_address(),
+        app=app,
+        storage_uri=redis_url,
+        default_limits=["500/hour", "60/minute"],
+        strategy="fixed-window",
+    )
+
+    # ── Auth gate for all /v1/ routes ──────────────────────────────────────
+    @app.before_request
+    def _require_api_key():
+        if not request.path.startswith("/v1/"):
+            return None
+        if not _VALID_KEYS:
+            return jsonify({"error": "API access not configured — set GOLFMIKE_API_KEYS"}), 503
+        key = _get_api_key()
+        if not key or key not in _VALID_KEYS:
+            return jsonify({"error": "Invalid or missing API key"}), 401
+        return None
 
     @app.route("/home", methods=["GET"])
     def home_page():
@@ -1840,6 +1867,7 @@ def create_simple_api(app: Flask) -> None:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/v1/subscriptions", methods=["POST"])
+    @limiter.limit("10/minute")
     def create_subscription():
         """
         Register a new notification subscription.
@@ -1911,6 +1939,7 @@ def create_simple_api(app: Flask) -> None:
     # ── Flow probability ──────────────────────────────────────────────────────
 
     @app.route("/v1/airports/<icao>/flow-forecast", methods=["GET"])
+    @limiter.limit("30/minute")
     def flow_forecast_single(icao: str):
         """
         Flow control probability for a single airport.
@@ -1936,6 +1965,7 @@ def create_simple_api(app: Flask) -> None:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/v1/airports/flow-forecast", methods=["GET"])
+    @limiter.limit("20/minute")
     def flow_forecast_batch():
         """
         Flow control probability for multiple airports in one call.

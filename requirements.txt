@@ -1,5 +1,7 @@
 # Core web framework
 quart==0.19.4
+flask==3.0.3
+flask-limiter==3.5.0
 
 # Database
 sqlalchemy==2.0.23
