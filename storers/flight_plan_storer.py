@@ -3,6 +3,7 @@ from db_config import SessionLocal
 from models.sqlalchemy.flight_plan import FlightPlanDBModel
 from models.sqlalchemy.aircraft import AircraftDBModel
 from models.pydantic.flight_plan import FlightPlanModel
+from storers.flight_hub import ensure_flight_hub_row
 from utils.logger import main_logger as logger
 from services.route_decoder import decode_route
 from services.route_overlay_service import store_planned_waypoints
@@ -29,6 +30,14 @@ def store_flight_plan(flight_plan: FlightPlanModel):
                 index_elements=["aircraft_id"], set_=update_dict
             )
             session.execute(update_stmt)
+
+            if flight_plan.eramGufi_316a and flight_plan.flightId_02a:
+                ensure_flight_hub_row(
+                    session,
+                    flight_plan.eramGufi_316a,
+                    flight_plan.flightId_02a,
+                    current_status="PLANNED",
+                )
 
             # Store flight plan
             flight_plan_data = flight_plan.dict()

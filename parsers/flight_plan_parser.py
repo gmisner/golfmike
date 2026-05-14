@@ -6,6 +6,7 @@ Parses flight plan XML data from the FDPS Solace queue
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from utils.aircraft_id import normalize_aircraft_id
 from utils.logger import main_logger as logger
 
 try:
@@ -73,7 +74,7 @@ class FlightPlanXMLParser:
 
                 # Extract aircraft ID
                 if tag.endswith("aircraftId"):
-                    flight_plan_data["aircraft_id"] = text.upper()
+                    flight_plan_data["aircraft_id"] = normalize_aircraft_id(text)
 
                 # Extract GUFI
                 elif tag.endswith("gufi"):
@@ -175,15 +176,25 @@ class FlightPlanXMLParser:
 
 
 # Function interface for backward compatibility
-def parse_flight_plan(xml_data: str) -> Optional[Dict[str, Any]]:
+def parse_flight_plan(xml_data) -> Optional[Dict[str, Any]]:
     """
     Parse flight plan XML data - function interface for backward compatibility
+    Handles both bytes and string input (for traffic consumer compatibility)
 
     Args:
-        xml_data: Raw XML string from Solace queue
+        xml_data: Raw XML string or bytes from Solace queue
 
     Returns:
         Dictionary containing parsed flight plan data or None if parsing fails
     """
+    # Convert bytes to string if needed
+    if isinstance(xml_data, bytes):
+        xml_data = xml_data.decode("utf-8")
+
     parser = FlightPlanXMLParser()
-    return parser.parse_flight_plan_xml(xml_data)
+    result = parser.parse_flight_plan_xml(xml_data)
+
+    # Return as list for consistency with other parsers
+    if result:
+        return [result]
+    return []

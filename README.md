@@ -69,7 +69,10 @@ The system uses environment variables for configuration. Key settings:
 - `GET /api/flights/{aircraft_id}/position` - Get current position
 - `GET /api/flights/{aircraft_id}/track` - Get flight track
 - `GET /api/flights/{aircraft_id}/flightplan` - Get flight plan
-- `GET /health` - System health check
+- `GET /api/flights/{aircraft_id}/alerts` - Operational / SWIM alerts for a tail (same filters as `/api/flight-alerts?aircraft_id=`)
+- `GET /api/flight-alerts` - Alerts list; filter by `aircraft_id` (recommended), optional `since` / `until` (ISO), `offset`, `acknowledged`
+- `GET /health` - Liveness (process up)
+- `GET /health/ready` - Readiness (database connection); returns `503` when the DB is unreachable
 
 ## Weather Data
 
@@ -105,7 +108,12 @@ python check_system_status.py
 
 # Test weather API
 python test_weather_api.py
+
+# Audit curated SWIM ingestable samples (strict)
+./tools/audit_ingestable_samples.sh
 ```
+
+See [docs/CI.md](docs/CI.md) for GitHub Actions, branch protection, and database-backed integration tests.
 
 ### Database Management
 

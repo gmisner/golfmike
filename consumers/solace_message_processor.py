@@ -166,6 +166,9 @@ class SolaceMessageProcessor:
         """Main processing loop for handling queued messages"""
         while self.is_running:
             try:
+                # Check if we should resume consumption (queue has space)
+                self.resume_consumption()
+                
                 # Get message from queue with timeout
                 try:
                     message_data = self.processing_queue.get(timeout=1.0)
@@ -234,12 +237,12 @@ class SolaceMessageProcessor:
 
     def resume_consumption(self):
         """Resume message consumption when queue has space"""
-        if (
-            not self.is_consuming
-            and self.processing_queue.qsize() < self.processing_queue_size * 0.8
-        ):
-            self.is_consuming = True
-            logger.info("Resumed message consumption")
+        if not self.is_consuming:
+            queue_size = self.processing_queue.qsize()
+            threshold = int(self.processing_queue_size * 0.8)
+            if queue_size < threshold:
+                self.is_consuming = True
+                logger.info(f"✅ Resumed message consumption (queue: {queue_size}/{self.processing_queue_size}, threshold: {threshold})")
 
     def get_stats(self) -> Dict[str, Any]:
         """Get processing statistics"""
@@ -250,6 +253,7 @@ class SolaceMessageProcessor:
         return {
             **self.stats,
             "queue_size": self.processing_queue.qsize(),
+            "processing_queue_size": self.processing_queue_size,
             "is_consuming": self.is_consuming,
             "uptime": uptime,
             "messages_per_second": (

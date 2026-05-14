@@ -1,70 +1,102 @@
 # swim_data_processor.py
 from lxml import etree
 from parser_storer_registry import get_parser, get_storer
-from typing import Union, Tuple
+from parsers.xml_namespaces import SWIM_NAMESPACES, SWIM_XML_PARSER
+from parsers.nas_message_collection_parser import parse_nas_message_collection
+from utils.tfm_fragment import build_minimal_tfm_data_service
+from typing import Any, List, Optional, Tuple
 from utils.logger import main_logger as logger
+
+NAS_MESSAGE_COLLECTION_NS = "http://www.faa.aero/nas/3.0"
 from sqlalchemy.exc import SQLAlchemyError
-from db_config import SessionLocal  # Import SessionLocal
 from error_handling import (
     retry_with_backoff,
     handle_database_errors,
     track_errors,
-    db_circuit_breaker,
 )
 
-NAMESPACES = {
-    "ds": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
-    "fdm": "urn:us:gov:dot:faa:atm:tfm:flightdata",
-    "nxce": "urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements",
-    "nxcm": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",
-    "ns2": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",
-    "ns4": "urn:us:gov:dot:faa:atm:tfm:ficommondatatypes",
-    "ns3": "urn:us:gov:dot:faa:atm:tfm:flightdata",
-    "ns6": "http://www.fixm.aero/tfm/3.1",
-    "ns5": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
-    "ns8": "http://www.faa.aero/nas/3.1",
-    "ns7": "urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements",
-    "ns13": "urn:us:gov:dot:faa:atm:tfm:rapttimeline",
-    "ns9": "urn:us:gov:dot:faa:atm:tfm:ficommondmessages2",
-    "ns12": "urn:us:gov:dot:faa:atm:tfm:flowinformation",
-    "ns11": "urn:us:gov:dot:faa:atm:tfm:ficommondmessages",
-    "ns10": "urn:us:gov:dot:faa:atm:tfm:tfmrequestreplytypes",
-    "ns16": "http://www.fixm.aero/flight/3.0",
-    "ns15": "http://www.fixm.aero/foundation/3.0",
-    "ns14": "http://www.fixm.aero/base/3.0",
-}
+
+def _fltd_message_elements(root: etree._Element) -> list:
+    return list(root.xpath(".//*[local-name()='fltdMessage']"))
 
 
-def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
+def _data_is_non_empty(data: Any) -> bool:
+    if data is None:
+        return False
+    if isinstance(data, (list, tuple, dict, str, bytes)) and len(data) == 0:
+        return False
+    return True
+
+
+def parse_xml_to_pydantic(
+    xml_string: str,
+) -> Optional[List[Tuple[str, Any]]]:
+    """
+    Parse SWIM/TFM XML into one or more (msgType, parsed_payload) items.
+
+    - MessageCollection (NAS) → a single (NAS_MessageCollection, rows) entry.
+    - TFM with ``fltdMessage`` children: one entry per child with a registered parser
+      (each message parsed against a single-message fragment, so the whole batch is ingested).
+    - Otherwise: legacy single dispatch using the first ``//@msgType`` (TMI, fiOutput, etc.).
+    """
     try:
-        # Convert the XML string to bytes once
         xml_bytes = xml_string.encode("utf-8")
-        logger.debug("Converting XML string to bytes.")
+        root = etree.fromstring(xml_bytes, parser=SWIM_XML_PARSER)
 
-        # Parse the XML with optimized parser
-        parser = etree.XMLParser(recover=True, huge_tree=True)
-        root = etree.fromstring(xml_bytes, parser=parser)
-        logger.debug("Root of XML parsed successfully.")
+        root_q = etree.QName(root)
+        if root_q.localname == "MessageCollection" and root_q.namespace in (
+            NAS_MESSAGE_COLLECTION_NS,
+            None,
+        ):
+            parsed = parse_nas_message_collection(root)
+            if not parsed:
+                logger.debug("NAS MessageCollection produced no track rows")
+                return None
+            return [("NAS_MessageCollection", parsed)]
 
-        # Extract message type from XML with error handling
-        msg_type_elements = root.xpath("//@msgType", namespaces=NAMESPACES)
+        fltds = _fltd_message_elements(root)
+        if fltds:
+            out: List[Tuple[str, Any]] = []
+            for fltd in fltds:
+                mt = fltd.get("msgType")
+                if not mt:
+                    continue
+                p = get_parser(mt)
+                if not p:
+                    logger.debug("No parser registered for msgType: {}", mt)
+                    continue
+                subroot = build_minimal_tfm_data_service(root, fltd)
+                try:
+                    parsed = p(subroot)
+                except Exception as e:
+                    logger.error(
+                        "Parser failed for msgType={}: {} (excerpt: {})",
+                        mt,
+                        e,
+                        str(etree.tostring(subroot)[:200]),
+                    )
+                    continue
+                if not _data_is_non_empty(parsed):
+                    continue
+                out.append((mt, parsed))
+            return out or None
+
+        # Legacy: no fltdMessage (e.g. TMI in fiOutput) — one dispatch on first @msgType
+        msg_type_elements = root.xpath("//@msgType", namespaces=SWIM_NAMESPACES)
         if not msg_type_elements:
-            logger.error("No msgType attribute found in XML")
+            logger.debug("No msgType attribute found in XML")
             return None
 
         msg_type = msg_type_elements[0]
-        logger.debug(f"Extracted message type: {msg_type}")
-
-        # Get the appropriate parser function based on message type
         parser_func = get_parser(msg_type)
         if not parser_func:
-            logger.error(f"No parser registered for message type: {msg_type}")
+            logger.debug("No parser registered for message type: {}", msg_type)
             return None
 
-        logger.debug(f"Using parser function: {parser_func}")
-        parsed_data = parser_func(xml_bytes)
-        logger.debug(f"Parsed data successfully for message type: {msg_type}")
-        return msg_type, parsed_data
+        parsed_data = parser_func(root)
+        if not _data_is_non_empty(parsed_data):
+            return None
+        return [(msg_type, parsed_data)]
 
     except etree.XMLSyntaxError as e:
         logger.error(f"XML syntax error: {e}")
@@ -80,46 +112,36 @@ def parse_xml_to_pydantic(xml_string: str) -> Union[Tuple[str, list], None]:
 @handle_database_errors
 @track_errors("database_operation")
 def parse_and_store_to_database(xml_string: str) -> bool:
-    logger.debug("Starting parse_and_store_to_database function.")
-    session = None
+    """Parse XML and store each (msgType, data) with the matching storer (own DB session)."""
     try:
-        # Parse XML first to avoid unnecessary database connection
-        parsed_data = parse_xml_to_pydantic(xml_string)
-        if parsed_data is None:
-            logger.error("Failed to parse XML data.")
+        parsed_list = parse_xml_to_pydantic(xml_string)
+        if not parsed_list:
+            logger.debug(
+                "Failed to parse XML data (may be expected for some message types)"
+            )
             return False
 
-        msg_type, data = parsed_data
-        logger.debug(f"Parsed data for message type: {msg_type}")
+        any_ok = False
+        for msg_type, data in parsed_list:
+            storer_func = get_storer(msg_type)
+            if not storer_func:
+                logger.debug("No storer registered for message type: {}", msg_type)
+                continue
+            if not _data_is_non_empty(data):
+                continue
+            try:
+                storer_func(data, session=None)
+                logger.info("Successfully stored {} (batch part)", msg_type)
+                any_ok = True
+            except SQLAlchemyError as e:
+                logger.error(
+                    f"Database error storing {msg_type} message: {e}", exc_info=True
+                )
+            except Exception as e:
+                logger.error(f"Error storing {msg_type} message: {e}", exc_info=True)
 
-        # Get the appropriate storer function based on message type
-        storer_func = get_storer(msg_type)
-        if not storer_func:
-            logger.error(f"No storer registered for message type: {msg_type}")
-            return False
-
-        # Use circuit breaker for database operations
-        def _store_data():
-            nonlocal session
-            session = SessionLocal()
-            logger.debug("Database session created.")
-
-            # Pass the session and data to the storer function
-            logger.debug("Storing data to database.")
-            storer_func(data, session=session)
-            session.commit()
-            logger.info(f"Stored data successfully for message type: {msg_type}")
-            return True
-
-        return db_circuit_breaker.call(_store_data)
+        return any_ok
 
     except Exception as e:
-        logger.error(
-            f"Unexpected error occurred during parse_and_store_to_database: {e}",
-            exc_info=True,
-        )
+        logger.error(f"Error in parse_and_store_to_database: {e}", exc_info=True)
         return False
-    finally:
-        if session:
-            session.close()
-        logger.debug("Finished parse_and_store_to_database function.")

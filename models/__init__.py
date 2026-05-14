@@ -1,10 +1,30 @@
 # models/__init__.py
 from models.sqlalchemy.aircraft import AircraftDBModel
+from models.sqlalchemy.flight_core import (
+    FlightsDBModel,
+    RouteAssignmentDBModel,
+    RouteWaypointDBModel,
+    FlightAlertDBModel,
+)
+from models.sqlalchemy.flight_events import (
+    FlightEventsDBModel,
+    TrackUpdatesDBModel,
+    AircraftProfilesDBModel,
+    FlightRoutesDBModel,
+)
 from models.sqlalchemy.flight_plan import FlightPlanDBModel
 from models.sqlalchemy.tmi_updates import TmiUpdatesDBModel
 from models.sqlalchemy.track_information import TrackInformationDBModel
 from models.sqlalchemy.status import StatusDBModel
 from models.sqlalchemy.fxa_flight import FxaFlightDBModel
+from models.sqlalchemy.weather import (
+    METARData,
+    NOTAMData,
+    TAFData,
+    WeatherAlert,
+    WeatherObservation,
+    WeatherStation,
+)
 from .base import Base
 from .pydantic.flight_plan import FlightPlanModel
 from .pydantic.tmi_updates import TmiUpdatesModel
@@ -17,6 +37,14 @@ from .pydantic.tmi_flight_list import TMIFlightListModel
 
 __all__ = [
     "AircraftDBModel",
+    "FlightsDBModel",
+    "RouteAssignmentDBModel",
+    "RouteWaypointDBModel",
+    "FlightAlertDBModel",
+    "FlightEventsDBModel",
+    "TrackUpdatesDBModel",
+    "AircraftProfilesDBModel",
+    "FlightRoutesDBModel",
     "TmiUpdatesDBModel",
     "FxaUpdatesDBModel",
     "FlightPlanDBModel",

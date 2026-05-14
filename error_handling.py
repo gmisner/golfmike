@@ -23,7 +23,8 @@ class CircuitBreaker:
                 self.state = "HALF_OPEN"
                 logger.info("Circuit breaker transitioning to HALF_OPEN state")
             else:
-                raise Exception("Circuit breaker is OPEN - service unavailable")
+                time_remaining = self.recovery_timeout - (time.time() - self.last_failure_time)
+                raise Exception(f"Circuit breaker is OPEN - service unavailable (recovery in {time_remaining:.1f}s)")
 
         try:
             result = func(*args, **kwargs)
@@ -31,6 +32,8 @@ class CircuitBreaker:
                 self.state = "CLOSED"
                 self.failure_count = 0
                 logger.info("Circuit breaker reset to CLOSED state")
+            # Reset failure count on success
+            self.failure_count = 0
             return result
         except Exception as e:
             self.failure_count += 1
@@ -43,6 +46,23 @@ class CircuitBreaker:
                 )
 
             raise e
+    
+    def reset(self):
+        """Manually reset the circuit breaker to CLOSED state."""
+        self.state = "CLOSED"
+        self.failure_count = 0
+        self.last_failure_time = None
+        logger.info("Circuit breaker manually reset to CLOSED state")
+    
+    def get_state(self) -> dict:
+        """Get current circuit breaker state."""
+        return {
+            "state": self.state,
+            "failure_count": self.failure_count,
+            "failure_threshold": self.failure_threshold,
+            "last_failure_time": self.last_failure_time,
+            "recovery_timeout": self.recovery_timeout,
+        }
 
 
 # Global circuit breakers for different services

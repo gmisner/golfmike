@@ -1,35 +1,13 @@
 from typing import List
 from lxml import etree
 from models.pydantic.flight_sectors import FlightSectorsModel
+from parsers.xml_namespaces import SWIM_NAMESPACES as NAMESPACES
 from utils.logger import main_logger as logger
 
-NAMESPACES = {
-    "ds": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
-    "fdm": "urn:us:gov:dot:faa:atm:tfm:flightdata",
-    "nxce": "urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements",
-    "nxcm": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",
-    "ns2": "urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages",
-    "ns4": "urn:us:gov:dot:faa:atm:tfm:ficommondatatypes",
-    "ns3": "urn:us:gov:dot:faa:atm:tfm:flightdata",
-    "ns6": "http://www.fixm.aero/tfm/3.1",
-    "ns5": "urn:us:gov:dot:faa:atm:tfm:tfmdataservice",
-    "ns8": "http://www.faa.aero/nas/3.1",
-    "ns7": "urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements",
-    "ns13": "urn:us:gov:dot:faa:atm:tfm:rapttimeline",
-    "ns9": "urn:us:gov:dot:faa:atm:tfm:ficommonmessages2",
-    "ns12": "urn:us:gov:dot:faa:atm:tfm:flowinformation",
-    "ns11": "urn:us:gov:dot:faa:atm:tfm:ficommonmessages",
-    "ns10": "urn:us:gov:dot:faa:atm:tfm:tfmrequestreplytypes",
-    "ns16": "http://www.fixm.aero/foundation/3.0",
-    "ns15": "http://www.fixm.aero/base/3.0",
-    "ns14": "http://www.fixm.aero/flight/3.0",
-}
 
-
-def parse_flight_sectors(xml_data: bytes) -> List[FlightSectorsModel]:
-    """Parses airspace assignment XML data."""
+def parse_flight_sectors(root: etree._Element) -> List[FlightSectorsModel]:
+    """Parses airspace assignment XML from an already-parsed root."""
     try:
-        root = etree.fromstring(xml_data)
         flight_sectors = []
 
         for message in root.findall(".//fdm:fltdMessage", namespaces=NAMESPACES):

@@ -1,16 +1,19 @@
 # syntax=docker/dockerfile:1.2
+# Do not pin --platform here: docker compose's service `platform:` selects the
+# correct arch (arm64 on Apple Silicon vs amd64). A hardcoded amd64 base forced
+# emulation and very slow builds on arm64 hosts.
 ARG VARIANT="3.10"
-ARG arch="amd64"
 
-FROM --platform=linux/${arch} mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT} AS final-stage
+FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
 
 WORKDIR /workspace
 
 # Use root user to copy files and set permissions
 USER root
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (drop Yarn apt repo from base image if present — stale key breaks apt-get update)
+RUN rm -f /etc/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/yarn*.list 2>/dev/null || true \
+    && apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     libpq-dev \
     gcc \

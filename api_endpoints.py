@@ -13,12 +13,16 @@ from models.sqlalchemy.flight_events import (
 )
 from models.sqlalchemy.aircraft import AircraftDBModel
 from models.sqlalchemy.flight_plan import FlightPlanDBModel
+from utils.aircraft_id import normalize_aircraft_id
 from utils.logger import main_logger as logger
 from typing import Dict, List, Any
 import json
 
 
 def create_flight_tracking_api(app: Flask) -> None:
+    def _normalize_lookup_aircraft_id(raw: str | None) -> str:
+        return normalize_aircraft_id(raw) or ""
+
     """Add flight tracking endpoints to the Flask app"""
 
     @app.route("/api/flights/current", methods=["GET"])
@@ -69,10 +73,15 @@ def create_flight_tracking_api(app: Flask) -> None:
         try:
             session = SessionLocal()
 
+            aid = _normalize_lookup_aircraft_id(aircraft_id)
+            if not aid:
+                session.close()
+                return jsonify({"error": "Aircraft not found"}), 404
+
             # Get latest position
             latest_track = (
                 session.query(TrackUpdatesDBModel)
-                .filter(TrackUpdatesDBModel.aircraft_id == aircraft_id)
+                .filter(TrackUpdatesDBModel.aircraft_id == aid)
                 .order_by(TrackUpdatesDBModel.time_at_position.desc())
                 .first()
             )
@@ -106,13 +115,18 @@ def create_flight_tracking_api(app: Flask) -> None:
         try:
             session = SessionLocal()
 
+            aid = _normalize_lookup_aircraft_id(aircraft_id)
+            if not aid:
+                session.close()
+                return jsonify({"aircraft_id": "", "tracks": []})
+
             # Get track history (last 24 hours by default)
             hours_back = request.args.get("hours", 24, type=int)
 
             tracks = (
                 session.query(TrackUpdatesDBModel)
                 .filter(
-                    TrackUpdatesDBModel.aircraft_id == aircraft_id,
+                    TrackUpdatesDBModel.aircraft_id == aid,
                     TrackUpdatesDBModel.time_at_position
                     >= func.now() - func.interval(f"{hours_back} hours"),
                 )
@@ -134,7 +148,7 @@ def create_flight_tracking_api(app: Flask) -> None:
                 )
 
             session.close()
-            return jsonify({"aircraft_id": aircraft_id, "tracks": track_data})
+            return jsonify({"aircraft_id": aid, "tracks": track_data})
 
         except Exception as e:
             logger.error(f"Error getting aircraft track: {e}", exc_info=True)
@@ -146,17 +160,22 @@ def create_flight_tracking_api(app: Flask) -> None:
         try:
             session = SessionLocal()
 
+            aid = _normalize_lookup_aircraft_id(aircraft_id)
+            if not aid:
+                session.close()
+                return jsonify({"error": "Aircraft not found"}), 404
+
             # Get flight plan
             flight_plan = (
                 session.query(FlightPlanDBModel)
-                .filter(FlightPlanDBModel.aircraft_id == aircraft_id)
+                .filter(FlightPlanDBModel.aircraft_id == aid)
                 .first()
             )
 
             # Get recent events
             events = (
                 session.query(FlightEventsDBModel)
-                .filter(FlightEventsDBModel.aircraft_id == aircraft_id)
+                .filter(FlightEventsDBModel.aircraft_id == aid)
                 .order_by(FlightEventsDBModel.event_timestamp.desc())
                 .limit(10)
                 .all()
@@ -165,12 +184,12 @@ def create_flight_tracking_api(app: Flask) -> None:
             # Get aircraft profile
             profile = (
                 session.query(AircraftProfilesDBModel)
-                .filter(AircraftProfilesDBModel.aircraft_id == aircraft_id)
+                .filter(AircraftProfilesDBModel.aircraft_id == aid)
                 .first()
             )
 
             status_data = {
-                "aircraft_id": aircraft_id,
+                "aircraft_id": aid,
                 "flight_plan": (
                     {
                         "gufi": flight_plan.gufi if flight_plan else None,

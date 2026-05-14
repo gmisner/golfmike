@@ -1,164 +1,109 @@
 # Docker Setup Guide for GolfMike
 
+There are two Compose setups:
+
+| Use case | Compose file(s) | Notes |
+|----------|-----------------|--------|
+| **VS Code / Cursor devcontainer** | `.devcontainer/docker-compose.yml` | Bind-mounts repo, `golfmike-dev` service, watches for Python changes. |
+| **Production-style / Portainer** | `docker-compose.yml` (optional `docker-compose.build.yml` locally) | App runs from image `GOLFMIKE_IMAGE` (GHCR or locally built). |
+
+**Container naming:** services `redis` and `postgres` keep short DNS names inside the stack; **container names** use the `golfmike-*` prefix (for example `golfmike-web-api`, `golfmike-redis`, `golfmike-celery-1`, `golfmike-traffic-consumer`).
+
 ## Prerequisites
-1. Docker Desktop must be running
-2. All dependencies are configured in the Docker containers
 
-## Quick Start
+1. Docker Engine 24+ and Docker Compose v2 (plugin: `docker compose`).
+2. For the devcontainer stack: Docker Desktop or equivalent with sufficient memory.
 
-### 1. Start Docker Desktop
-- Open Docker Desktop from Applications
-- Wait for it to fully start (you'll see the Docker icon in your menu bar)
-- Make sure it shows "Docker Desktop is running"
+## Quick start — devcontainer stack
 
-### 2. Build and Run the System
+From the **repository root**:
+
 ```bash
-# Navigate to your project directory
-cd /Users/gmisner/Documents/GolfMike
-
-# Build and start all services
-docker-compose -f .devcontainer/docker-compose.yml up --build -d
-
-# Check if all containers are running
-docker-compose -f .devcontainer/docker-compose.yml ps
-
-# View logs
-docker-compose -f .devcontainer/docker-compose.yml logs -f
+docker compose -f .devcontainer/docker-compose.yml up --build -d
+docker compose -f .devcontainer/docker-compose.yml ps
+docker compose -f .devcontainer/docker-compose.yml logs -f
 ```
 
-### 3. Access the Services
+Stop:
 
-#### Web API
-- **URL**: http://localhost:5500
-- **Endpoints**:
-  - `GET /health` - System health check
-  - `GET /metrics` - System metrics
-  - `GET /stats` - Processing statistics
-  - `POST /process` - Process XML data
-  - `GET /result/<task_id>` - Get task result
-
-#### Flower (Celery Monitoring)
-- **URL**: http://localhost:5555
-- **Purpose**: Monitor Celery tasks and workers
-
-#### Database
-- **Host**: localhost
-- **Port**: 15432
-- **Database**: postgres
-- **Username**: postgres
-- **Password**: password
-
-#### Redis
-- **Host**: localhost
-- **Port**: 6379
-
-### 4. Test the System
-
-#### Test the API
 ```bash
-# Health check
-curl http://localhost:5500/health
-
-# Get metrics
-curl http://localhost:5500/metrics
-
-# Get stats
-curl http://localhost:5500/stats
+docker compose -f .devcontainer/docker-compose.yml down
+# Remove DB volume (destructive):
+docker compose -f .devcontainer/docker-compose.yml down -v
 ```
 
-#### Test Celery Workers
-```bash
-# Check worker status
-docker-compose -f .devcontainer/docker-compose.yml exec celery_worker celery -A celery_app inspect active
+## Quick start — root stack (local build)
 
-# Check queues
-docker-compose -f .devcontainer/docker-compose.yml exec celery_worker celery -A celery_app inspect stats
+Build the app image from the repo `Dockerfile`, then start all services:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
 ```
 
-### 5. Monitor the System
+## Quick start — Portainer + GHCR
 
-#### View Logs
+1. Enable **GitHub Actions** for the repo and allow `GITHUB_TOKEN` **write** for packages (Settings → Actions → General → Workflow permissions → *Read and write permissions*).
+
+2. Push to `main`. Workflow **Publish Docker image to GHCR** builds and pushes to  
+   `ghcr.io/<lowercase-github-owner>/<lowercase-repo>` with tags `latest` (on main) and a git-SHA tag.
+
+3. In GitHub → Packages, ensure the package is visible to your Portainer host (public, or add pull credentials).
+
+4. In Portainer: **Stacks** → add stack from **Git**; set Compose path to **`docker-compose.yml`**.
+
+5. Under **Environment**, set at least:
+
+   - `GOLFMIKE_IMAGE=ghcr.io/your-org/your-repo:latest` (use your real lowercase path)
+   - `POSTGRES_PASSWORD` (strong value; must match what the app uses — see `db_config.py`)
+
+See `.env.example` for all variables.
+
+**Optional:** add repository secret `PORTAINER_WEBHOOK_URL` (Portainer stack webhook). After each successful push to `main`, the workflow POSTs to it so the stack can redeploy.
+
+**Do not** attach `docker-compose.build.yml` in Portainer when using a pre-built GHCR image.
+
+## Accessing services
+
+### Web API
+
+- URL: http://localhost:5500
+- Health: `GET /health`
+
+### Flower (Celery)
+
+- URL: http://localhost:5555 (when Flower service is running)
+
+### PostgreSQL (devcontainer stack)
+
+- Host: localhost  
+- Port: **15432** (mapped to container 5432)  
+- User / password / DB: see compose `postgres` service (defaults often `postgres` / `password`).
+
+### Redis
+
+- Devcontainer stack exposes **6379** on localhost.
+
+### Root `docker-compose.yml`
+
+- Postgres and Redis are **not** published to the host by default (only app ports from `GOLFMIKE_WEB_PORT` / `GOLFMIKE_FLOWER_PORT`). Access from other containers via hostnames `postgres` and `redis`.
+
+## Useful commands (devcontainer file)
+
 ```bash
-# All services
-docker-compose -f .devcontainer/docker-compose.yml logs -f
-
-# Specific service
-docker-compose -f .devcontainer/docker-compose.yml logs -f celery_worker
-
-# Web API
-docker-compose -f .devcontainer/docker-compose.yml logs -f web_api
-```
-
-#### Check Resource Usage
-```bash
-# Container stats
-docker stats
-
-# Specific container
-docker stats golfmike-api
-```
-
-### 6. Stop the System
-```bash
-# Stop all services
-docker-compose -f .devcontainer/docker-compose.yml down
-
-# Stop and remove volumes (WARNING: This will delete database data)
-docker-compose -f .devcontainer/docker-compose.yml down -v
+docker compose -f .devcontainer/docker-compose.yml exec celery_worker celery -A celery_app inspect active
+docker compose -f .devcontainer/docker-compose.yml logs -f web_api
+docker stats golfmike-web-api
 ```
 
 ## Troubleshooting
 
-### Docker Desktop Issues
-1. **Docker not starting**: Restart Docker Desktop
-2. **Permission issues**: Make sure Docker Desktop has proper permissions
-3. **Resource issues**: Increase Docker Desktop memory allocation in settings
+- **Build failures:** check `Dockerfile` and `requirements.txt` (root: runtime deps; devcontainer may use `.devcontainer/requirements.txt`).
+- **Portainer pull errors:** verify `GOLFMIKE_IMAGE`, registry auth, and package visibility.
+- **DB auth errors:** `POSTGRES_*` env vars must match in the `postgres` service and all app services.
 
-### Container Issues
-1. **Build failures**: Check Dockerfile and requirements.txt
-2. **Connection issues**: Ensure all services are running
-3. **Database issues**: Check PostgreSQL container logs
+## Architecture overview
 
-### Common Commands
-```bash
-# Rebuild specific service
-docker-compose -f .devcontainer/docker-compose.yml up --build celery_worker
-
-# Restart specific service
-docker-compose -f .devcontainer/docker-compose.yml restart celery_worker
-
-# Execute command in running container
-docker-compose -f .devcontainer/docker-compose.yml exec celery_worker bash
-
-# View container logs
-docker logs <container_name>
-```
-
-## Architecture Overview
-
-The system consists of:
-- **4 Celery Workers**: Process XML messages from FAA SWIM
-- **1 Web API**: Provides REST endpoints for monitoring and task management
-- **1 PostgreSQL Database**: Stores processed flight data
-- **1 Redis**: Message broker for Celery
-- **1 Flower**: Web UI for monitoring Celery tasks
-
-## Performance Optimizations Applied
-
-1. **Database Connection Pooling**: Optimized for 4 workers
-2. **Celery Configuration**: Enhanced for better throughput
-3. **XML Parsing**: Cached parsers and optimized parsing
-4. **Error Handling**: Circuit breakers and retry mechanisms
-5. **Monitoring**: Comprehensive health checks and metrics
-6. **Resource Limits**: Proper memory and CPU limits for containers
-
-## Next Steps
-
-1. Start Docker Desktop
-2. Run the build command
-3. Test the health endpoint
-4. Monitor the Flower dashboard
-5. Start processing FAA SWIM data
-
-
-
+- **Celery workers:** process background tasks (multiple workers in devcontainer compose).
+- **Web API:** Flask app in `app_flask.py`.
+- **PostgreSQL / Redis:** data and Celery broker.
+- **Consumers:** e.g. `traffic_consumer`, `weather_consumer`, `fdps_tfm_consumer` (see root `docker-compose.yml`).

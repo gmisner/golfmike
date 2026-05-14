@@ -1,3 +1,5 @@
+name: golfmike
+
 networks:
   golfmike_network:
     name: golfmike_network
@@ -6,7 +8,7 @@ networks:
 services:
   # Redis service for message brokering - optimized
   redis:
-    container_name: redis
+    container_name: golfmike-redis
     image: redis:7-alpine  # Use latest stable Redis with Alpine
     ports:
       - "6379:6379"
@@ -32,7 +34,7 @@ services:
   postgres:
     platform: linux/arm64
     image: postgres:15-alpine  # Use Alpine variant for smaller size
-    container_name: postgres
+    container_name: golfmike-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: "postgres"
@@ -55,7 +57,7 @@ services:
     ]
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /Users/gmisner/Documents/GolfMike/initdb:/docker-entrypoint-initdb.d
+      - ../initdb:/docker-entrypoint-initdb.d
     ports:
       - "15432:5432"
     healthcheck:
@@ -78,7 +80,7 @@ services:
   db_init:
     platform: linux/arm64
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -87,7 +89,7 @@ services:
       - PATH=/home/vscode/.local/bin:$PATH
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && python -c 'from db_config import init_db; init_db()'"
     user: "vscode"
     depends_on:
@@ -100,9 +102,9 @@ services:
   # Web API service - optimized
   web_api:
     platform: linux/arm64
-    container_name: golfmike-api
+    container_name: golfmike-web-api
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -113,7 +115,7 @@ services:
       - FLASK_DEBUG=False
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && python app_flask.py"
     user: "vscode"
     ports:
@@ -141,9 +143,9 @@ services:
   # Celery worker service - optimized with better resource management
   celery_worker:
     platform: linux/arm64
-    container_name: veggie-1
+    container_name: golfmike-celery-1
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -158,7 +160,7 @@ services:
       - CELERY_WORKER_DISABLE_RATE_LIMITS=True
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --optimization=fair"
     user: "vscode"
     deploy:
@@ -179,9 +181,9 @@ services:
   # Second Celery worker - optimized
   celery_worker_2:
     platform: linux/arm64
-    container_name: veggie-2
+    container_name: golfmike-celery-2
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -196,7 +198,7 @@ services:
       - CELERY_WORKER_DISABLE_RATE_LIMITS=True
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q weather_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --optimization=fair"
     user: "vscode"
     deploy:
@@ -214,11 +216,12 @@ services:
       - golfmike_network
     restart: unless-stopped
 
-  # Solace consumer service - optimized
-  bigtitties:
+  # Solace consumer wrapper (optional; legacy path — prefer traffic_consumer in main compose)
+  solace_wrapper:
+    container_name: golfmike-solace-wrapper
     platform: linux/arm64
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -227,7 +230,7 @@ services:
       - PATH=/home/vscode/.local/bin:$PATH
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && python solace_consumer_wrapper.py"
     user: "vscode"
     depends_on:
@@ -248,7 +251,7 @@ services:
   # Flower service for monitoring - optimized
   flower:
     image: mher/flower:latest
-    container_name: flower-pot
+    container_name: golfmike-flower
     platform: linux/arm64
     command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555", "--basic_auth=admin:password"]
     ports:

@@ -1,23 +1,56 @@
+# Project name: container prefix is golfmike-<service>.1 unless container_name is set.
+# Do not set devcontainer.json "runServices" to a short list here: consumers + Celery need to run to ingest data.
+# When web_api runs, host URL uses GOLFMIKE_WEB_PORT (default 5501) -> container 5500.
+name: golfmike
+
 networks:
   golfmike_network:
     name: golfmike_network
     driver: bridge
 
 # Centralized logging configuration
+# All services use this configuration for consistent log management
 x-logging: &default-logging
   driver: "json-file"
   options:
-    max-size: "10m"
-    max-file: "3"
-    labels: "service"
+    max-size: "50m"  # Increased for better troubleshooting
+    max-file: "5"    # Keep more log files
+    labels: "service,environment"
+    tag: "{{.Name}}"  # Tag logs with container name
 
 services:
+  # Devcontainer service for VS Code/Cursor development
+  golfmike-dev:
+    platform: linux/arm64
+    container_name: golfmike-dev
+    image: golfmike-dev:arm64
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    user: "vscode"
+    command: sleep infinity  # Keep container running for devcontainer attachment
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    logging: *default-logging
+
   # Celery worker service to process background tasks
   celery_worker:
     platform: linux/arm64  # Specify the platform for compatibility
-    container_name: veggie-1
+    image: golfmike-dev:arm64
+    container_name: golfmike-celery-1
     build:
-      context: /Users/gmisner/Documents/GolfMike  # Build context for Dockerfile
+      context: ..  # Build context for Dockerfile
       dockerfile: .devcontainer/Dockerfile  # Path to Dockerfile
       args:
         VARIANT: "3.10"  # Python version to use in the container
@@ -29,8 +62,8 @@ services:
       - CELERY_WORKER_CONCURRENCY=2  # Limit concurrency per worker
     working_dir: /workspace  # Set working directory inside the container
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"  # Optimized worker settings
+      - ..:/workspace  # Mount local directory to container workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --hostname=golfmike-celery-1@%h' ."
     user: "vscode"  # Run the container as user "vscode"
     logging: *default-logging
     deploy:
@@ -49,9 +82,10 @@ services:
   # Add another Celery Worker
   celery_worker_2:
     platform: linux/arm64
-    container_name: veggie-2
+    image: golfmike-dev:arm64
+    container_name: golfmike-celery-2
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -63,8 +97,8 @@ services:
       - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --hostname=golfmike-celery-2@%h' ."
     user: "vscode"
     logging: *default-logging
     deploy:
@@ -83,9 +117,10 @@ services:
   # Add another Celery Worker
   celery_worker_3:
     platform: linux/arm64
-    container_name: veggie-3
+    image: golfmike-dev:arm64
+    container_name: golfmike-celery-3
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -97,8 +132,8 @@ services:
       - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --hostname=golfmike-celery-3@%h' ."
     user: "vscode"
     logging: *default-logging
     deploy:
@@ -117,9 +152,10 @@ services:
   # Add another Celery Worker
   celery_worker_4:
     platform: linux/arm64
-    container_name: veggie-4
+    image: golfmike-dev:arm64
+    container_name: golfmike-celery-4
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -131,8 +167,8 @@ services:
       - CELERY_WORKER_CONCURRENCY=2
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000"
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'celery -A celery_app worker -Q solace,message_processing --loglevel=info --concurrency=2 --max-tasks-per-child=1000 --hostname=golfmike-celery-4@%h' ."
     user: "vscode"
     logging: *default-logging
     deploy:
@@ -151,23 +187,26 @@ services:
   # Web API service
   web_api:
     platform: linux/arm64
-    container_name: golfmike-api
+    image: golfmike-dev:arm64
+    container_name: golfmike-web-api
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      # Werkzeug reloader + bind-mounted /workspace causes endless reloads and dropped HTTP connections.
+      - FLASK_USE_RELOADER=0
     logging: *default-logging
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
+      - ..:/workspace
     command: /bin/bash -c "cd /workspace && python app_flask.py"
     user: "vscode"
     ports:
-      - "5500:5500"
+      - "${GOLFMIKE_WEB_PORT:-5500}:5500"
     deploy:
       resources:
         limits:
@@ -184,9 +223,9 @@ services:
   # Flower service for monitoring Celery tasks
   flower:
     image: mher/flower:latest
-    container_name: flower-pot
+    container_name: golfmike-flower
     platform: linux/arm64  # Specify the platform for compatibility
-    command: ["/bin/sh", "-c", "celery --broker=redis://redis:6379/0 flower --debug"]  # Use /bin/sh to ensure command runs properly
+    command: ["celery", "flower", "--broker=redis://redis:6379/0", "--port=5555", "--address=0.0.0.0"]
     ports:
       - "5555:5555"  # Expose Flower's web UI on port 5555
     depends_on:
@@ -194,10 +233,13 @@ services:
       - celery_worker  # Ensure Celery worker starts before Flower
     networks:
       - golfmike_network
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
 
   # Redis service for message brokering
   redis:
-    container_name: redis
+    container_name: golfmike-redis
     image: redis:alpine  # Use a lightweight Redis image
     ports:
       - "6379:6379"  # Expose Redis on port 6379
@@ -216,7 +258,7 @@ services:
   postgres:
     platform: linux/arm64
     image: postgres:15
-    container_name: postgres
+    container_name: golfmike-postgres
     restart: always
     environment:
       POSTGRES_USER: "postgres"
@@ -225,7 +267,7 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /Users/gmisner/Documents/GolfMike/initdb:/docker-entrypoint-initdb.d
+      - ../initdb:/docker-entrypoint-initdb.d
     ports:
       - "15432:5432"
     healthcheck:
@@ -239,8 +281,10 @@ services:
   # Database initialization service
   db_init:
     platform: linux/amd64  # Specify the platform for compatibility
+    container_name: golfmike-db-init
+    image: golfmike-dev:amd64
     build:
-      context: /Users/gmisner/Documents/GolfMike  # Build context for Dockerfile
+      context: ..  # Build context for Dockerfile
       dockerfile: .devcontainer/Dockerfile  # Path to Dockerfile
       args:
         VARIANT: "3.10"  # Python version to use in the container
@@ -249,7 +293,7 @@ services:
       - PATH=/home/vscode/.local/bin:$PATH  # Add local bin to PATH
     working_dir: /workspace  # Set working directory inside the container
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace  # Mount local directory to container workspace
+      - ..:/workspace  # Mount local directory to container workspace
     command: /bin/bash -c "cd /workspace && python -c 'from db_config import init_db; init_db()'"  # Command to initialize the database
     user: "vscode"  # Run the container as user "vscode"
     depends_on:
@@ -261,8 +305,10 @@ services:
   # Traffic Consumer (TFM)
   traffic_consumer:
     platform: linux/amd64
+    container_name: golfmike-traffic-consumer
+    image: golfmike-dev:amd64
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -271,8 +317,35 @@ services:
       - PATH=/home/vscode/.local/bin:$PATH
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && python consumers/traffic_consumer.py"
+      - ..:/workspace
+    # watchfiles: restart on .py changes (same idea as Flask debug reloader on web_api)
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'python consumers/traffic_consumer.py' ."
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+  # FDPS TFM consumer (additional FDPS queue: TFMData / fltdOutput style XML)
+  fdps_tfm_consumer:
+    platform: linux/amd64
+    container_name: golfmike-fdps-tfm-consumer
+    image: golfmike-dev:amd64
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'python consumers/fdps_tfm_consumer.py' ."
     user: "vscode"
     depends_on:
       - redis
@@ -285,8 +358,10 @@ services:
   # Weather Consumer (ITWS)
   weather_consumer:
     platform: linux/amd64
+    container_name: golfmike-weather-consumer
+    image: golfmike-dev:amd64
     build:
-      context: /Users/gmisner/Documents/GolfMike
+      context: ..
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
@@ -295,8 +370,8 @@ services:
       - PATH=/home/vscode/.local/bin:$PATH
     working_dir: /workspace
     volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && python consumers/weather_consumer.py"
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'python consumers/weather_consumer.py' ."
     user: "vscode"
     depends_on:
       - redis
@@ -306,29 +381,37 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
-  # Flight Plan Consumer (FDPS)
-  flight_plan_consumer:
-    platform: linux/amd64
-    build:
-      context: /Users/gmisner/Documents/GolfMike
-      dockerfile: .devcontainer/Dockerfile
-      args:
-        VARIANT: "3.10"
-    environment:
-      - PYTHONPATH=/workspace
-      - PATH=/home/vscode/.local/bin:$PATH
-    working_dir: /workspace
-    volumes:
-      - /Users/gmisner/Documents/GolfMike:/workspace
-    command: /bin/bash -c "cd /workspace && python consumers/flight_plan_consumer.py"
-    user: "vscode"
-    depends_on:
-      - redis
-      - postgres
-    networks:
-      - golfmike_network
-    restart: unless-stopped
-    logging: *default-logging
+  # Flight Plan Consumer (FDPS) - DISABLED
+  # Flight plan messages are now handled by the traffic consumer
+  # The traffic consumer processes all message types including:
+  # - flightPlanInformation
+  # - FlightCreate
+  # - HCS_FLIGHT_PLAN_MSG
+  # - FD_FLIGHT_CREATE_MSG
+  # - IADE_FLIGHT_PLAN_MSG
+  # Uncomment below if you need a separate consumer for FDPS queue
+  # flight_plan_consumer:
+  #   platform: linux/amd64
+  #   build:
+  #     context: ..
+  #     dockerfile: .devcontainer/Dockerfile
+  #     args:
+  #       VARIANT: "3.10"
+  #   environment:
+  #     - PYTHONPATH=/workspace
+  #     - PATH=/home/vscode/.local/bin:$PATH
+  #   working_dir: /workspace
+  #   volumes:
+  #     - ..:/workspace
+  #   command: /bin/bash -c "cd /workspace && python consumers/flight_plan_consumer.py"
+  #   user: "vscode"
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #   networks:
+  #     - golfmike_network
+  #   restart: unless-stopped
+  #   logging: *default-logging
 
 volumes:
   postgres_data:

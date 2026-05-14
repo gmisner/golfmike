@@ -16,7 +16,7 @@ Your optimized GolfMike FAA SWIM data processing system is now **fully operation
 
 ### 🔄 **Celery Workers** (4 Workers)
 - **Status**: ✅ All 4 workers online and ready
-- **Workers**: veggie-1, veggie-2, veggie-3, veggie-4
+- **Workers**: golfmike-celery-1, golfmike-celery-2, golfmike-celery-3, golfmike-celery-4
 - **Queues**: solace, message_processing
 - **Concurrency**: 2 tasks per worker
 

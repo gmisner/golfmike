@@ -31,8 +31,8 @@ This document outlines the optimizations made to the Docker Compose configuratio
 
 ### 4. **Celery Worker Optimizations**
 - **Task Queues**: Separated workers by task type:
-  - `veggie-1`: Handles `solace` and `message_processing` queues
-  - `veggie-2`: Handles `weather_processing` queue
+  - `golfmike-celery-1`: Handles `solace` and `message_processing` queues
+  - `golfmike-celery-2`: Handles `weather_processing` queue
 - **Worker Settings**: Added optimization parameters:
   - `CELERY_WORKER_PREFETCH_MULTIPLIER=1` - Better task distribution
   - `CELERY_TASK_ACKS_LATE=True` - Acknowledge tasks after completion

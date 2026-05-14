@@ -14,7 +14,9 @@ class FlightEventsDBModel(Base):
     __tablename__ = "flight_events"
 
     id = Column(Integer, primary_key=True, index=True)
-    aircraft_id = Column(String(50), nullable=False, index=True)
+    aircraft_id = Column(
+        String(50), ForeignKey("aircraft.aircraft_id"), nullable=False, index=True
+    )
     gufi = Column(String(50), nullable=False, index=True)
     event_type = Column(
         String(50), nullable=False, index=True
@@ -34,8 +36,15 @@ class TrackUpdatesDBModel(Base):
     __tablename__ = "track_updates"
 
     id = Column(Integer, primary_key=True, index=True)
-    aircraft_id = Column(String(50), nullable=False, index=True)
-    gufi = Column(String(50), nullable=False, index=True)
+    aircraft_id = Column(
+        String(50), ForeignKey("aircraft.aircraft_id"), nullable=False, index=True
+    )
+    gufi = Column(
+        String(50),
+        ForeignKey("flights.gufi", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     latitude = Column(String, nullable=False)  # Will be converted to DECIMAL in SQL
     longitude = Column(String, nullable=False)  # Will be converted to DECIMAL in SQL
     altitude = Column(Integer)  # in feet
@@ -43,10 +52,12 @@ class TrackUpdatesDBModel(Base):
     heading = Column(Integer)  # in degrees
     time_at_position = Column(DateTime(timezone=True), nullable=False, index=True)
     source_facility = Column(String(10))
+    track_data = Column(JSONB)
     created_at = Column(DateTime(timezone=True), default=func.now())
 
     # Relationships
     aircraft = relationship("AircraftDBModel", back_populates="track_updates")
+    flight = relationship("FlightsDBModel", back_populates="track_updates")
 
 
 class AircraftProfilesDBModel(Base):
@@ -73,7 +84,9 @@ class FlightRoutesDBModel(Base):
     __tablename__ = "flight_routes"
 
     id = Column(Integer, primary_key=True, index=True)
-    aircraft_id = Column(String(50), nullable=False, index=True)
+    aircraft_id = Column(
+        String(50), ForeignKey("aircraft.aircraft_id"), nullable=False, index=True
+    )
     gufi = Column(String(50), nullable=False, index=True)
     route_name = Column(String(100))
     waypoints = Column(JSONB)  # Array of waypoints with lat/long

@@ -1,5 +1,5 @@
 {
-    "name": "BigTitties",
+    "name": "GolfMike",
     "customizations": {
         "vscode": {
             "settings": {
@@ -27,9 +27,16 @@
         }
     },
     "dockerComposeFile": [
-        "/Users/gmisner/Documents/GolfMike/.devcontainer/docker-compose.yml"
+        "docker-compose.yml"
     ],
-    "service": "bigtitties",
+    "service": "golfmike-dev",
     "workspaceFolder": "/workspace",
-    "remoteUser": "vscode"
+    "remoteUser": "vscode",
+    "forwardPorts": [5501, 5555, 15432, 6379],
+    "portsAttributes": {
+        "5501": { "label": "Flask / Quart API" },
+        "5555": { "label": "Flower (Celery)" },
+        "15432": { "label": "PostgreSQL" },
+        "6379": { "label": "Redis" }
+    }
 }

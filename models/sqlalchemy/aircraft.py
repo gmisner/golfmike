@@ -12,6 +12,7 @@ class AircraftDBModel(Base):
     user_category = Column(String)
 
     # Relationships
+    flights = relationship("FlightsDBModel", back_populates="aircraft")
     flight_plan = relationship("FlightPlanDBModel", back_populates="aircraft")
     tmi_updates = relationship("TmiUpdatesDBModel", back_populates="aircraft")
     fxa_flight = relationship("FxaFlightDBModel", back_populates="aircraft")
@@ -24,3 +25,6 @@ class AircraftDBModel(Base):
     airspace_assignments = relationship(
         "FlightSectorsDBModel", back_populates="aircraft"
     )
+    track_updates = relationship("TrackUpdatesDBModel", back_populates="aircraft")
+    flight_events = relationship("FlightEventsDBModel", back_populates="aircraft")
+    flight_routes = relationship("FlightRoutesDBModel", back_populates="aircraft")

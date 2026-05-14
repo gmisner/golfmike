@@ -50,10 +50,13 @@ def process_weather_message(message_data):
         logger.info(f"📋 Destination: {message_data.get('destination', 'Unknown')}")
 
         # Parse and store weather data
-        weather_data = weather_parser.parse_weather_xml(payload)
+        weather_data = weather_parser.parse_message(payload)
         if weather_data:
-            weather_storer.store_weather_data(weather_data)
-            logger.info("✅ Weather data stored successfully")
+            stored = weather_storer.store_weather_data(weather_data)
+            if stored:
+                logger.info("✅ Weather data stored successfully")
+            else:
+                logger.warning("Weather message parsed but storage did not complete")
         else:
             logger.warning("No weather data extracted from message")
 

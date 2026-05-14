@@ -3,8 +3,12 @@ from flask import Flask, jsonify, request, send_from_directory, render_template_
 from celery_app import app as celery_app
 from tasks import process_xml
 from simple_api import create_simple_api
+from sqlalchemy import text
 import time
 import os
+
+from utils.logger import main_logger as logger
+from utils.readiness import database_connection_ok
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -58,6 +62,18 @@ def flight_detail():
         )
 
 
+@app.route("/flight-alerts.html", methods=["GET"])
+def flight_alerts_page():
+    """Serve SWIM / operational alerts list for a tail number (?aircraft_id=)."""
+    try:
+        return send_from_directory("static", "flight-alerts.html")
+    except Exception as e:
+        return (
+            jsonify({"error": "Flight alerts page not available", "details": str(e)}),
+            500,
+        )
+
+
 @app.route("/test-tabler.html", methods=["GET"])
 def test_tabler():
     """Serve the Tabler.io test page"""
@@ -66,6 +82,30 @@ def test_tabler():
     except Exception as e:
         return (
             jsonify({"error": "Test page not available", "details": str(e)}),
+            500,
+        )
+
+
+@app.route("/flights-table.html", methods=["GET"])
+def flights_table():
+    """Serve the flights table page"""
+    try:
+        return send_from_directory("static", "flights-table.html")
+    except Exception as e:
+        return (
+            jsonify({"error": "Flights table page not available", "details": str(e)}),
+            500,
+        )
+
+
+@app.route("/search.html", methods=["GET"])
+def search_results_page():
+    """Serve the search results page (same pattern as index.html, not under /static/ URL)."""
+    try:
+        return send_from_directory("static", "search.html")
+    except Exception as e:
+        return (
+            jsonify({"error": "Search page not available", "details": str(e)}),
             500,
         )
 
@@ -139,8 +179,59 @@ def health():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/health/ready", methods=["GET"])
+def health_ready():
+    """Readiness: API process is up and the primary database accepts connections."""
+    ok, err = database_connection_ok()
+    ts = time.time()
+    if ok:
+        return (
+            jsonify(
+                {
+                    "status": "ready",
+                    "timestamp": ts,
+                    "database": {"ok": True},
+                }
+            ),
+            200,
+        )
+    if err:
+        logger.warning("readiness check failed: {}", err)
+    return (
+        jsonify(
+            {
+                "status": "not_ready",
+                "timestamp": ts,
+                "database": {"ok": False, "error": err or "unknown"},
+            }
+        ),
+        503,
+    )
+
+
 # Add simple flight tracking API endpoints
 create_simple_api(app)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5500, debug=True)
+    port = int(os.environ.get("PORT", "5500"))
+    debug = os.environ.get("FLASK_DEBUG", "true").lower() in ("1", "true", "yes")
+    # Werkzeug stat reloader restarts the process on file changes; with Docker bind mounts that
+    # is noisy and often drops in-flight TCP connections (curl "empty reply"). Opt-in only.
+    use_reloader = os.environ.get("FLASK_USE_RELOADER", "0").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    logger.info(
+        "Starting Flask on 0.0.0.0:{} debug={} use_reloader={} threaded=True",
+        port,
+        debug,
+        use_reloader,
+    )
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=debug,
+        use_reloader=use_reloader,
+        threaded=True,
+    )

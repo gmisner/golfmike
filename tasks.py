@@ -121,16 +121,13 @@ def process_flight_plan_xml(xml_string):
 
 
 # Start flight plan consumer task
+# DISABLED: Flight plan messages are now handled by the traffic consumer
+# The traffic consumer processes all message types including flightPlanInformation, FlightCreate, etc.
 @shared_task(name="tasks.start_flight_plan_consumer", queue="solace")
 def start_flight_plan_consumer():
-    logger.info("Starting the flight plan consumer using Celery...")
-    try:
-        import flight_plan_consumer
-
-        flight_plan_consumer.run()  # This is where the flight plan consumer starts
-        logger.info("Flight plan consumer started successfully.")
-    except Exception as e:
-        logger.error(f"Error running flight plan consumer: {e}", exc_info=True)
+    logger.info("Flight plan consumer is disabled - flight plans are handled by traffic consumer")
+    logger.info("Flight plan messages (flightPlanInformation, FlightCreate, etc.) are processed via traffic consumer")
+    return  # Do not start separate consumer
 
 
 # Weather data fetch task, runs every 15 minutes

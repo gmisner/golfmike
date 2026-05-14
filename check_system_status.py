@@ -84,7 +84,14 @@ def check_solace_consumer():
         import subprocess
 
         result = subprocess.run(
-            ["docker", "ps", "--filter", "name=bigtitties", "--format", "{{.Status}}"],
+            [
+                "docker",
+                "ps",
+                "--filter",
+                "name=golfmike-traffic-consumer",
+                "--format",
+                "{{.Status}}",
+            ],
             capture_output=True,
             text=True,
         )
@@ -156,7 +163,7 @@ def main():
     if not solace_ok:
         print("❌ Solace Consumer: Not running")
         print(
-            "   → Start with: docker-compose -f .devcontainer/docker-compose.yml up bigtitties -d"
+            "   → Start with: docker compose -f .devcontainer/docker-compose.yml up traffic_consumer -d"
         )
 
     if not flask_ok:
@@ -177,13 +184,11 @@ def main():
         print(
             "1. Start all services: docker-compose -f .devcontainer/docker-compose.yml up -d"
         )
-        print("2. Check Solace consumer logs: docker logs devcontainer-bigtitties-1")
-        print("3. Check Flask app logs: docker logs golfmike-api")
+        print("2. Check traffic consumer logs: docker logs golfmike-traffic-consumer")
+        print("3. Check Flask app logs: docker logs golfmike-web-api")
         print("4. Wait 5-10 minutes for FAA SWIM data to populate")
         print("5. Access the web interface at: http://localhost:5500")
 
 
 if __name__ == "__main__":
     main()
-
-

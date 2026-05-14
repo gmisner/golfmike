@@ -221,7 +221,7 @@ The GolfMike Flight Tracker is a comprehensive aviation data processing and visu
 ## Deployment
 
 ### Docker Containers
-- `golfmike-api`: Main Flask application
+- `golfmike-web-api`: Main Flask application
 - `postgres`: PostgreSQL database
 - `redis`: Redis message broker
 - `celery-worker`: Background task processing

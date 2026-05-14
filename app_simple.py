@@ -2,6 +2,8 @@
 from quart import Quart, jsonify, request
 from celery_app import app as celery_app
 from tasks import process_xml
+from utils.logger import main_logger as logger
+from utils.readiness import database_connection_ok
 import time
 
 app = Quart(__name__)
@@ -65,8 +67,35 @@ async def health():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route("/health/ready", methods=["GET"])
+async def health_ready():
+    """Readiness: process up and the primary database accepts connections."""
+    ok, err = database_connection_ok()
+    ts = time.time()
+    if ok:
+        return (
+            jsonify(
+                {
+                    "status": "ready",
+                    "timestamp": ts,
+                    "database": {"ok": True},
+                }
+            ),
+            200,
+        )
+    if err:
+        logger.warning("readiness check failed: {}", err)
+    return (
+        jsonify(
+            {
+                "status": "not_ready",
+                "timestamp": ts,
+                "database": {"ok": False, "error": err or "unknown"},
+            }
+        ),
+        503,
+    )
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5500)
-
-
-

@@ -7,8 +7,11 @@ Simple script to monitor Solace connection health and data flow
 import time
 import subprocess
 import psycopg2
+from pathlib import Path
 from datetime import datetime, timedelta
 from utils.logger import main_logger as logger
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def check_database_connection():
@@ -52,15 +55,16 @@ def check_solace_container():
     try:
         result = subprocess.run(
             [
-                "docker-compose",
+                "docker",
+                "compose",
                 "-f",
                 ".devcontainer/docker-compose.yml",
                 "ps",
-                "bigtitties",
+                "traffic_consumer",
             ],
             capture_output=True,
             text=True,
-            cwd="/Users/gmisner/Documents/GolfMike",
+            cwd=str(_REPO_ROOT),
         )
 
         if "Up" in result.stdout:
@@ -133,6 +137,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

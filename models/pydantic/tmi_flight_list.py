@@ -2,38 +2,50 @@
 
 from datetime import datetime
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 
 class FxaFlightModel(BaseModel):
-    id: Optional[int]
-    aircraft_id: str
-    update_time: datetime
-    fxaId: str
-    fcaId: str
-    fcaName: str
-    lastUpdate: datetime
-    bentryTm: datetime
-    createTm: datetime
-    eentryTm: datetime
-    entryTm: datetime
-    exitTm: datetime
-    extendedExitTm: datetime
-    ientryTm: datetime
-    oentryTm: datetime
-    entryLat: float
-    entryLon: float
-    entryHeading: int
-    exitInd: str
+    fcaId: Optional[str] = None
+    fcaName: Optional[str] = None
+    lastUpdate: Optional[str] = None
+    bentryTm: Optional[str] = None
+    createTm: Optional[str] = None
+    eentryTm: Optional[str] = None
+    entryTm: Optional[str] = None
+    exitTm: Optional[str] = None
+    extendedExitTm: Optional[str] = None
+    ientryTm: Optional[str] = None
+    oentryTm: Optional[str] = None
+    entryLat: Optional[float] = None
+    entryLon: Optional[float] = None
+    entryHeading: Optional[int] = None
+    exitInd: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TMIFlightModel(BaseModel):
+    """Model for TMI information"""
+    update_type: Optional[str] = None
+    last_update_time: Optional[str] = None
+    fca_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class TMIFlightListModel(BaseModel):
-    aircraft_id: str
-    gufi: str
-    igtd: datetime
-    departure_airport: str
-    arrival_airport: str
-    fxa_flights: List[FxaFlightModel] = []
+    aircraft_id: Optional[str] = None
+    gufi: Optional[str] = None
+    igtd: Optional[str] = None
+    departure_airport: Optional[str] = None
+    arrival_airport: Optional[str] = None
+    flight_reference: Optional[str] = None
+    status: Optional[str] = None
+    fxa_flights: List[Dict[str, Any]] = []
+    tmi_info: List[Dict[str, Any]] = []
 
     class Config:
         from_attributes = True

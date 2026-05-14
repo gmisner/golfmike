@@ -323,10 +323,11 @@ class FlightTracker {
                             <div><strong>Position:</strong> ${flight.position.latitude.toFixed(4)}, ${flight.position.longitude.toFixed(4)}</div>
                             <div><strong>Last Update:</strong> ${flight.position.timestamp ? new Date(flight.position.timestamp).toLocaleTimeString() : 'N/A'}</div>
                         </div>
-                        <div class="mt-2">
+                        <div class="mt-2 d-flex flex-wrap gap-1">
                             <button class="btn btn-sm btn-primary" onclick="tracker.showFlightDetails('${flight.aircraft_id}')">
-                                View Details
+                                View details
                             </button>
+                            <a class="btn btn-sm btn-outline-secondary" href="/flight-alerts.html?aircraft_id=${encodeURIComponent(flight.aircraft_id)}">Alerts</a>
                         </div>
                     </div>
                 `;
@@ -534,29 +535,78 @@ class FlightTracker {
         this.showSearchLoading();
 
         try {
-            // Search both current and upcoming flights
+            // API includes hub + upcoming + track_information + track_updates fallbacks
+            const searchRes = await fetch(
+                `${this.apiBase}/search?q=${encodeURIComponent(searchTerm)}`
+            );
+            const searchData = searchRes.ok ? await searchRes.json() : { flights: [] };
+            const apiFlights = searchData.flights || [];
+
+            const exactFromApi = apiFlights.find(
+                f =>
+                    f.aircraft_id &&
+                    f.aircraft_id.toLowerCase() === searchTerm
+            );
+            if (exactFromApi) {
+                this.showFlightDetails(exactFromApi.aircraft_id);
+                return;
+            }
+
+            // Search both current and upcoming flights (local list + API merge)
             const [currentFlights, upcomingFlights] = await Promise.all([
                 this.searchCurrentFlights(searchTerm),
-                this.searchUpcomingFlights(searchTerm)
+                this.searchUpcomingFlights(searchTerm, apiFlights)
             ]);
 
-            // Check if search term matches a specific aircraft ID exactly
-            const exactCurrentMatch = currentFlights.find(flight => 
-                flight.aircraft_id.toLowerCase() === searchTerm
+            const mergedCurrent = [...currentFlights];
+            for (const af of apiFlights) {
+                if (!af.aircraft_id) continue;
+                const id = (af.aircraft_id || '').toLowerCase();
+                const dep = (af.departure_airport || '').toLowerCase();
+                const arr = (af.arrival_airport || '').toLowerCase();
+                const matches =
+                    id.includes(searchTerm) ||
+                    dep.includes(searchTerm) ||
+                    arr.includes(searchTerm) ||
+                    (af.gufi && af.gufi.toLowerCase().includes(searchTerm));
+                if (!matches) continue;
+                if (mergedCurrent.some(c => c.aircraft_id === af.aircraft_id)) continue;
+                const ts = af.position && af.position.timestamp;
+                mergedCurrent.push({
+                    ...af,
+                    current_status: af.position ? 'IN_FLIGHT' : 'PLANNED',
+                    status_timestamp: ts ?? null,
+                    position: af.position || {
+                        latitude: null,
+                        longitude: null,
+                        altitude: null,
+                        speed: null,
+                        heading: null,
+                        timestamp: null
+                    }
+                });
+            }
+
+            const exactCurrentMatch = mergedCurrent.find(
+                flight =>
+                    flight.aircraft_id &&
+                    flight.aircraft_id.toLowerCase() === searchTerm
             );
-            const exactUpcomingMatch = upcomingFlights.find(flight => 
-                flight.aircraft_id.toLowerCase() === searchTerm
+            const exactUpcomingMatch = upcomingFlights.find(
+                flight =>
+                    flight.aircraft_id &&
+                    flight.aircraft_id.toLowerCase() === searchTerm
             );
 
             if (exactCurrentMatch || exactUpcomingMatch) {
-                // If exact match found, redirect to flight detail page
-                const aircraftId = exactCurrentMatch?.aircraft_id || exactUpcomingMatch?.aircraft_id;
+                const aircraftId =
+                    exactCurrentMatch?.aircraft_id ||
+                    exactUpcomingMatch?.aircraft_id;
                 this.showFlightDetails(aircraftId);
                 return;
             }
 
-            // Combine and display results
-            this.displaySearchResults(currentFlights, upcomingFlights);
+            this.displaySearchResults(mergedCurrent, upcomingFlights);
 
         } catch (error) {
             console.error('Search error:', error);
@@ -567,33 +617,39 @@ class FlightTracker {
     async searchCurrentFlights(searchTerm) {
         // Filter current flights based on search term
         const allFlights = this.currentFlights || [];
-        return allFlights.filter(flight => 
-            flight.aircraft_id.toLowerCase().includes(searchTerm) ||
-            flight.departure_airport.toLowerCase().includes(searchTerm) ||
-            flight.arrival_airport.toLowerCase().includes(searchTerm) ||
+        return allFlights.filter(flight =>
+            (flight.aircraft_id || '').toLowerCase().includes(searchTerm) ||
+            (flight.departure_airport || '').toLowerCase().includes(searchTerm) ||
+            (flight.arrival_airport || '').toLowerCase().includes(searchTerm) ||
             (flight.gufi && flight.gufi.toLowerCase().includes(searchTerm))
         );
     }
 
-    async searchUpcomingFlights(searchTerm) {
+    async searchUpcomingFlights(searchTerm, preloadedFlights = null) {
         try {
-            // Search upcoming flights via API
-            const response = await fetch(`/api/flights/search?aircraft_id=${encodeURIComponent(searchTerm)}`);
-            if (!response.ok) {
-                throw new Error('Failed to search upcoming flights');
+            let flights = preloadedFlights;
+            if (!flights) {
+                const response = await fetch(
+                    `${this.apiBase}/search?q=${encodeURIComponent(searchTerm)}`
+                );
+                if (!response.ok) {
+                    throw new Error('Failed to search upcoming flights');
+                }
+                const data = await response.json();
+                flights = data.flights || [];
             }
-            
-            const upcomingFlights = await response.json();
-            
-            // Filter upcoming flights based on search term
-            return upcomingFlights.filter(flight => 
-                flight.flight_type === 'UPCOMING' && (
-                    flight.aircraft_id.toLowerCase().includes(searchTerm) ||
-                    flight.departure_airport.toLowerCase().includes(searchTerm) ||
-                    flight.arrival_airport.toLowerCase().includes(searchTerm) ||
-                    (flight.flight_reference && flight.flight_reference.toLowerCase().includes(searchTerm))
-                )
-            );
+
+            return flights.filter(flight => {
+                const ft = (flight.flight_type || '').toLowerCase();
+                if (ft !== 'upcoming') return false;
+                return (
+                    (flight.aircraft_id || '').toLowerCase().includes(searchTerm) ||
+                    (flight.departure_airport || '').toLowerCase().includes(searchTerm) ||
+                    (flight.arrival_airport || '').toLowerCase().includes(searchTerm) ||
+                    (flight.flight_reference &&
+                        flight.flight_reference.toLowerCase().includes(searchTerm))
+                );
+            });
         } catch (error) {
             console.error('Error searching upcoming flights:', error);
             return [];
@@ -747,7 +803,7 @@ class FlightTracker {
 
     showFlightDetails(aircraftId) {
         // Redirect to the flight detail page
-        window.location.href = `/flight-detail.html?aircraft=${aircraftId}`;
+        window.location.href = `/flight-detail.html?aircraft_id=${encodeURIComponent(aircraftId)}`;
     }
 
     createFlightDetailsModal(aircraftId, positionData, trackData) {

@@ -40,11 +40,8 @@ def process_traffic_message(message_data):
             logger.warning("No payload in message data")
             return
 
-        logger.info("🔄 PROCESSING TRAFFIC MESSAGE - Starting message processing")
-        logger.info(f"📋 Payload Size: {len(payload)} bytes")
-        logger.info(f"📋 Destination: {message_data.get('destination', 'Unknown')}")
-
-        # Process and store the message
+        # Process and store the message (reduced logging for performance)
+        logger.debug(f"Processing traffic message: {len(payload)} bytes from {message_data.get('destination', 'Unknown')}")
         parse_and_store_to_database(payload)
 
     except Exception as e:
@@ -138,10 +135,11 @@ def run():
         connection_manager.on_message_received = on_message_received
 
         # Create message processor with high-performance configuration
+        # Increased queue size and processors to handle high message volume
         message_processor = SolaceMessageProcessor(
             concurrent_consumer_count=4,  # Multiple consumers for concurrent message consumption
-            parallel_processor_count=3,  # More parallel processing threads
-            processing_queue_size=10000,  # Large queue to handle message bursts
+            parallel_processor_count=8,  # Increased parallel processing threads for better throughput
+            processing_queue_size=50000,  # Increased queue size to handle large message bursts
             message_handler=process_traffic_message,
         )
 
@@ -154,17 +152,30 @@ def run():
                 while True:
                     time.sleep(1)
 
-                    # Log stats periodically
+                    # Log stats periodically and check queue health
                     if connection_manager and message_processor:
                         stats = message_processor.get_stats()
+                        queue_size = stats.get("queue_size", 0)
+                        is_consuming = stats.get("is_consuming", True)
+                        
+                        # Log every 100 messages or if queue is getting full
                         if (
                             stats["messages_processed"] > 0
-                            and stats["messages_processed"] % 50 == 0
+                            and (stats["messages_processed"] % 100 == 0 or queue_size > 10000)
                         ):
+                            status_icon = "✅" if is_consuming else "⚠️"
                             logger.info(
-                                f"📊 Processed {stats['messages_processed']} messages, "
-                                f"Queue: {stats['queue_size']}, "
-                                f"Rate: {stats['messages_per_second']:.1f} msg/s"
+                                f"📊 {status_icon} Processed {stats['messages_processed']} messages, "
+                                f"Queue: {queue_size}/{stats.get('processing_queue_size', 50000)}, "
+                                f"Rate: {stats.get('messages_per_second', 0):.1f} msg/s, "
+                                f"Consuming: {is_consuming}"
+                            )
+                        
+                        # Warn if queue is getting very full
+                        if queue_size > 40000:
+                            logger.warning(
+                                f"⚠️ Queue is {queue_size} messages (80% full). "
+                                f"Consider increasing parallel_processor_count or optimizing processing."
                             )
 
             except KeyboardInterrupt:

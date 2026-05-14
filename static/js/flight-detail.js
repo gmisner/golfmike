@@ -3,6 +3,41 @@
  * Handles map rendering, data loading, and interactive features
  */
 
+/** Initial bearing from point a → b (degrees clockwise from north; 0=N, 90=E). */
+function flightDetailInitialBearingDeg(lat1, lng1, lat2, lng2) {
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    const θ = Math.atan2(y, x);
+    return ((θ * 180) / Math.PI + 360) % 360;
+}
+
+/** Top-down aircraft SVG (nose up); rotate with CSS for heading. */
+function flightDetailAircraftMapIconHtml(rotationDeg) {
+    const r = Number.isFinite(rotationDeg) ? rotationDeg : 0;
+    const svg = `
+<svg class="flight-detail-aircraft-svg" viewBox="0 0 48 48" width="40" height="40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g transform="translate(24,24)">
+    <path fill="#39ff14" stroke="#0d0d0d" stroke-width="1.35" stroke-linejoin="round"
+      d="M0,-18 L-3.5,5 L-15,8 L-15,11 L-4,10 L-2,17 L0,15 L2,17 L4,10 L15,11 L15,8 L3.5,5 L0,-18 Z"/>
+  </g>
+</svg>`;
+    return `<div class="flight-map-aircraft-marker-inner" style="transform:rotate(${r}deg)">${svg}</div>`;
+}
+
+function flightDetailAircraftDivIcon(rotationDeg) {
+    return L.divIcon({
+        className: 'flight-map-aircraft-marker',
+        html: flightDetailAircraftMapIconHtml(rotationDeg),
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+    });
+}
+
 class FlightDetailPage {
     constructor() {
         this.map = null;
@@ -10,6 +45,10 @@ class FlightDetailPage {
         this.aircraftId = null;
         this.flightDate = null;
         this.temperatureUnit = 'celsius'; // Default to Celsius
+        this.trackProfileChart = null;
+        this.mapOverlayGroup = null;
+        this._liveTrackTimer = null;
+        this._mapFitBoundsOnce = false;
         
         this.init();
     }
@@ -23,9 +62,11 @@ class FlightDetailPage {
 
     parseUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
-        this.aircraftId = urlParams.get('aircraft') || 'N560PB';
+        // Search UI and most links use ?aircraft_id=; flight-tracker uses ?aircraft=
+        this.aircraftId =
+            urlParams.get('aircraft_id') || urlParams.get('aircraft') || null;
         this.flightDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
-        
+
         console.log('Flight Detail - Aircraft:', this.aircraftId, 'Date:', this.flightDate);
     }
 
@@ -39,6 +80,8 @@ class FlightDetailPage {
                 attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
                 subdomains: 'abcd', maxZoom: 19
             }).addTo(this.map);
+
+            this.mapOverlayGroup = L.layerGroup().addTo(this.map);
             
             console.log('Map initialized successfully');
         } catch (error) {
@@ -51,12 +94,20 @@ class FlightDetailPage {
 
     async loadFlightData() {
         try {
+            if (!this.aircraftId) {
+                this.showError(
+                    'Missing aircraft. Open this page from search (View Details) or use ?aircraft_id=TAIL_OR_CALLSIGN in the URL.'
+                );
+                return;
+            }
+
             console.log('Loading flight data for:', this.aircraftId);
-            
+            this._mapFitBoundsOnce = false;
+
             // Load flight data and upcoming flights in parallel
             const [flightResponse, upcomingResponse] = await Promise.all([
                 fetch(`/api/flights/${this.aircraftId}/detail?date=${this.flightDate}`),
-                fetch(`/api/flights/${this.aircraftId}/upcoming`)
+                fetch(`/api/flights/${this.aircraftId}/upcoming?include_past=1`)
             ]);
             
             console.log('API response status:', flightResponse.status);
@@ -101,7 +152,9 @@ class FlightDetailPage {
             // Update page title and header
             console.log('Updating flight header...');
             this.updateFlightHeader();
-            
+            this.updateOperationalBanner();
+            this.updateNcsmRoutePanel(this.flightData.route_assignment);
+
             // Update OOOI stats
             console.log('Updating OOOI stats...');
             this.updateOOOIStats();
@@ -125,6 +178,10 @@ class FlightDetailPage {
             // Update aircraft details
             console.log('Updating aircraft details...');
             this.updateAircraftDetails();
+
+            // Update latest oceanic report panel
+            console.log('Updating oceanic report panel...');
+            this.updateOceanicReport();
             
             // Update recent flights
             console.log('Updating recent flights...');
@@ -135,9 +192,45 @@ class FlightDetailPage {
             this.renderMap();
             
             console.log('Flight data rendering complete');
+
+            this.startLiveTrackPolling();
         } catch (error) {
             console.error('Error rendering flight data:', error);
             this.showError('Error rendering flight data. Please refresh the page.');
+        }
+    }
+
+    updateOperationalBanner() {
+        const wrap = document.getElementById('operational-banner-wrap');
+        const el = document.getElementById('operational-banner');
+        const alertsNav = document.getElementById('alerts-page-btn');
+        if (alertsNav && this.aircraftId) {
+            alertsNav.href = `/flight-alerts.html?aircraft_id=${encodeURIComponent(this.aircraftId)}`;
+        }
+        if (!wrap || !el) return;
+        const op = this.flightData.operational;
+        if (!op) {
+            wrap.classList.add('d-none');
+            return;
+        }
+        const links = op.links || {};
+        const alertsHref = links.alerts_page || `/flight-alerts.html?aircraft_id=${encodeURIComponent(this.aircraftId)}`;
+        const n = Number(op.alerts_unacknowledged_30d || 0);
+        const recent = Array.isArray(op.recent_swim_alerts) ? op.recent_swim_alerts.length : 0;
+        if (n > 0) {
+            el.className = 'alert alert-warning mb-0';
+            el.innerHTML =
+                `You have <strong>${n}</strong> unacknowledged operational alert(s) in the last 30 days (by tail <strong>${this.aircraftId}</strong>). ` +
+                `<a href="${alertsHref}">View alerts</a> — GUFI is shown only for reference.`;
+            wrap.classList.remove('d-none');
+        } else if (recent > 0) {
+            el.className = 'alert alert-info mb-0';
+            el.innerHTML =
+                `Recent SWIM / operational messages for this tail. ` +
+                `<a href="${alertsHref}">Browse alerts</a>.`;
+            wrap.classList.remove('d-none');
+        } else {
+            wrap.classList.add('d-none');
         }
     }
 
@@ -173,9 +266,63 @@ class FlightDetailPage {
         statusBadge.textContent = status.text;
         statusBadge.className = `badge ${status.class}`;
         
-        // Update filed route
-        document.getElementById('filed-route').textContent = 
-            flight.filed_route || 'Route not available';
+        // Show airway/fix string when present, plus OD (expected_route) when it adds info
+        const detail = (flight.filed_route || flight.route_text || '').trim();
+        const od = (flight.expected_route || '').trim();
+        let routeLine;
+        if (detail && od && detail.replace(/\s/g, '') !== od.replace(/\s/g, '')) {
+            routeLine = `${detail} · ${od}`;
+        } else {
+            routeLine = detail || od || 'Route not available';
+        }
+        document.getElementById('filed-route').textContent = routeLine;
+    }
+
+    /**
+     * FlightScheduleActivate (NCSM) payload from route_assignments — fixes, alt, routeOfFlight.
+     */
+    updateNcsmRoutePanel(ra) {
+        const panel = document.getElementById('ncsm-route-panel');
+        if (!panel) return;
+        const hasContent =
+            ra &&
+            (ra.route_of_flight ||
+                (ra.fixes && ra.fixes.length) ||
+                (ra.waypoints && ra.waypoints.length) ||
+                ra.assigned_altitude != null ||
+                ra.assigned_speed != null);
+        if (!hasContent) {
+            panel.classList.add('d-none');
+            return;
+        }
+        panel.classList.remove('d-none');
+        const parts = [];
+        if (ra.assigned_altitude != null && ra.assigned_altitude !== '') {
+            parts.push(`Assigned alt ${ra.assigned_altitude} ft`);
+        }
+        if (ra.assigned_speed != null && ra.assigned_speed !== '') {
+            parts.push(`Filed TAS ${ra.assigned_speed} kt`);
+        }
+        if (ra.etd) parts.push(`ETD ${ra.etd}`);
+        if (ra.eta) parts.push(`ETA ${ra.eta}`);
+        if (ra.source_facility) parts.push(`Facility ${ra.source_facility}`);
+        document.getElementById('ncsm-meta').textContent = parts.join(' · ');
+        document.getElementById('ncsm-route-of-flight').textContent =
+            ra.route_of_flight || '';
+        let fixLine = '';
+        if (ra.fixes && ra.fixes.length) {
+            const names = ra.fixes.map((f) =>
+                typeof f === 'string'
+                    ? f
+                    : f.name || f.fix || ''
+            ).filter(Boolean);
+            fixLine = `Fixes (${names.length}): ${names.join(' → ')}`;
+        }
+        document.getElementById('ncsm-fixes').textContent = fixLine;
+        const hint = document.getElementById('ncsm-doc-hint');
+        if (hint) {
+            hint.textContent = ra.documentation || '';
+        }
     }
 
     determineFlightStatus(flight) {
@@ -378,16 +525,476 @@ class FlightDetailPage {
         tbody.innerHTML = '';
         
         trackPoints.forEach(point => {
+            const gs = point.ground_speed ?? point.speed;
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${this.formatTime(point.time)}</td>
                 <td>${point.latitude?.toFixed(4) || 'N/A'}</td>
                 <td>${point.longitude?.toFixed(4) || 'N/A'}</td>
-                <td>${point.altitude || 'N/A'}</td>
-                <td>${point.ground_speed || 'N/A'}</td>
+                <td>${this.formatAltitudeDisplay(point.altitude)}</td>
+                <td>${gs ?? 'N/A'}</td>
                 <td>${point.remark || ''}</td>
             `;
             tbody.appendChild(row);
+        });
+
+        this.updateTrackProfileChart(trackPoints);
+    }
+
+    /**
+     * Parse a track numeric field (altitude, ground_speed) from API / DB.
+     * @returns {number|null}
+     */
+    parseTrackNumber(value) {
+        if (value === null || value === undefined || value === '') {
+            return null;
+        }
+        if (typeof value === 'string') {
+            const cleaned = value.replace(/,/g, '').trim();
+            if (cleaned === '') {
+                return null;
+            }
+            const n = Number(cleaned);
+            return Number.isFinite(n) ? n : null;
+        }
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    /**
+     * NAS simpleAltitude is often flight level in hundreds of feet (360 = FL360 = 36,000 ft).
+     * Matches utils.nas_altitude.normalize_altitude_to_feet_maybe_legacy for legacy rows.
+     */
+    normalizeAltitudeFeet(value) {
+        const n = this.parseTrackNumber(value);
+        if (n === null) {
+            return null;
+        }
+        if (n >= 10000) {
+            return n;
+        }
+        if (n >= 10 && n <= 99) {
+            return n * 100;
+        }
+        if (n >= 100 && n <= 600 && n !== 500) {
+            return n * 100;
+        }
+        return n;
+    }
+
+    formatAltitudeDisplay(value) {
+        const n = this.normalizeAltitudeFeet(value);
+        if (n === null) {
+            return 'N/A';
+        }
+        return String(n);
+    }
+
+    startLiveTrackPolling() {
+        if (this._liveTrackTimer) {
+            clearInterval(this._liveTrackTimer);
+            this._liveTrackTimer = null;
+        }
+        if (!this.aircraftId) {
+            return;
+        }
+        const poll = () => this.pollLiveTrack();
+        setTimeout(poll, 1500);
+        this._liveTrackTimer = setInterval(poll, 25000);
+    }
+
+    async pollLiveTrack() {
+        if (!this.aircraftId || !this.flightData || document.hidden) {
+            return;
+        }
+        try {
+            const res = await fetch(
+                `/api/flights/${encodeURIComponent(this.aircraftId)}/track?date=${encodeURIComponent(this.flightDate)}`
+            );
+            if (!res.ok) {
+                return;
+            }
+            const data = await res.json();
+            const raw = data.tracks || [];
+            if (!raw.length) {
+                return;
+            }
+            const normalized = raw
+                .map((t) => ({
+                    time: t.timestamp,
+                    latitude: t.latitude,
+                    longitude: t.longitude,
+                    altitude: t.altitude,
+                    ground_speed: t.speed ?? t.ground_speed,
+                    remark: '',
+                }))
+                .sort((a, b) => new Date(a.time) - new Date(b.time));
+            this.flightData.track = normalized;
+            this.updateTrackLog();
+            this.renderMap();
+        } catch (e) {
+            console.error('Live track poll failed', e);
+        }
+    }
+
+    /**
+     * Line chart: altitude (ft), ground speed (kts), or latitude (°N) vs time.
+     * Uses Chart.js when available; falls back to native canvas if the library did not load.
+     */
+    updateTrackProfileChart(trackPoints) {
+        const card = document.getElementById('track-profile-card');
+        const section = document.getElementById('track-profile-section');
+        const noData = document.getElementById('track-profile-no-data');
+        const note = document.getElementById('track-profile-note');
+        const canvas = document.getElementById('track-profile-chart');
+        if (!card || !section || !canvas) {
+            return;
+        }
+
+        if (this.trackProfileChart) {
+            this.trackProfileChart.destroy();
+            this.trackProfileChart = null;
+        }
+
+        const hideCard = () => {
+            card.classList.add('d-none');
+            section.classList.add('d-none');
+            if (noData) {
+                noData.classList.add('d-none');
+            }
+            if (note) {
+                note.classList.add('d-none');
+                note.textContent = '';
+            }
+        };
+
+        if (!trackPoints.length) {
+            hideCard();
+            return;
+        }
+
+        const labels = trackPoints.map((p) => this.formatChartAxisTime(p.time));
+        const altData = trackPoints.map((p) => this.normalizeAltitudeFeet(p.altitude));
+        const gsData = trackPoints.map((p) =>
+            this.parseTrackNumber(p.ground_speed ?? p.speed)
+        );
+        const latData = trackPoints.map((p) => this.parseTrackNumber(p.latitude));
+
+        const hasAlt = altData.some((v) => v !== null);
+        const hasGs = gsData.some((v) => v !== null);
+        const hasLat = latData.some((v) => v !== null);
+        const hasAltOrGs = hasAlt || hasGs;
+
+        card.classList.remove('d-none');
+
+        if (!hasAltOrGs && !hasLat) {
+            section.classList.add('d-none');
+            if (noData) {
+                noData.classList.remove('d-none');
+            }
+            if (note) {
+                note.classList.add('d-none');
+            }
+            return;
+        }
+
+        if (noData) {
+            noData.classList.add('d-none');
+        }
+        if (note) {
+            if (!hasAltOrGs && hasLat) {
+                note.textContent =
+                    'Altitude and speed are not in this feed; showing latitude vs time.';
+                note.classList.remove('d-none');
+            } else {
+                note.classList.add('d-none');
+                note.textContent = '';
+            }
+        }
+        section.classList.remove('d-none');
+
+        const ChartCtor = typeof window !== 'undefined' ? window.Chart : undefined;
+
+        const buildChartConfig = () => {
+            if (hasAltOrGs) {
+                return {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Altitude (ft)',
+                                data: altData,
+                                yAxisID: 'y',
+                                borderColor: 'rgb(32, 107, 196)',
+                                backgroundColor: 'rgba(32, 107, 196, 0.08)',
+                                fill: false,
+                                tension: 0.15,
+                                spanGaps: true,
+                                hidden: !hasAlt,
+                            },
+                            {
+                                label: 'Ground speed (kts)',
+                                data: gsData,
+                                yAxisID: 'y1',
+                                borderColor: 'rgb(247, 103, 7)',
+                                backgroundColor: 'rgba(247, 103, 7, 0.08)',
+                                fill: false,
+                                tension: 0.15,
+                                spanGaps: true,
+                                hidden: !hasGs,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        if (v === null || v === undefined) {
+                                            return `${ctx.dataset.label}: —`;
+                                        }
+                                        const unit =
+                                            ctx.dataset.yAxisID === 'y' ? ' ft' : ' kts';
+                                        return `${ctx.dataset.label}: ${v}${unit}`;
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 12,
+                                },
+                            },
+                            y: {
+                                type: 'linear',
+                                display: hasAlt,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Altitude (ft)',
+                                },
+                                grid: { drawOnChartArea: true },
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: hasGs,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Ground speed (kts)',
+                                },
+                                grid: { drawOnChartArea: false },
+                            },
+                        },
+                    },
+                };
+            }
+            return {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Latitude (°N)',
+                            data: latData,
+                            borderColor: 'rgb(32, 107, 196)',
+                            backgroundColor: 'rgba(32, 107, 196, 0.08)',
+                            fill: false,
+                            tension: 0.15,
+                            spanGaps: true,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label(ctx) {
+                                    const v = ctx.parsed.y;
+                                    if (v === null || v === undefined) {
+                                        return `${ctx.dataset.label}: —`;
+                                    }
+                                    return `${ctx.dataset.label}: ${v}°`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 12,
+                            },
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Latitude (°N)',
+                            },
+                        },
+                    },
+                },
+            };
+        };
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+
+        if (typeof ChartCtor === 'function') {
+            try {
+                this.trackProfileChart = new ChartCtor(ctx, buildChartConfig());
+                requestAnimationFrame(() => {
+                    if (this.trackProfileChart) {
+                        this.trackProfileChart.resize();
+                    }
+                });
+                return;
+            } catch (e) {
+                console.error('Chart.js render failed, using canvas fallback', e);
+            }
+        }
+
+        this.drawNativeTrackProfileChart(
+            canvas,
+            labels,
+            altData,
+            gsData,
+            latData,
+            hasAltOrGs
+        );
+    }
+
+    /**
+     * Minimal canvas fallback when Chart.js is blocked or throws.
+     */
+    drawNativeTrackProfileChart(
+        canvas,
+        labels,
+        altData,
+        gsData,
+        latData,
+        hasAltOrGs
+    ) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+        const wrap = canvas.parentElement;
+        const cssW = Math.max(wrap ? wrap.clientWidth : 400, 320);
+        const cssH = 280;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${cssH}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cssW, cssH);
+
+        const pad = { l: 44, r: 44, t: 20, b: 32 };
+        const plotW = cssW - pad.l - pad.r;
+        const plotH = cssH - pad.t - pad.b;
+        const n = labels.length;
+
+        const xAt = (i) => {
+            if (n <= 1) {
+                return pad.l + plotW / 2;
+            }
+            return pad.l + (i / (n - 1)) * plotW;
+        };
+
+        const line = (data, color, ymin, ymax) => {
+            const vals = data.filter((v) => v !== null);
+            if (!vals.length) {
+                return;
+            }
+            let lo = ymin;
+            let hi = ymax;
+            if (lo === undefined || hi === undefined) {
+                lo = Math.min(...vals);
+                hi = Math.max(...vals);
+            }
+            if (hi === lo) {
+                lo -= 1;
+                hi += 1;
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < n; i++) {
+                const v = data[i];
+                if (v === null) {
+                    continue;
+                }
+                const x = xAt(i);
+                const y = pad.t + ((hi - v) / (hi - lo)) * plotH;
+                if (!started) {
+                    ctx.moveTo(x, y);
+                    started = true;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        };
+
+        ctx.strokeStyle = '#e9ecef';
+        ctx.lineWidth = 1;
+        for (let g = 0; g <= 4; g++) {
+            const gy = pad.t + (g / 4) * plotH;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, gy);
+            ctx.lineTo(pad.l + plotW, gy);
+            ctx.stroke();
+        }
+
+        if (hasAltOrGs) {
+            line(altData, 'rgb(32, 107, 196)');
+            line(gsData, 'rgb(247, 103, 7)');
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '11px system-ui, sans-serif';
+            ctx.fillText('Altitude (blue) · Speed (orange)', pad.l, cssH - 8);
+        } else {
+            line(latData, 'rgb(32, 107, 196)');
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '11px system-ui, sans-serif';
+            ctx.fillText('Latitude (°N)', pad.l, cssH - 8);
+        }
+    }
+
+    formatChartAxisTime(timeString) {
+        if (!timeString) {
+            return '—';
+        }
+        const date = new Date(timeString);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'UTC',
+            hour12: false,
         });
     }
 
@@ -596,11 +1203,53 @@ class FlightDetailPage {
         }
     }
 
+    _flightListItemHtml(flight) {
+        return `
+            <div class="list-group-item px-0">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <div class="fw-bold">${flight.flight_reference || flight.aircraft_id}</div>
+                                <div class="text-muted small">
+                                    ${flight.departure_airport || 'TBD'} → ${flight.arrival_airport || 'TBD'}
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="ti ti-clock me-1"></i>
+                                    Dep: ${flight.departure_time ? new Date(flight.departure_time).toLocaleString() : 'TBD'}
+                                </div>
+                                ${flight.aircraft_type ? `
+                                    <div class="text-muted small">
+                                        <i class="ti ti-plane me-1"></i>
+                                        ${flight.aircraft_type}
+                                    </div>
+                                ` : ''}
+                                ${flight.aircraft_operator ? `
+                                    <div class="text-muted small">
+                                        <i class="ti ti-building me-1"></i>
+                                        ${flight.aircraft_operator}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="ms-3">
+                                <span class="badge bg-${this.getStatusColor(flight.status)}">${flight.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     updateUpcomingFlights() {
         const upcomingContainer = document.getElementById('upcoming-flights');
         if (!upcomingContainer) return;
 
-        if (!this.upcomingFlights || this.upcomingFlights.length === 0) {
+        const all = this.upcomingFlights || [];
+        const upcoming = all.filter((f) => !f.is_past);
+        const past = all.filter((f) => f.is_past);
+
+        if (all.length === 0) {
             upcomingContainer.innerHTML = `
                 <div class="card card-sm">
                     <div class="card-body text-center text-secondary">
@@ -622,53 +1271,46 @@ class FlightDetailPage {
             return;
         }
 
-        upcomingContainer.innerHTML = `
-            <div class="card card-sm">
+        const pastBlock =
+            past.length > 0
+                ? `
+            <div class="card card-sm mb-3">
                 <div class="card-header">
-                    <strong>Upcoming Flights</strong>
-                    <span class="badge bg-info ms-2">${this.upcomingFlights.length}</span>
+                    <strong>Recent flights</strong>
+                    <span class="badge bg-secondary ms-2">${past.length}</span>
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        ${this.upcomingFlights.map(flight => `
-                            <div class="list-group-item px-0">
-                                <div class="row align-items-center">
-                                    <div class="col">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-fill">
-                                                <div class="fw-bold">${flight.flight_reference || flight.aircraft_id}</div>
-                                                <div class="text-muted small">
-                                                    ${flight.departure_airport || 'TBD'} → ${flight.arrival_airport || 'TBD'}
-                                                </div>
-                                                <div class="text-muted small">
-                                                    <i class="ti ti-clock me-1"></i>
-                                                    Dep: ${flight.departure_time ? new Date(flight.departure_time).toLocaleString() : 'TBD'}
-                                                </div>
-                                                ${flight.aircraft_type ? `
-                                                    <div class="text-muted small">
-                                                        <i class="ti ti-plane me-1"></i>
-                                                        ${flight.aircraft_type}
-                                                    </div>
-                                                ` : ''}
-                                                ${flight.aircraft_operator ? `
-                                                    <div class="text-muted small">
-                                                        <i class="ti ti-building me-1"></i>
-                                                        ${flight.aircraft_operator}
-                                                    </div>
-                                                ` : ''}
-                                            </div>
-                                            <div class="ms-3">
-                                                <span class="badge bg-${this.getStatusColor(flight.status)}">${flight.status}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
+                        ${past.map((f) => this._flightListItemHtml(f)).join('')}
                     </div>
                 </div>
             </div>
-        `;
+        `
+                : '';
+
+        const upcomingBlock =
+            upcoming.length > 0
+                ? `
+            <div class="card card-sm">
+                <div class="card-header">
+                    <strong>Upcoming flights</strong>
+                    <span class="badge bg-info ms-2">${upcoming.length}</span>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        ${upcoming.map((f) => this._flightListItemHtml(f)).join('')}
+                    </div>
+                </div>
+            </div>
+        `
+                : '';
+
+        upcomingContainer.innerHTML =
+            pastBlock +
+            upcomingBlock +
+            (past.length > 0 && upcoming.length === 0
+                ? `<p class="text-muted small mb-0">No future scheduled flights in the feed.</p>`
+                : '');
     }
 
     getStatusColor(status) {
@@ -757,6 +1399,58 @@ class FlightDetailPage {
         document.getElementById('aircraft-equipment').textContent = aircraft.equipment || 'ADS-B Out';
     }
 
+    updateOceanicReport() {
+        const card = document.getElementById('oceanic-report-card');
+        const body = document.getElementById('oceanic-report-body');
+        if (!card || !body) {
+            return;
+        }
+        const oceanic = this.flightData?.oceanic_report;
+        if (!oceanic) {
+            card.classList.add('d-none');
+            body.innerHTML = '';
+            return;
+        }
+
+        const rvsm = oceanic.rvsm_data || {};
+        const boolTag = (raw) => {
+            if (raw === true || String(raw).toLowerCase() === 'true') return 'Yes';
+            if (raw === false || String(raw).toLowerCase() === 'false') return 'No';
+            return 'Unknown';
+        };
+        const fmt = (v) => (v !== null && v !== undefined && v !== '' ? v : '—');
+        const lat =
+            oceanic.latitude !== null && oceanic.latitude !== undefined
+                ? Number(oceanic.latitude).toFixed(4)
+                : '—';
+        const lon =
+            oceanic.longitude !== null && oceanic.longitude !== undefined
+                ? Number(oceanic.longitude).toFixed(4)
+                : '—';
+
+        body.innerHTML = `
+            <div class="small text-secondary mb-2">
+                Reported ${fmt(oceanic.reported_at)} · Received ${fmt(oceanic.created_at)}
+            </div>
+            <div class="row g-2 small">
+                <div class="col-6"><span class="text-secondary">Position</span><div class="fw-semibold">${lat}, ${lon}</div></div>
+                <div class="col-6"><span class="text-secondary">Speed</span><div class="fw-semibold">${fmt(oceanic.speed)}</div></div>
+                <div class="col-6"><span class="text-secondary">Altitude</span><div class="fw-semibold">${fmt(oceanic.altitude)}</div></div>
+                <div class="col-6"><span class="text-secondary">ETA (est)</span><div class="fw-semibold">${fmt(oceanic.eta_estimated)}</div></div>
+                <div class="col-6"><span class="text-secondary">Facility</span><div class="fw-semibold">${fmt(oceanic.source_facility)}</div></div>
+                <div class="col-6"><span class="text-secondary">Flight Ref</span><div class="fw-semibold">${fmt(oceanic.flight_reference)}</div></div>
+            </div>
+            <hr class="my-2"/>
+            <div class="small fw-semibold mb-1">RVSM</div>
+            <div class="small">
+                Equipped: <strong>${boolTag(rvsm.equipped)}</strong> ·
+                Current: <strong>${boolTag(rvsm.current_compliance)}</strong> ·
+                Future: <strong>${boolTag(rvsm.future_compliance)}</strong>
+            </div>
+        `;
+        card.classList.remove('d-none');
+    }
+
     async updateRecentFlights() {
         try {
             const response = await fetch(`/api/flights/${this.aircraftId}/recent`);
@@ -768,7 +1462,7 @@ class FlightDetailPage {
             recentFlights.forEach(flight => {
                 const item = document.createElement('a');
                 item.className = 'list-group-item';
-                item.href = `?aircraft=${this.aircraftId}&date=${flight.date}`;
+                item.href = `?aircraft_id=${encodeURIComponent(this.aircraftId)}&date=${encodeURIComponent(flight.date)}`;
                 item.textContent = `${flight.route} · ${flight.date}`;
                 container.appendChild(item);
             });
@@ -779,57 +1473,117 @@ class FlightDetailPage {
     }
 
     renderMap() {
-        if (!this.map || !this.flightData.track) return;
-        
+        if (!this.map || !this.flightData) return;
+
+        const plannedRoute = this.flightData.planned_route || [];
+        const trackPoints = this.flightData.track || [];
+        const hasPlannedLine = plannedRoute.length >= 2;
+        const hasTrackPts = trackPoints.length > 0;
+        if (!hasPlannedLine && !hasTrackPts) return;
+
         try {
-            // Clear existing markers and polylines
-            this.map.eachLayer(layer => {
-                if (layer instanceof L.Marker || layer instanceof L.Polyline) {
-                    this.map.removeLayer(layer);
-                }
-            });
-            
-            const trackPoints = this.flightData.track || [];
-            if (trackPoints.length === 0) return;
-            
-            // Create polyline from track points
-            const latLngs = trackPoints
-                .filter(point => point.latitude && point.longitude)
-                .map(point => [point.latitude, point.longitude]);
-            
-            if (latLngs.length > 0) {
-                const polyline = L.polyline(latLngs, {
-                    color: '#007bff',
-                    weight: 3,
-                    opacity: 0.8
-                }).addTo(this.map);
-                
-                // Add departure marker
-                if (latLngs[0]) {
-                    L.marker(latLngs[0], {
-                        icon: L.divIcon({
-                            className: 'departure-marker',
-                            html: '<div style="background: #28a745; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">D</div>',
-                            iconSize: [20, 20]
-                        })
-                    }).addTo(this.map);
-                }
-                
-                // Add arrival marker
-                if (latLngs[latLngs.length - 1]) {
-                    L.marker(latLngs[latLngs.length - 1], {
-                        icon: L.divIcon({
-                            className: 'arrival-marker',
-                            html: '<div style="background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">A</div>',
-                            iconSize: [20, 20]
-                        })
-                    }).addTo(this.map);
-                }
-                
-                // Fit map to show entire route
-                this.map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+            if (this.mapOverlayGroup) {
+                this.mapOverlayGroup.clearLayers();
             }
-            
+
+            const legend = document.getElementById('map-legend');
+            const legPlanned = document.getElementById('legend-planned');
+            const legTrack = document.getElementById('legend-track');
+            if (legend) {
+                legend.classList.add('d-none');
+                if (legPlanned) legPlanned.classList.add('d-none');
+                if (legTrack) legTrack.classList.add('d-none');
+            }
+
+            const plannedLatLngs = plannedRoute.filter(
+                ll =>
+                    Array.isArray(ll) &&
+                    ll.length === 2 &&
+                    Number.isFinite(Number(ll[0])) &&
+                    Number.isFinite(Number(ll[1]))
+            ).map(ll => [Number(ll[0]), Number(ll[1])]);
+
+            const trackSorted = [...trackPoints].sort(
+                (a, b) =>
+                    new Date(a.time || 0).getTime() - new Date(b.time || 0).getTime()
+            );
+            const trackLatLngs = trackSorted
+                .filter(
+                    point =>
+                        point.latitude != null &&
+                        point.longitude != null &&
+                        !Number.isNaN(Number(point.latitude)) &&
+                        !Number.isNaN(Number(point.longitude))
+                )
+                .map(point => [Number(point.latitude), Number(point.longitude)]);
+
+            const boundsLayers = [];
+            const overlayTarget = this.mapOverlayGroup || this.map;
+
+            if (plannedLatLngs.length >= 2) {
+                const plannedLine = L.polyline(plannedLatLngs, {
+                    color: '#94a3b8',
+                    weight: 3,
+                    opacity: 0.5,
+                    dashArray: '10, 14',
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                }).addTo(overlayTarget);
+                boundsLayers.push(plannedLine);
+                if (legend) {
+                    legend.classList.remove('d-none');
+                    if (legPlanned) legPlanned.classList.remove('d-none');
+                }
+            }
+
+            if (trackLatLngs.length >= 2) {
+                const trackLine = L.polyline(trackLatLngs, {
+                    color: '#0d6efd',
+                    weight: 4,
+                    opacity: 0.92,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                }).addTo(overlayTarget);
+                trackLine.bringToFront();
+                boundsLayers.push(trackLine);
+                if (legend) {
+                    legend.classList.remove('d-none');
+                    if (legTrack) legTrack.classList.remove('d-none');
+                }
+
+                const n = trackLatLngs.length;
+                const endBearing = flightDetailInitialBearingDeg(
+                    trackLatLngs[n - 2][0],
+                    trackLatLngs[n - 2][1],
+                    trackLatLngs[n - 1][0],
+                    trackLatLngs[n - 1][1]
+                );
+
+                const mEnd = L.marker(trackLatLngs[n - 1], {
+                    icon: flightDetailAircraftDivIcon(endBearing),
+                }).addTo(overlayTarget);
+                boundsLayers.push(mEnd);
+            } else if (trackLatLngs.length === 1) {
+                const m = L.marker(trackLatLngs[0], {
+                    icon: flightDetailAircraftDivIcon(0),
+                }).addTo(overlayTarget);
+                boundsLayers.push(m);
+                if (legend) {
+                    legend.classList.remove('d-none');
+                    if (legTrack) legTrack.classList.remove('d-none');
+                }
+            }
+
+            if (boundsLayers.length > 0) {
+                const group = L.featureGroup(boundsLayers);
+                if (!this._mapFitBoundsOnce) {
+                    this.map.fitBounds(group.getBounds(), {
+                        padding: [24, 24],
+                        maxZoom: 12,
+                    });
+                    this._mapFitBoundsOnce = true;
+                }
+            }
         } catch (error) {
             console.error('Error rendering map:', error);
         }
@@ -866,6 +1620,25 @@ class FlightDetailPage {
                 this.shareFlight();
             });
         }
+
+        window.addEventListener('resize', () => {
+            if (this.trackProfileChart) {
+                this.trackProfileChart.resize();
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.aircraftId && this.flightData) {
+                this.pollLiveTrack();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (this._liveTrackTimer) {
+                clearInterval(this._liveTrackTimer);
+                this._liveTrackTimer = null;
+            }
+        });
     }
 
     downloadCSV() {
@@ -890,8 +1663,8 @@ class FlightDetailPage {
             this.formatTime(point.time),
             point.latitude || '',
             point.longitude || '',
-            point.altitude || '',
-            point.ground_speed || '',
+            this.normalizeAltitudeFeet(point.altitude) ?? '',
+            point.ground_speed ?? point.speed ?? '',
             point.remark || ''
         ]);
         

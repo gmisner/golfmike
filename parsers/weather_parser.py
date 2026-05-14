@@ -78,6 +78,12 @@ class WeatherXMLParser:
             self.logger.error(f"Error parsing weather XML: {e}")
             return {"error": str(e), "raw_content": xml_content}
 
+    def parse_weather_xml(
+        self, xml_content: str, message_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Backward-compatible alias for :meth:`parse_message`."""
+        return self.parse_message(xml_content, message_type)
+
     def _detect_message_type(self, root: etree.Element) -> str:
         """Detect the type of weather message from XML structure"""
         # Check for common weather message indicators

@@ -9,7 +9,7 @@ class FlightPlanDBModel(Base):
     __tablename__ = "flight_plan"
     id = Column(Integer, primary_key=True, index=True)
     flight_plan_id = Column(String, unique=True, index=True)
-    gufi = Column(String, unique=True, index=True)
+    gufi = Column(String, ForeignKey("flights.gufi"), unique=True, index=True, nullable=True)
     aircraft_id = Column(String, ForeignKey("aircraft.aircraft_id"))
     igtd = Column(DateTime)
     departure_airport = Column(String)
@@ -58,4 +58,9 @@ class FlightPlanDBModel(Base):
     departurePoint_26a = Column(String)
     destination_27a = Column(String)
     aircraft = relationship("AircraftDBModel", back_populates="flight_plan")
+    flight = relationship(
+        "FlightsDBModel",
+        back_populates="flight_plan",
+        foreign_keys=[gufi],
+    )
     fxa_flight = relationship("FxaFlightDBModel", back_populates="flight_plan")
