@@ -720,7 +720,7 @@ class FlightTracker {
         
         return `
             <div class="list-group-item list-group-item-action" 
-                 onclick="flightTracker.showFlightDetails('${flight.aircraft_id}')"
+                 onclick="tracker.showFlightDetails('${flight.aircraft_id}')"
                  style="cursor: pointer;">
                 <div class="row align-items-center">
                     <div class="col-auto">
