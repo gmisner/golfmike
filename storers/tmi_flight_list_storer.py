@@ -74,9 +74,10 @@ def store_tmi_flight_list(parsed_data, session=None):
                 if flight.get("status"):
                     flights_row.current_status = flight["status"]
 
-            # Fetch or create FlightPlanDBModel entry
+            # Fetch or create FlightPlanDBModel entry (look up by gufi, not flight_plan_id,
+            # since other storers may insert with gufi set but flight_plan_id unset)
             flight_plan = (
-                session.query(FlightPlanDBModel).filter_by(flight_plan_id=gufi).first()
+                session.query(FlightPlanDBModel).filter_by(gufi=gufi).first()
             )
             if not flight_plan:
                 flight_plan = FlightPlanDBModel(
