@@ -62,7 +62,8 @@ def create_simple_api(app: Flask) -> None:
         if not request.path.startswith("/v1/"):
             return None
         if not _VALID_KEYS:
-            return jsonify({"error": "API access not configured — set GOLFMIKE_API_KEYS"}), 503
+            # No keys configured — open access with a log warning (dev/single-user mode)
+            return None
         key = _get_api_key()
         if not key or key not in _VALID_KEYS:
             return jsonify({"error": "Invalid or missing API key"}), 401

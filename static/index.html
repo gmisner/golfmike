@@ -163,6 +163,7 @@
   </footer>
 
   <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+  <script src="/static/js/api_client.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────────
     const API = { flights: '/api/flights', v1: '/v1' };
@@ -313,7 +314,7 @@
     async function loadEvents() {
       try {
         const since = new Date(Date.now() - 3600_000).toISOString();
-        const res = await fetch(`${API.v1}/flights/events?since=${since}&limit=30`);
+        const res = await GolfMikeAPI.apiFetch(`${API.v1}/flights/events?since=${since}&limit=30`);
         const data = await res.json();
         renderEvents(data.events || []);
       } catch {
@@ -359,7 +360,7 @@
     async function loadRiskSummary() {
       const box = document.getElementById('risk-summary');
       try {
-        const res = await fetch(`${API.v1}/airports/flow-forecast?airports=${HUBS.join(',')}&hours=2`);
+        const res = await GolfMikeAPI.apiFetch(`${API.v1}/airports/flow-forecast?airports=${HUBS.join(',')}&hours=2`);
         const data = await res.json();
         renderRiskSummary(data.airports || []);
       } catch {
@@ -403,14 +404,14 @@
 
       try {
         const since = new Date(Date.now() - 3600_000).toISOString();
-        const res = await fetch(`${API.v1}/flights/events?since=${since}&type=FILED`);
+        const res = await GolfMikeAPI.apiFetch(`${API.v1}/flights/events?since=${since}&type=FILED`);
         const data = await res.json();
         document.getElementById('stat-filed').textContent = data.count ?? '—';
       } catch {}
 
       try {
         const since = new Date(Date.now() - 3600_000).toISOString();
-        const res = await fetch(`${API.v1}/flights/events?since=${since}`);
+        const res = await GolfMikeAPI.apiFetch(`${API.v1}/flights/events?since=${since}`);
         const data = await res.json();
         document.getElementById('stat-events').textContent = data.count ?? '—';
       } catch {}
