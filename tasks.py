@@ -334,3 +334,113 @@ def cleanup_old_weather_data(days_to_keep=30):
         raise
     finally:
         session.close()
+
+
+@shared_task(name="tasks.refresh_flow_predictions", queue="weather_processing")
+def refresh_flow_predictions(airport_icao_list=None):
+    """
+    Refresh flow control probability predictions for a list of airports.
+    Runs every 15 minutes via Celery Beat.
+    """
+    from services.flow_probability_service import batch_predict
+
+    if not airport_icao_list:
+        airport_icao_list = ["KJFK", "KLAX", "KORD", "KDFW", "KATL"]
+
+    logger.info(f"Refreshing flow predictions for {len(airport_icao_list)} airports")
+    try:
+        results = batch_predict(airport_icao_list, window_hours=2)
+        high_risk = [r for r in results if (r.get("flow_probability") or 0) >= 0.55]
+        if high_risk:
+            logger.warning(
+                f"HIGH/VERY_HIGH flow risk: "
+                + ", ".join(f"{r['airport']} ({r['flow_probability']:.0%})" for r in high_risk)
+            )
+        return {
+            "status": "success",
+            "airports_processed": len(results),
+            "high_risk_count": len(high_risk),
+        }
+    except Exception as e:
+        logger.error(f"Flow prediction refresh failed: {e}", exc_info=True)
+        raise
+
+
+@shared_task(name="tasks.label_completed_flow_predictions", queue="maintenance")
+def label_completed_flow_predictions():
+    """
+    Retrospectively label completed flow predictions with actual outcomes.
+
+    For each prediction whose window has expired, checks whether TMI data
+    contains a GDP/GS record for that airport during the prediction window.
+    This builds the labeled training dataset for upgrading to an ML model.
+    """
+    from datetime import timezone
+    from sqlalchemy import text
+
+    session = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+
+        # Find unlabeled predictions whose window has closed
+        unlabeled = session.execute(
+            text(
+                """
+                SELECT id, airport_icao, predicted_at, window_hours
+                FROM flow_predictions
+                WHERE actual_flow_control IS NULL
+                  AND predicted_at + (window_hours * INTERVAL '1 hour') < :now
+                LIMIT 200
+                """
+            ),
+            {"now": now},
+        ).fetchall()
+
+        labeled = 0
+        for row in unlabeled:
+            window_end = row.predicted_at + timedelta(hours=row.window_hours)
+
+            # Check if any GDP/GS TMI program was active for this airport in that window
+            tmi_hit = session.execute(
+                text(
+                    """
+                    SELECT COUNT(*) as cnt
+                    FROM tmi_updates
+                    WHERE update_time BETWEEN :start AND :end
+                      AND (
+                        fca_id ILIKE :pattern
+                        AND (update_type ILIKE '%GDP%' OR update_type ILIKE '%GS%')
+                      )
+                    """
+                ),
+                {
+                    "start": row.predicted_at,
+                    "end": window_end,
+                    "pattern": f"%{row.airport_icao}%",
+                },
+            ).fetchone()
+
+            had_flow = (tmi_hit.cnt > 0) if tmi_hit else False
+
+            session.execute(
+                text(
+                    """
+                    UPDATE flow_predictions
+                    SET actual_flow_control = :val, labeled_at = :now
+                    WHERE id = :id
+                    """
+                ),
+                {"val": had_flow, "now": now, "id": row.id},
+            )
+            labeled += 1
+
+        session.commit()
+        logger.info(f"Labeled {labeled} completed flow predictions")
+        return {"status": "success", "labeled": labeled}
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Flow prediction labeling failed: {e}", exc_info=True)
+        raise
+    finally:
+        session.close()

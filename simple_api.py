@@ -1591,4 +1591,433 @@ def create_simple_api(app: Flask) -> None:
 
         except Exception as e:
             logger.error("Error getting upcoming flights: " + str(e))
-            return jsonify({"error": "Internal server error"}), 500
+
+    # ── Route overlay & events ────────────────────────────────────────────────
+
+    @app.route("/v1/flights/<gufi>/route-overlay", methods=["GET"])
+    def route_overlay(gufi: str):
+        """
+        Return the planned route, actual track, and deviation records for a
+        flight so the map can draw both paths and highlight off-route segments.
+
+        Query params:
+          hours  – how many hours of track history to include (default 12)
+        """
+        hours = int(request.args.get("hours", 12))
+
+        try:
+            session = SessionLocal()
+
+            # ── Planned waypoints ─────────────────────────────────────────────
+            planned_rows = session.execute(
+                text(
+                    """
+                    SELECT sequence, fix_name, latitude, longitude,
+                           altitude_restriction, speed_restriction,
+                           estimated_time_over, route_source
+                    FROM planned_waypoints
+                    WHERE gufi = :gufi
+                    ORDER BY sequence
+                    """
+                ),
+                {"gufi": gufi},
+            ).fetchall()
+
+            planned_route = [
+                {
+                    "sequence": r.sequence,
+                    "fix_name": r.fix_name,
+                    "latitude": r.latitude,
+                    "longitude": r.longitude,
+                    "altitude_restriction": r.altitude_restriction,
+                    "speed_restriction": r.speed_restriction,
+                    "estimated_time_over": (
+                        r.estimated_time_over.isoformat()
+                        if r.estimated_time_over
+                        else None
+                    ),
+                    "route_source": r.route_source,
+                }
+                for r in planned_rows
+                if r.latitude is not None and r.longitude is not None
+            ]
+
+            # ── Actual track ──────────────────────────────────────────────────
+            track_rows = session.execute(
+                text(
+                    """
+                    SELECT latitude, longitude, altitude, speed, heading,
+                           time_at_position
+                    FROM track_updates
+                    WHERE gufi = :gufi
+                      AND time_at_position >= NOW() - INTERVAL ':hours hours'
+                    ORDER BY time_at_position ASC
+                    """.replace(":hours hours", f"{hours} hours")
+                ),
+                {"gufi": gufi},
+            ).fetchall()
+
+            actual_track = [
+                {
+                    "latitude": float(r.latitude) if r.latitude else None,
+                    "longitude": float(r.longitude) if r.longitude else None,
+                    "altitude": r.altitude,
+                    "speed": r.speed,
+                    "heading": r.heading,
+                    "timestamp": (
+                        r.time_at_position.isoformat() if r.time_at_position else None
+                    ),
+                }
+                for r in track_rows
+            ]
+
+            # ── Deviation records ─────────────────────────────────────────────
+            deviation_rows = session.execute(
+                text(
+                    """
+                    SELECT actual_latitude, actual_longitude, actual_altitude,
+                           actual_speed, timestamp, nearest_fix_name,
+                           cross_track_distance_nm, altitude_delta_ft, alert_level
+                    FROM flight_deviations
+                    WHERE gufi = :gufi
+                      AND timestamp >= NOW() - INTERVAL ':hours hours'
+                      AND alert_level != 'NORMAL'
+                    ORDER BY timestamp ASC
+                    """.replace(":hours hours", f"{hours} hours")
+                ),
+                {"gufi": gufi},
+            ).fetchall()
+
+            deviations = [
+                {
+                    "latitude": r.actual_latitude,
+                    "longitude": r.actual_longitude,
+                    "altitude": r.actual_altitude,
+                    "speed": r.actual_speed,
+                    "timestamp": (
+                        r.timestamp.isoformat() if r.timestamp else None
+                    ),
+                    "nearest_fix": r.nearest_fix_name,
+                    "cross_track_nm": r.cross_track_distance_nm,
+                    "altitude_delta_ft": r.altitude_delta_ft,
+                    "alert_level": r.alert_level,
+                }
+                for r in deviation_rows
+            ]
+
+            # ── Adherence summary ─────────────────────────────────────────────
+            if actual_track:
+                all_dev_rows = session.execute(
+                    text(
+                        """
+                        SELECT alert_level, COUNT(*) as cnt
+                        FROM flight_deviations
+                        WHERE gufi = :gufi
+                        GROUP BY alert_level
+                        """
+                    ),
+                    {"gufi": gufi},
+                ).fetchall()
+                counts = {r.alert_level: r.cnt for r in all_dev_rows}
+                total = sum(counts.values())
+                normal = counts.get("NORMAL", 0)
+                adherence_pct = round(normal / total * 100, 1) if total else None
+            else:
+                adherence_pct = None
+
+            session.close()
+
+            return jsonify(
+                {
+                    "gufi": gufi,
+                    "planned_route": planned_route,
+                    "actual_track": actual_track,
+                    "deviations": deviations,
+                    "adherence_pct": adherence_pct,
+                    "planned_waypoint_count": len(planned_route),
+                    "track_point_count": len(actual_track),
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error building route overlay for {gufi}: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/v1/flights/events", methods=["GET"])
+    def flight_events_poll():
+        """
+        Polling endpoint for flight events. Returns events newer than `since`.
+
+        Query params:
+          since      – ISO-8601 timestamp (required)
+          type       – comma-separated event types to filter (default: all)
+          origin     – filter by departure airport (ICAO)
+          dest       – filter by arrival airport (ICAO)
+          aircraft   – filter by aircraft_id/callsign
+          limit      – max records to return (default 100, max 500)
+        """
+        since_str = request.args.get("since")
+        if not since_str:
+            return jsonify({"error": "since parameter required (ISO-8601)"}), 400
+
+        try:
+            from datetime import datetime
+            since = datetime.fromisoformat(since_str.replace("Z", "+00:00"))
+        except ValueError:
+            return jsonify({"error": "Invalid since timestamp"}), 400
+
+        event_types = request.args.get("type", "")
+        origin = request.args.get("origin", "").upper()
+        dest = request.args.get("dest", "").upper()
+        aircraft = request.args.get("aircraft", "").upper()
+        limit = min(int(request.args.get("limit", 100)), 500)
+
+        try:
+            session = SessionLocal()
+
+            filters = ["created_at > :since"]
+            params = {"since": since, "limit": limit}
+
+            if event_types:
+                types_list = [t.strip().upper() for t in event_types.split(",")]
+                types_sql = ", ".join(f"'{t}'" for t in types_list)
+                filters.append(f"event_type IN ({types_sql})")
+
+            if aircraft:
+                filters.append("aircraft_id = :aircraft")
+                params["aircraft"] = aircraft
+
+            where = " AND ".join(filters)
+            query = text(
+                f"""
+                SELECT aircraft_id, gufi, event_type, event_timestamp,
+                       event_data, source_facility, created_at
+                FROM flight_events
+                WHERE {where}
+                ORDER BY created_at ASC
+                LIMIT :limit
+                """
+            )
+            rows = session.execute(query, params).fetchall()
+
+            events = []
+            for r in rows:
+                ed = r.event_data or {}
+                if isinstance(ed, str):
+                    import json as _json
+                    try:
+                        ed = _json.loads(ed)
+                    except Exception:
+                        ed = {}
+
+                # Apply origin/dest filters on the event_data payload
+                if origin and ed.get("departure_airport", "").upper() != origin:
+                    continue
+                if dest and ed.get("arrival_airport", "").upper() != dest:
+                    continue
+
+                events.append(
+                    {
+                        "aircraft_id": r.aircraft_id,
+                        "gufi": r.gufi,
+                        "event_type": r.event_type,
+                        "event_timestamp": (
+                            r.event_timestamp.isoformat() if r.event_timestamp else None
+                        ),
+                        "event_data": ed,
+                        "source_facility": r.source_facility,
+                        "created_at": (
+                            r.created_at.isoformat() if r.created_at else None
+                        ),
+                    }
+                )
+
+            session.close()
+            return jsonify({"events": events, "count": len(events)})
+
+        except Exception as e:
+            logger.error(f"Error polling flight events: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/v1/subscriptions", methods=["POST"])
+    def create_subscription():
+        """
+        Register a new notification subscription.
+
+        Body (JSON):
+          apprise_url   – required. Apprise URL (slack://, discord://, mailto://, etc.)
+          label         – optional human label
+          event_types   – optional list of event types (default: all)
+          filter_origin – optional ICAO departure filter
+          filter_dest   – optional ICAO destination filter
+          filter_aircraft – optional aircraft_id filter
+          filter_alert_level – optional minimum deviation alert level
+        """
+        body = request.get_json(silent=True) or {}
+        apprise_url = body.get("apprise_url", "").strip()
+        if not apprise_url:
+            return jsonify({"error": "apprise_url is required"}), 400
+
+        try:
+            session = SessionLocal()
+            from models.sqlalchemy.flight_overlay import NotificationSubscriptionDBModel
+
+            sub = NotificationSubscriptionDBModel(
+                apprise_url=apprise_url,
+                label=body.get("label"),
+                event_types=body.get("event_types") or [],
+                filter_origin=(body.get("filter_origin") or "").upper() or None,
+                filter_destination=(body.get("filter_dest") or "").upper() or None,
+                filter_aircraft_id=(body.get("filter_aircraft") or "").upper() or None,
+                filter_alert_level=(body.get("filter_alert_level") or "").upper() or None,
+                is_active=True,
+            )
+            session.add(sub)
+            session.commit()
+            sub_id = sub.id
+            session.close()
+
+            return jsonify({"id": sub_id, "status": "created"}), 201
+
+        except Exception as e:
+            logger.error(f"Error creating subscription: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/v1/subscriptions/<int:sub_id>", methods=["DELETE"])
+    def delete_subscription(sub_id: int):
+        """Deactivate a notification subscription."""
+        try:
+            session = SessionLocal()
+            from models.sqlalchemy.flight_overlay import NotificationSubscriptionDBModel
+
+            sub = (
+                session.query(NotificationSubscriptionDBModel)
+                .filter_by(id=sub_id)
+                .first()
+            )
+            if not sub:
+                session.close()
+                return jsonify({"error": "Subscription not found"}), 404
+
+            sub.is_active = False
+            session.commit()
+            session.close()
+            return jsonify({"id": sub_id, "status": "deactivated"})
+
+        except Exception as e:
+            logger.error(f"Error deleting subscription {sub_id}: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    # ── Flow probability ──────────────────────────────────────────────────────
+
+    @app.route("/v1/airports/<icao>/flow-forecast", methods=["GET"])
+    def flow_forecast_single(icao: str):
+        """
+        Flow control probability for a single airport.
+
+        Query params:
+          hours  – forecast window in hours (default 2, max 6)
+
+        Response includes:
+          flow_probability  – 0.0 to 1.0
+          risk_level        – VERY_LOW / LOW / MODERATE / HIGH / VERY_HIGH
+          confidence        – HIGH / MEDIUM / LOW  (reflects data availability)
+          risk_factors      – ordered list of contributing factors with weights
+          current_conditions – METAR summary
+          model_version     – "heuristic-v1" until ML model is trained
+        """
+        hours = min(int(request.args.get("hours", 2)), 6)
+        try:
+            from services.flow_probability_service import predict_flow_probability
+            result = predict_flow_probability(icao.upper(), window_hours=hours)
+            return jsonify(result)
+        except Exception as e:
+            logger.error(f"Flow forecast error for {icao}: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/v1/airports/flow-forecast", methods=["GET"])
+    def flow_forecast_batch():
+        """
+        Flow control probability for multiple airports in one call.
+        Results sorted by probability descending so highest-risk airports
+        appear first — useful for dashboard overviews.
+
+        Query params:
+          airports  – comma-separated ICAO codes (e.g. KLAX,KJFK,KORD)
+          hours     – forecast window in hours (default 2, max 6)
+
+        Example:
+          GET /v1/airports/flow-forecast?airports=KLAX,KJFK,KORD,KATL&hours=2
+        """
+        airports_str = request.args.get("airports", "")
+        if not airports_str:
+            return jsonify({"error": "airports parameter required (comma-separated ICAO codes)"}), 400
+
+        airports = [a.strip().upper() for a in airports_str.split(",") if a.strip()]
+        if len(airports) > 50:
+            return jsonify({"error": "Maximum 50 airports per batch request"}), 400
+
+        hours = min(int(request.args.get("hours", 2)), 6)
+        try:
+            from services.flow_probability_service import batch_predict
+            results = batch_predict(airports, window_hours=hours)
+            return jsonify({"airports": results, "count": len(results)})
+        except Exception as e:
+            logger.error(f"Batch flow forecast error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/v1/airports/<icao>/flow-history", methods=["GET"])
+    def flow_forecast_history(icao: str):
+        """
+        Historical flow probability predictions for trend analysis.
+        Returns the last N predictions stored for this airport.
+
+        Query params:
+          hours  – how many hours of history to return (default 24)
+          limit  – max records (default 50, max 500)
+        """
+        hours = int(request.args.get("hours", 24))
+        limit = min(int(request.args.get("limit", 50)), 500)
+        try:
+            session = SessionLocal()
+            rows = session.execute(
+                text(
+                    """
+                    SELECT predicted_at, window_hours, flow_probability,
+                           risk_level, confidence, flight_category,
+                           ceiling_ft, visibility_sm, active_tmi_types,
+                           taf_trend, risk_factors, actual_flow_control
+                    FROM flow_predictions
+                    WHERE airport_icao = :icao
+                      AND predicted_at >= NOW() - INTERVAL ':hours hours'
+                    ORDER BY predicted_at DESC
+                    LIMIT :limit
+                    """.replace(":hours hours", f"{hours} hours")
+                ),
+                {"icao": icao.upper(), "limit": limit},
+            ).fetchall()
+
+            history = [
+                {
+                    "predicted_at": r.predicted_at.isoformat() if r.predicted_at else None,
+                    "window_hours": r.window_hours,
+                    "flow_probability": r.flow_probability,
+                    "risk_level": r.risk_level,
+                    "confidence": r.confidence,
+                    "flight_category": r.flight_category,
+                    "ceiling_ft": r.ceiling_ft,
+                    "visibility_sm": r.visibility_sm,
+                    "active_tmi": r.active_tmi_types,
+                    "taf_trend": r.taf_trend,
+                    "risk_factors": r.risk_factors,
+                    "actual_flow_control": r.actual_flow_control,
+                }
+                for r in rows
+            ]
+
+            session.close()
+            return jsonify({"airport": icao.upper(), "history": history, "count": len(history)})
+
+        except Exception as e:
+            logger.error(f"Flow history error for {icao}: {e}")
+            return jsonify({"error": str(e)}), 500

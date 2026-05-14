@@ -3,7 +3,7 @@ Flight Events Storer - Handles flight status events and notifications
 """
 
 from sqlalchemy.orm import Session
-from models.sqlalchemy.flight_events import FlightEventsDBModel
+from models.sqlalchemy.flight_events import FlightEventsDBModel, TrackUpdatesDBModel
 from utils.logger import main_logger as logger
 from typing import Dict, Any
 import json

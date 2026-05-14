@@ -4,6 +4,7 @@ quart==0.19.4
 # Database
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
+alembic==1.13.1
 
 # Celery and Redis
 celery==5.3.4
@@ -25,3 +26,8 @@ pydantic==2.5.0
 
 # Additional utilities
 python-dotenv==1.0.0
+python-dateutil==2.9.0
+
+# Notifications (Apprise supports Slack, Discord, Telegram, Pushover, ntfy, email, +50 more)
+# See: https://github.com/caronc/apprise
+apprise==1.9.3

@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Airport Flow Risk — GolfMike</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="/css/custom.css"/>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <a href="/" class="navbar-brand d-flex align-items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="color:var(--gm-blue)">
+          <path d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7H9l2-7H7l-2 2H2l2-4-2-4h3l2 2h4L9 3h3l4 7z"/>
+        </svg>
+        GolfMike
+      </a>
+      <div class="collapse navbar-collapse" id="navbar-menu">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="/">Tracker</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/airports.html">Airports</a></li>
+          <li class="nav-item"><a class="nav-link" href="/flight-plan.html">Flight Plans</a></li>
+        </ul>
+      </div>
+      <div class="ms-3 d-none d-md-flex align-items-center gap-3">
+        <span class="live-indicator"><span class="live-dot"></span>Live</span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="refreshAll()">↻ Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page header -->
+  <div class="page-header py-3" style="background:var(--gm-surface-2);border-bottom:1px solid var(--gm-border)">
+    <div class="container-xl">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h2 class="mb-0">Airport Flow Risk</h2>
+          <div class="text-dim mt-1" style="font-size:0.82rem">
+            Probability of FAA flow control (GDP/GS) in the next 2 hours · refreshes every 5 min
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <label class="text-dim me-1" style="font-size:0.8rem">Window:</label>
+          <select class="form-select form-select-sm" id="window-select" style="width:auto"
+                  onchange="refreshAll()">
+            <option value="1">1 hour</option>
+            <option value="2" selected>2 hours</option>
+            <option value="4">4 hours</option>
+            <option value="6">6 hours</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-xl py-4">
+
+    <!-- NAS Overview map -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3 class="card-title mb-0">National Airspace — Risk Overview</h3>
+      </div>
+      <div class="card-body p-0">
+        <div id="nas-map" class="map-container map-container-full"></div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+      <span class="text-dim" style="font-size:0.82rem">Filter:</span>
+      <button class="btn btn-sm btn-outline-secondary active" data-filter="all" onclick="setFilter('all',this)">All</button>
+      <button class="btn btn-sm btn-outline-secondary" data-filter="high" onclick="setFilter('high',this)">High Risk</button>
+      <button class="btn btn-sm btn-outline-secondary" data-filter="tmi" onclick="setFilter('tmi',this)">Active TMI</button>
+      <div class="ms-auto text-dim" id="last-updated" style="font-size:0.78rem">—</div>
+    </div>
+
+    <!-- Airport grid -->
+    <div class="row g-3" id="airport-grid">
+      <!-- Cards injected by JS -->
+      <div class="col-12 text-center py-5 text-dim">
+        <div class="spinner-border spinner-border-sm me-2"></div>Loading airport data…
+      </div>
+    </div>
+
+    <!-- Detail panel (shown on card click) -->
+    <div id="detail-panel" style="display:none" class="mt-4">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h3 class="card-title mb-0" id="detail-title">—</h3>
+          <button class="btn btn-sm btn-outline-secondary" onclick="closeDetail()">✕ Close</button>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-12 col-lg-6">
+              <h4 class="text-dim mb-3" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.05em">Risk Factors</h4>
+              <div id="detail-factors"></div>
+            </div>
+            <div class="col-12 col-lg-6">
+              <h4 class="text-dim mb-3" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.05em">Current Conditions</h4>
+              <div id="detail-conditions"></div>
+              <h4 class="text-dim mt-4 mb-3" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.05em">24-Hour Trend</h4>
+              <div id="detail-trend" style="height:120px;position:relative">
+                <canvas id="trend-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer py-3 mt-4">
+    <div class="container-xl">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-dim" style="font-size:0.8rem">© 2026 GolfMike Aviation Intelligence</div>
+        <div class="text-dim" style="font-size:0.75rem">Model: heuristic-v1 · Data: FAA SWIM · AviationWeather.gov</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ── Config ────────────────────────────────────────────────
+    const AIRPORTS = [
+      // Primary hubs
+      { icao:'KJFK', name:'New York JFK',      lat:40.6399, lon:-73.7787 },
+      { icao:'KLAX', name:'Los Angeles',        lat:33.9425, lon:-118.4081},
+      { icao:'KORD', name:'Chicago O\'Hare',    lat:41.9742, lon:-87.9073 },
+      { icao:'KDFW', name:'Dallas/Fort Worth',  lat:32.8998, lon:-97.0403 },
+      { icao:'KATL', name:'Atlanta',            lat:33.6407, lon:-84.4277 },
+      { icao:'KDEN', name:'Denver',             lat:39.8561, lon:-104.6737},
+      { icao:'KSFO', name:'San Francisco',      lat:37.6213, lon:-122.3790},
+      { icao:'KSEA', name:'Seattle',            lat:47.4502, lon:-122.3088},
+      { icao:'KIAH', name:'Houston Intercont.', lat:29.9902, lon:-95.3368 },
+      { icao:'KPHX', name:'Phoenix',            lat:33.4373, lon:-112.0078},
+      { icao:'KLAS', name:'Las Vegas',          lat:36.0840, lon:-115.1537},
+      { icao:'KMIA', name:'Miami',              lat:25.7959, lon:-80.2870 },
+      { icao:'KBOS', name:'Boston',             lat:42.3656, lon:-71.0096 },
+      { icao:'KEWR', name:'Newark',             lat:40.6895, lon:-74.1745 },
+      { icao:'KMSP', name:'Minneapolis',        lat:44.8848, lon:-93.2223 },
+      { icao:'KDTW', name:'Detroit',            lat:42.2124, lon:-83.3534 },
+      { icao:'KPHL', name:'Philadelphia',       lat:39.8719, lon:-75.2411 },
+      { icao:'KCLT', name:'Charlotte',          lat:35.2140, lon:-80.9431 },
+      { icao:'KMCO', name:'Orlando',            lat:28.4294, lon:-81.3089 },
+      { icao:'KSLC', name:'Salt Lake City',     lat:40.7884, lon:-111.9778},
+      { icao:'KPDX', name:'Portland',           lat:45.5887, lon:-122.5975},
+      { icao:'KMDW', name:'Chicago Midway',     lat:41.7859, lon:-87.7524 },
+      { icao:'KBWI', name:'Baltimore/Wash.',    lat:39.1754, lon:-76.6683 },
+      { icao:'KIAD', name:'Washington Dulles',  lat:38.9531, lon:-77.4565 },
+    ];
+
+    const RISK_COLOR = {
+      'very_low': '#22c55e', 'low': '#86efac', 'moderate': '#f59e0b',
+      'high': '#ef4444', 'very_high': '#f87171',
+    };
+
+    let allResults = [];
+    let activeFilter = 'all';
+    let map, mapMarkers = {};
+
+    // ── Map ───────────────────────────────────────────────────
+    function initMap() {
+      map = L.map('nas-map', { zoomControl: true }).setView([39.5, -98.5], 4);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CARTO',
+        subdomains: 'abcd', maxZoom: 19,
+      }).addTo(map);
+    }
+
+    function updateMapMarkers(results) {
+      results.forEach(r => {
+        const apt = AIRPORTS.find(a => a.icao === r.airport);
+        if (!apt || r.flow_probability == null) return;
+
+        const pct = Math.round(r.flow_probability * 100);
+        const lvl = (r.risk_level||'VERY_LOW').toLowerCase();
+        const color = RISK_COLOR[lvl] || '#94a3b8';
+        const radius = 14 + r.flow_probability * 20;
+
+        if (mapMarkers[r.airport]) {
+          map.removeLayer(mapMarkers[r.airport]);
+        }
+
+        const circle = L.circleMarker([apt.lat, apt.lon], {
+          radius,
+          color,
+          fillColor: color,
+          fillOpacity: 0.25,
+          weight: 2,
+        }).addTo(map);
+
+        circle.bindPopup(`
+          <div style="min-width:180px">
+            <div style="font-weight:700;font-size:1rem;margin-bottom:4px">${r.airport}</div>
+            <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:8px">${apt.name}</div>
+            <div style="font-size:1.4rem;font-weight:800;color:${color}">${pct}%</div>
+            <div style="font-size:0.72rem;color:#94a3b8">flow control probability</div>
+            ${r.current_conditions?.active_tmi?.length
+              ? `<div style="margin-top:6px;font-size:0.75rem;color:#f59e0b">⚠ Active: ${r.current_conditions.active_tmi.join(', ')}</div>`
+              : ''}
+          </div>
+        `);
+
+        circle.on('click', () => showDetail(r));
+        mapMarkers[r.airport] = circle;
+      });
+    }
+
+    // ── Data loading ──────────────────────────────────────────
+    async function refreshAll() {
+      const hours = document.getElementById('window-select').value;
+      const icaos = AIRPORTS.map(a => a.icao).join(',');
+      try {
+        const res = await fetch(`/v1/airports/flow-forecast?airports=${icaos}&hours=${hours}`);
+        const data = await res.json();
+        allResults = data.airports || [];
+        document.getElementById('last-updated').textContent =
+          'Updated ' + new Date().toLocaleTimeString();
+        renderGrid(allResults);
+        updateMapMarkers(allResults);
+      } catch (e) {
+        document.getElementById('airport-grid').innerHTML =
+          `<div class="col-12"><div class="alert alert-danger">Failed to load airport data.</div></div>`;
+      }
+    }
+
+    // ── Filter ────────────────────────────────────────────────
+    function setFilter(f, btn) {
+      activeFilter = f;
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGrid(allResults);
+    }
+
+    function applyFilter(results) {
+      if (activeFilter === 'high') return results.filter(r => (r.flow_probability||0) >= 0.55);
+      if (activeFilter === 'tmi')  return results.filter(r => r.current_conditions?.active_tmi?.length);
+      return results;
+    }
+
+    // ── Grid rendering ────────────────────────────────────────
+    function renderGrid(results) {
+      const grid = document.getElementById('airport-grid');
+      const filtered = applyFilter(results);
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="col-12 text-center py-5 text-dim">No airports match this filter.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(r => {
+        if (r.error || r.flow_probability == null) return airportErrorCard(r);
+        return airportCard(r);
+      }).join('');
+    }
+
+    function airportCard(r) {
+      const pct = Math.round((r.flow_probability||0) * 100);
+      const lvl = (r.risk_level||'VERY_LOW').toLowerCase().replace('_','-');
+      const apt = AIRPORTS.find(a => a.icao === r.airport);
+      const cond = r.current_conditions || {};
+      const hasTmi = cond.active_tmi?.length;
+
+      return `
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3" id="apt-${r.airport}">
+          <div class="card airport-risk-card h-100" onclick="showDetail(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+            <div class="card-body pb-4">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <div>
+                  <div class="monospace fw-bold" style="font-size:1.1rem">${r.airport}</div>
+                  <div class="text-dim" style="font-size:0.75rem">${apt?.name||''}</div>
+                </div>
+                <span class="risk-badge risk-${lvl}">${pct}%</span>
+              </div>
+
+              <!-- Probability bar -->
+              <div class="mb-3" style="background:var(--gm-surface-3);border-radius:99px;height:6px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:${RISK_COLOR[lvl.replace('-','_')]||'#94a3b8'};
+                            border-radius:99px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1)"></div>
+              </div>
+
+              <!-- Conditions row -->
+              <div class="d-flex gap-3 flex-wrap" style="font-size:0.78rem">
+                ${cond.flight_category ? `<span class="status-badge status-${catClass(cond.flight_category)}">${cond.flight_category}</span>` : ''}
+                ${cond.ceiling_ft != null ? `<span class="text-dim">⬆ ${cond.ceiling_ft.toLocaleString()} ft</span>` : ''}
+                ${cond.visibility_sm != null ? `<span class="text-dim">👁 ${cond.visibility_sm} sm</span>` : ''}
+              </div>
+
+              <!-- TMI alert -->
+              ${hasTmi ? `
+                <div class="mt-2" style="font-size:0.75rem;color:var(--gm-amber);font-weight:600">
+                  ⚠ Active: ${cond.active_tmi.join(' · ')}
+                </div>` : ''}
+
+              <!-- TAF trend -->
+              ${cond.taf_trend && cond.taf_trend !== 'STEADY' ? `
+                <div class="mt-1" style="font-size:0.72rem;color:${cond.taf_trend==='DETERIORATING'?'var(--gm-red)':'var(--gm-green)'}">
+                  ${cond.taf_trend==='DETERIORATING' ? '↘ Deteriorating forecast' : '↗ Improving forecast'}
+                </div>` : ''}
+
+              <div class="mt-2 text-dim" style="font-size:0.7rem">${r.confidence} confidence · ${r.window_hours}h window</div>
+            </div>
+            <div class="probability-bar probability-bar-${lvl}" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }
+
+    function airportErrorCard(r) {
+      return `
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+          <div class="card h-100" style="opacity:0.5">
+            <div class="card-body">
+              <div class="monospace fw-bold">${r.airport}</div>
+              <div class="text-dim mt-1" style="font-size:0.78rem">Data unavailable</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function catClass(cat) {
+      const m = { VFR:'departed', MVFR:'filed', IFR:'diverted', LIFR:'cancelled' };
+      return m[cat] || 'filed';
+    }
+
+    // ── Detail panel ──────────────────────────────────────────
+    function showDetail(r) {
+      if (typeof r === 'string') r = JSON.parse(r);
+      const apt = AIRPORTS.find(a => a.icao === r.airport);
+      document.getElementById('detail-title').textContent =
+        `${r.airport} — ${apt?.name||''} · Flow Risk ${Math.round(r.flow_probability*100)}%`;
+
+      // Risk factors
+      const factors = (r.risk_factors||[]);
+      document.getElementById('detail-factors').innerHTML = factors.length
+        ? factors.map(f => {
+            const positive = f.contribution > 0;
+            const color = positive
+              ? (f.contribution > 0.4 ? 'var(--gm-red)' : f.contribution > 0.2 ? 'var(--gm-amber)' : 'var(--gm-blue)')
+              : 'var(--gm-green)';
+            const pct = Math.abs(Math.round(f.contribution*100));
+            return `
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span style="font-size:0.82rem;font-weight:500">${f.description}</span>
+                  <span style="font-size:0.78rem;color:${color};font-weight:700;white-space:nowrap;margin-left:8px">
+                    ${positive?'+':'-'}${pct}%
+                  </span>
+                </div>
+                <div style="background:var(--gm-surface-3);border-radius:99px;height:4px">
+                  <div style="width:${Math.min(pct*2,100)}%;height:100%;background:${color};border-radius:99px"></div>
+                </div>
+              </div>`;
+          }).join('')
+        : `<div class="text-dim">No significant risk factors detected.</div>`;
+
+      // Current conditions
+      const cond = r.current_conditions || {};
+      document.getElementById('detail-conditions').innerHTML = `
+        <div class="row g-2">
+          ${condRow('Category', cond.flight_category)}
+          ${condRow('Ceiling', cond.ceiling_ft != null ? cond.ceiling_ft.toLocaleString() + ' ft' : null)}
+          ${condRow('Visibility', cond.visibility_sm != null ? cond.visibility_sm + ' sm' : null)}
+          ${condRow('Wind', cond.wind_speed_kt != null ? `${cond.wind_speed_kt}${cond.wind_gust_kt?'/G'+cond.wind_gust_kt:''}kt` : null)}
+          ${condRow('Forecast', cond.taf_trend)}
+          ${condRow('Active TMI', cond.active_tmi?.join(', ') || 'None')}
+          ${condRow('METAR age', cond.metar_age_minutes != null ? cond.metar_age_minutes + ' min ago' : null)}
+        </div>`;
+
+      document.getElementById('detail-panel').style.display = 'block';
+      document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Load trend history
+      loadTrend(r.airport);
+    }
+
+    function condRow(label, value) {
+      if (value == null || value === '') return '';
+      return `
+        <div class="col-6">
+          <div class="text-dim" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.04em">${label}</div>
+          <div style="font-size:0.85rem;font-weight:500">${value}</div>
+        </div>`;
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-panel').style.display = 'none';
+    }
+
+    // ── Trend sparkline ───────────────────────────────────────
+    async function loadTrend(icao) {
+      try {
+        const res = await fetch(`/v1/airports/${icao}/flow-history?hours=24&limit=48`);
+        const data = await res.json();
+        drawTrend(data.history || []);
+      } catch {
+        document.getElementById('detail-trend').innerHTML =
+          `<div class="text-dim" style="font-size:0.78rem">Trend unavailable.</div>`;
+      }
+    }
+
+    function drawTrend(history) {
+      const container = document.getElementById('detail-trend');
+      if (!history.length) {
+        container.innerHTML = `<div class="text-dim" style="font-size:0.78rem">No history yet — predictions accumulate over time.</div>`;
+        return;
+      }
+
+      const probs = history.map(h => h.flow_probability || 0).reverse();
+      const W = container.offsetWidth || 400, H = 120;
+      const pad = { t:8, r:8, b:24, l:32 };
+      const iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
+
+      const svg = [`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`];
+
+      // Grid lines
+      [0, 0.25, 0.5, 0.75, 1].forEach(v => {
+        const y = pad.t + iH - v*iH;
+        svg.push(`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}"
+          stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`);
+        svg.push(`<text x="${pad.l-4}" y="${y+4}" text-anchor="end"
+          fill="#64748b" font-size="9">${Math.round(v*100)}%</text>`);
+      });
+
+      // Build path
+      const step = probs.length > 1 ? iW / (probs.length-1) : iW;
+      const pts = probs.map((p,i) => [pad.l + i*step, pad.t + iH - p*iH]);
+
+      // Area fill
+      const areaPath = `M${pts[0][0]},${pad.t+iH} ` +
+        pts.map(([x,y]) => `L${x},${y}`).join(' ') +
+        ` L${pts[pts.length-1][0]},${pad.t+iH} Z`;
+      svg.push(`<path d="${areaPath}" fill="rgba(59,130,246,0.12)"/>`);
+
+      // Line
+      const linePath = `M${pts[0][0]},${pts[0][1]} ` + pts.slice(1).map(([x,y]) => `L${x},${y}`).join(' ');
+      svg.push(`<path d="${linePath}" stroke="#3b82f6" stroke-width="1.5" fill="none"/>`);
+
+      // Dots for high-risk points
+      pts.forEach(([x,y], i) => {
+        const p = probs[i];
+        if (p >= 0.55) {
+          const col = p >= 0.75 ? '#ef4444' : '#f59e0b';
+          svg.push(`<circle cx="${x}" cy="${y}" r="3" fill="${col}"/>`);
+        }
+      });
+
+      svg.push(`</svg>`);
+      container.innerHTML = svg.join('');
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    initMap();
+    refreshAll();
+    setInterval(refreshAll, 300_000); // every 5 min
+  </script>
+</body>
+</html>

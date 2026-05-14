@@ -77,6 +77,7 @@ class WeatherDataStorer:
 
     def _store_metar(self, metar_data: Dict[str, Any]) -> bool:
         """Store METAR data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -134,18 +135,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing METAR: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing METAR: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_taf(self, taf_data: Dict[str, Any]) -> bool:
         """Store TAF data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -200,18 +205,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing TAF: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing TAF: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_notam(self, notam_data: Dict[str, Any]) -> bool:
         """Store NOTAM data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -280,18 +289,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing NOTAM: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing NOTAM: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_sigmet(self, sigmet_data: Dict[str, Any]) -> bool:
         """Store SIGMET data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -358,18 +371,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing SIGMET: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing SIGMET: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_airmet(self, airmet_data: Dict[str, Any]) -> bool:
         """Store AIRMET data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -436,15 +453,18 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing AIRMET: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing AIRMET: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def get_weather_summary(self) -> Dict[str, int]:
         """Get summary of weather data in database"""
@@ -468,6 +488,7 @@ class WeatherDataStorer:
 
     def _store_itws_alert(self, alert_data: Dict[str, Any]) -> bool:
         """Store ITWS Alert data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -534,18 +555,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing ITWS Alert: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing ITWS Alert: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_itws(self, itws_data: Dict[str, Any]) -> bool:
         """Store ITWS data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -606,18 +631,22 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing ITWS: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing ITWS: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()
 
     def _store_itws_msg(self, itws_data: Dict[str, Any], data_type: str) -> bool:
         """Store ITWS message data to database"""
+        session = None
         try:
             session = SessionLocal()
 
@@ -734,12 +763,15 @@ class WeatherDataStorer:
             return True
 
         except SQLAlchemyError as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Database error storing ITWS {data_type}: {e}")
             return False
         except Exception as e:
-            session.rollback()
+            if session:
+                session.rollback()
             self.logger.error(f"Error storing ITWS {data_type}: {e}")
             return False
         finally:
-            session.close()
+            if session:
+                session.close()

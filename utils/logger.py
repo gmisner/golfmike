@@ -1,9 +1,11 @@
 import sys
-from loguru import logger
 import logging
+from loguru import logger
 
 
 class InterceptHandler(logging.Handler):
+    """Route stdlib logging records into loguru."""
+
     def emit(self, record):
         try:
             level = logger.level(record.levelname).name
@@ -20,29 +22,24 @@ class InterceptHandler(logging.Handler):
         )
 
 
-# Apply the InterceptHandler to the root logger
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+# Wire root logger → loguru once (idempotent: basicConfig is a no-op if handlers exist)
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=False)
 
+# SQLAlchemy: WARNING only, no propagation to root (avoids double-emit)
+_sa_logger = logging.getLogger("sqlalchemy.engine")
+_sa_logger.setLevel(logging.WARNING)
+_sa_logger.propagate = False
+if not _sa_logger.handlers:
+    _sa_logger.addHandler(InterceptHandler())
 
-# SQLAlchemy-specific handler
-class SQLAlchemyLoguruHandler(logging.Handler):
-    def emit(self, record):
-        try:
-            level = logger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
-        logger.opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
-
-
-# Configure SQLAlchemy's logger to use the custom Loguru handler
-sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
-sqlalchemy_logger.setLevel(logging.DEBUG)  # Set to desired logging level
-sqlalchemy_logger.addHandler(SQLAlchemyLoguruHandler())
-
-# Configure the main logger (loguru)
+# Loguru sink — remove default, add one structured sink (idempotent across re-imports)
 main_logger = logger
-main_logger.remove()  # Remove default configuration to prevent logging to files
+main_logger.remove()
 main_logger.add(
     sys.stderr,
-    format="{time:MMMM D, YYYY > HH:mm:ss!UTC} | {level} | {message}",
+    format="{time:YYYY-MM-DD HH:mm:ss} UTC | {level:<8} | {name}:{line} | {message}",
+    level="INFO",
+    colorize=True,
+    backtrace=True,
+    diagnose=False,  # keep False in prod; set True locally for stack-var dumps
 )

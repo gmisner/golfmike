@@ -1,0 +1,315 @@
+networks:
+  golfmike_network:
+    name: golfmike_network
+    driver: bridge
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Shared environment injected into every Python service
+x-app-env: &app-env
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  DATABASE_URL: postgresql+psycopg2://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-postgres}
+  PYTHONPATH: /app
+  APPRISE_URLS: ${APPRISE_URLS:-}
+
+# Shared build config for the application image
+x-app-build: &app-build
+  build:
+    context: .
+    dockerfile: Dockerfile
+  working_dir: /app
+  volumes:
+    - .:/app
+  networks:
+    - golfmike_network
+  logging: *default-logging
+  restart: unless-stopped
+
+services:
+
+  # ── Infrastructure ────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: golfmike-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-15432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    container_name: golfmike-redis
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1 --save 300 10 --save 60 10000
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Database setup (runs once, exits) ────────────────────────────────────
+
+  db_init:
+    <<: *app-build
+    container_name: golfmike-db-init
+    environment:
+      <<: *app-env
+    command: >
+      /bin/sh -c "
+        python -c 'from db_config import init_db; init_db()' &&
+        alembic upgrade head
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ── API ───────────────────────────────────────────────────────────────────
+
+  web_api:
+    <<: *app-build
+    container_name: golfmike-api
+    environment:
+      <<: *app-env
+    command: python app_flask.py
+    ports:
+      - "${API_PORT:-5500}:5500"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ── Celery workers ────────────────────────────────────────────────────────
+
+  celery_worker_1:
+    <<: *app-build
+    container_name: golfmike-worker-1
+    environment:
+      <<: *app-env
+      CELERY_WORKER_CONCURRENCY: "2"
+    command: >
+      celery -A celery_app worker
+        -Q message_processing,weather_processing
+        --loglevel=info
+        --concurrency=2
+        --max-tasks-per-child=1000
+        --hostname=worker-1@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  celery_worker_2:
+    <<: *app-build
+    container_name: golfmike-worker-2
+    environment:
+      <<: *app-env
+      CELERY_WORKER_CONCURRENCY: "2"
+    command: >
+      celery -A celery_app worker
+        -Q message_processing,solace
+        --loglevel=info
+        --concurrency=2
+        --max-tasks-per-child=1000
+        --hostname=worker-2@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  celery_worker_3:
+    <<: *app-build
+    container_name: golfmike-worker-3
+    environment:
+      <<: *app-env
+      CELERY_WORKER_CONCURRENCY: "2"
+    command: >
+      celery -A celery_app worker
+        -Q maintenance
+        --loglevel=info
+        --concurrency=2
+        --max-tasks-per-child=500
+        --hostname=worker-3@%h
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Celery Beat (scheduler) ───────────────────────────────────────────────
+
+  celery_beat:
+    <<: *app-build
+    container_name: golfmike-beat
+    environment:
+      <<: *app-env
+    command: >
+      celery -A celery_app beat
+        --loglevel=info
+        --schedule=/tmp/celerybeat-schedule
+    depends_on:
+      redis:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ── Consumers (Solace subscribers) ───────────────────────────────────────
+
+  traffic_consumer:
+    <<: *app-build
+    container_name: golfmike-traffic-consumer
+    environment:
+      <<: *app-env
+      SOLACE_HOST: ${SOLACE_HOST:-}
+      SOLACE_VPN: ${SOLACE_VPN:-}
+      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
+      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
+    command: python consumers/traffic_consumer.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  weather_consumer:
+    <<: *app-build
+    container_name: golfmike-weather-consumer
+    environment:
+      <<: *app-env
+      SOLACE_HOST: ${SOLACE_HOST:-}
+      SOLACE_VPN: ${SOLACE_VPN:-}
+      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
+      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
+    command: python consumers/weather_consumer.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  flight_plan_consumer:
+    <<: *app-build
+    container_name: golfmike-fp-consumer
+    environment:
+      <<: *app-env
+      SOLACE_HOST: ${SOLACE_HOST:-}
+      SOLACE_VPN: ${SOLACE_VPN:-}
+      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
+      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
+    command: python consumers/flight_plan_consumer.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ── Monitoring ────────────────────────────────────────────────────────────
+
+  flower:
+    image: mher/flower:2.0
+    container_name: golfmike-flower
+    command: >
+      celery
+        --broker=redis://redis:6379/0
+        flower
+        --port=5555
+        --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-golfmike}
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  postgres_data:

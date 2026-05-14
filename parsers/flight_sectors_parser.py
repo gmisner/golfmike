@@ -33,11 +33,19 @@ def parse_flight_sectors(xml_data: bytes) -> List[FlightSectorsModel]:
         flight_sectors = []
 
         for message in root.findall(".//fdm:fltdMessage", namespaces=NAMESPACES):
-            aircraft_id = message.find(".//nxce:aircraftId", namespaces=NAMESPACES).text
+            _acid_elem = message.find(".//nxce:aircraftId", namespaces=NAMESPACES)
+            _igtd_elem = message.find(".//nxce:igtd", namespaces=NAMESPACES)
+
+            aircraft_id = _acid_elem.text if _acid_elem is not None else None
+            igtd = _igtd_elem.text if _igtd_elem is not None else None
+
+            if not aircraft_id:
+                logger.warning("fltdMessage missing aircraftId — skipping")
+                continue
+
             flight_ref = message.get("flightRef")
             dep_arpt = message.get("depArpt")
             arr_arpt = message.get("arrArpt")
-            igtd = message.find(".//nxce:igtd", namespaces=NAMESPACES).text
             flight_traversal_data = message.find(
                 ".//nxcm:flightTraversalData2", namespaces=NAMESPACES
             )

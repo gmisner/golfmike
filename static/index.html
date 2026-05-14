@@ -1,418 +1,428 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>GolfMike Flight Tracker</title>
+  <title>GolfMike — Aviation Intelligence</title>
   <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
-  <style>
-    .hero { padding: 4rem 0; background: #f6f8fb; }
-    .hero .lead { max-width: 56ch; }
-    .search-results { margin-top: 2rem; }
-    .flight-card { margin-bottom: 1rem; }
-    .flight-card .card-body { padding: 1rem; }
-    .flight-info { display: flex; justify-content: space-between; align-items: center; }
-    .flight-route { font-size: 0.9rem; color: #6c757d; }
-    .flight-status { font-size: 0.8rem; }
-    .aircraft-icon {
-      width: 24px;
-      height: 24px;
-      fill: currentColor;
-    }
-    
-    /* Autocomplete styles */
-    .autocomplete-container {
-      position: relative;
-    }
-    
-    .autocomplete-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: white;
-      border: 1px solid #dee2e6;
-      border-top: none;
-      border-radius: 0 0 0.375rem 0.375rem;
-      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      z-index: 1000;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .autocomplete-item {
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      border-bottom: 1px solid #f8f9fa;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .autocomplete-item:hover {
-      background-color: #f8f9fa;
-    }
-    
-    .autocomplete-item:last-child {
-      border-bottom: none;
-    }
-    
-    .autocomplete-item .text {
-      font-weight: 500;
-    }
-    
-    .autocomplete-item .category {
-      font-size: 0.75rem;
-      color: #6c757d;
-    }
-    
-    .autocomplete-item.highlighted {
-      background-color: #e3f2fd;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/custom.css"/>
 </head>
-<body class="layout-fluid">
+<body>
+
   <!-- Navbar -->
   <header class="navbar navbar-expand-md d-print-none">
     <div class="container-xl">
-      <h1 class="navbar-brand navbar-brand-autodark pe-3">
-        <a href="/" class="text-decoration-none">
-          <svg class="aircraft-icon me-2" viewBox="0 0 24 24">
-            <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
-          </svg>
-          GolfMike Flight Tracker
-        </a>
-      </h1>
-      <div class="navbar-nav flex-row order-md-last">
-        <a href="#map" class="btn btn-primary">Live Map</a>
+      <a href="/" class="navbar-brand d-flex align-items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="color:var(--gm-blue)">
+          <path d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7H9l2-7H7l-2 2H2l2-4-2-4h3l2 2h4L9 3h3l4 7z"/>
+        </svg>
+        GolfMike
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbar-menu">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="/">Tracker</a></li>
+          <li class="nav-item"><a class="nav-link" href="/airports.html">Airports</a></li>
+          <li class="nav-item"><a class="nav-link" href="/flight-plan.html">Flight Plans</a></li>
+        </ul>
+      </div>
+      <div class="ms-3 d-none d-md-flex align-items-center">
+        <span class="live-indicator"><span class="live-dot"></span>Live</span>
       </div>
     </div>
   </header>
 
-  <!-- Search-first Hero -->
+  <!-- Live stats bar -->
+  <div class="stats-bar d-none d-md-block">
+    <div class="container-xl">
+      <div class="d-flex">
+        <div class="stat-item">
+          <div>
+            <div class="stat-value" id="stat-active">—</div>
+            <div class="stat-label">Active Flights</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div>
+            <div class="stat-value" id="stat-filed">—</div>
+            <div class="stat-label">Filed Today</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div>
+            <div class="stat-value" id="stat-events">—</div>
+            <div class="stat-label">Events (1h)</div>
+          </div>
+        </div>
+        <div class="stat-item ms-auto">
+          <div class="text-end">
+            <div class="stat-value" id="stat-updated" style="font-size:0.8rem">—</div>
+            <div class="stat-label">Last updated</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
   <section class="hero">
     <div class="container-xl">
       <div class="row justify-content-center">
         <div class="col-12 col-lg-8 col-xl-6 text-center">
-          <h2 class="mb-2">Track flights in real time</h2>
-          <p class="lead text-secondary mb-4">Search by flight #, tail #, airport, or route.</p>
-          <form class="row g-2 justify-content-center" action="/search" method="GET" id="hero-search">
+          <h1 class="hero-title mb-3">Aviation intelligence,<br>in real time.</h1>
+          <p class="hero-subtitle mb-5 mx-auto">
+            Track any flight by tail number, callsign, or airport pair.
+            Live FAA SWIM data — updated every 60 seconds.
+          </p>
+          <form id="hero-search" class="row g-2 justify-content-center">
             <div class="col-12 col-md-8">
               <div class="autocomplete-container">
-                <input name="q" id="q" type="text" class="form-control form-control-lg" placeholder="e.g. SWA123 · N560PB · KLAX → KDVT" aria-label="Search flights, airports, operators" required autocomplete="off">
-                <div class="autocomplete-dropdown" id="autocomplete-dropdown" style="display: none;"></div>
+                <input name="q" id="q" type="text" class="form-control form-control-lg"
+                       placeholder="N560PB · SWA123 · KLAX → KJFK"
+                       aria-label="Search flights, airports, operators"
+                       autocomplete="off" required/>
+                <div class="autocomplete-dropdown" id="autocomplete-dropdown" style="display:none"></div>
               </div>
             </div>
             <div class="col-12 col-md-4 d-grid">
               <button class="btn btn-primary btn-lg" type="submit">Search</button>
             </div>
           </form>
-          <!-- Inline helper links kept minimal -->
-          <div class="small text-secondary mt-3">Examples: N560PB · KLAX → KDVT · KPHX</div>
+          <div class="mt-3" style="font-size:0.8rem;color:var(--gm-text-dim)">
+            Try: <a href="#" class="text-decoration-none" style="color:var(--gm-blue)" onclick="quickSearch('KLAX')">KLAX</a> ·
+            <a href="#" class="text-decoration-none" style="color:var(--gm-blue)" onclick="quickSearch('KJFK')">KJFK</a> ·
+            <a href="#" class="text-decoration-none" style="color:var(--gm-blue)" onclick="quickSearch('SWA')">SWA</a>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Search Results -->
-  <section class="search-results" id="search-results" style="display: none;">
+  <!-- Search results (hidden until search) -->
+  <section id="search-results" style="display:none" class="py-4">
     <div class="container-xl">
       <div class="row justify-content-center">
         <div class="col-12 col-lg-10">
-          <h3 class="mb-3 text-center">Search Results</h3>
-          <div id="results-container">
-            <!-- Results will be populated here -->
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="mb-0" id="results-heading">Results</h3>
+            <button class="btn btn-sm btn-outline-secondary" onclick="clearSearch()">Clear</button>
+          </div>
+          <div id="results-container"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent events feed (visible when no search active) -->
+  <section id="events-section" class="py-4">
+    <div class="container-xl">
+      <div class="row">
+        <div class="col-12 col-lg-8">
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <h3 class="card-title mb-0">Recent Events</h3>
+              <span class="live-indicator"><span class="live-dot"></span>Live</span>
+            </div>
+            <div class="card-body p-0">
+              <div id="events-feed" style="max-height:420px;overflow-y:auto;padding:1rem">
+                <div class="text-center py-4 text-dim">Loading events…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4 mt-3 mt-lg-0">
+          <div class="card h-100">
+            <div class="card-header">
+              <h3 class="card-title mb-0">Airport Risk</h3>
+            </div>
+            <div class="card-body p-0">
+              <div id="risk-summary" style="max-height:420px;overflow-y:auto;padding:0.75rem">
+                <div class="text-center py-4 text-dim">Loading…</div>
+              </div>
+            </div>
+            <div class="card-footer text-center">
+              <a href="/airports.html" class="btn btn-sm btn-outline-secondary w-100">Full Airport Dashboard →</a>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Optional minimal footer -->
-  <footer class="footer footer-transparent mt-4">
+  <footer class="footer py-3 mt-4">
     <div class="container-xl">
-      <div class="text-secondary text-center">© 2025 GolfMike Flight Tracker</div>
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-dim" style="font-size:0.8rem">© 2026 GolfMike Aviation Intelligence</div>
+        <div class="text-dim" style="font-size:0.75rem">Data: FAA SWIM · AviationWeather.gov</div>
+      </div>
     </div>
   </footer>
 
+  <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
   <script>
-    // Autocomplete functionality
-    let autocompleteTimeout;
-    let currentSuggestions = [];
-    let selectedIndex = -1;
+    // ── Config ────────────────────────────────────────────────
+    const API = { flights: '/api/flights', v1: '/v1' };
+    const HUBS = ['KJFK','KLAX','KORD','KDFW','KATL','KDEN','KSFO','KSEA','KIAH','KPHX'];
 
-    document.getElementById('q').addEventListener('input', function(e) {
-      const query = e.target.value.trim();
-      
-      // Clear previous timeout
-      clearTimeout(autocompleteTimeout);
-      
-      // Hide dropdown if query is too short
-      if (query.length < 2) {
-        hideAutocomplete();
-        return;
-      }
-      
-      // Debounce the autocomplete request
-      autocompleteTimeout = setTimeout(() => {
-        fetchAutocompleteSuggestions(query);
-      }, 300);
+    // ── Autocomplete ──────────────────────────────────────────
+    let acTimeout, acSelected = -1;
+
+    document.getElementById('q').addEventListener('input', e => {
+      clearTimeout(acTimeout);
+      const q = e.target.value.trim();
+      if (q.length < 2) return hideAC();
+      acTimeout = setTimeout(() => fetchAC(q), 280);
     });
 
-    document.getElementById('q').addEventListener('keydown', function(e) {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      const items = dropdown.querySelectorAll('.autocomplete-item');
-      
-      if (items.length === 0) return;
-      
-      switch(e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-          updateHighlight();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          selectedIndex = Math.max(selectedIndex - 1, -1);
-          updateHighlight();
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (selectedIndex >= 0 && selectedIndex < items.length) {
-            const selectedItem = items[selectedIndex];
-            const text = selectedItem.dataset.text;
-            document.getElementById('q').value = text;
-            hideAutocomplete();
-            // Trigger search
-            document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-          } else {
-            // Normal form submission
-            document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-          }
-          break;
-        case 'Escape':
-          hideAutocomplete();
-          break;
+    document.getElementById('q').addEventListener('keydown', e => {
+      const items = document.querySelectorAll('.autocomplete-item');
+      if (!items.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); acSelected = Math.min(acSelected+1, items.length-1); highlightAC(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); acSelected = Math.max(acSelected-1, -1); highlightAC(); }
+      else if (e.key === 'Escape') hideAC();
+      else if (e.key === 'Enter' && acSelected >= 0) {
+        e.preventDefault();
+        document.getElementById('q').value = items[acSelected].dataset.text;
+        hideAC();
+        doSearch(document.getElementById('q').value);
       }
     });
 
-    // Hide autocomplete when clicking outside
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.autocomplete-container')) {
-        hideAutocomplete();
-      }
-    });
+    document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-container')) hideAC(); });
 
-    function fetchAutocompleteSuggestions(query) {
-      fetch(`/api/autocomplete?q=${encodeURIComponent(query)}&limit=8`)
-        .then(response => response.json())
-        .then(suggestions => {
-          currentSuggestions = suggestions;
-          displayAutocompleteSuggestions(suggestions);
+    async function fetchAC(q) {
+      try {
+        const res = await fetch(`/api/autocomplete?q=${encodeURIComponent(q)}&limit=8`);
+        const data = await res.json();
+        renderAC(data);
+      } catch { hideAC(); }
+    }
+
+    function renderAC(items) {
+      const dd = document.getElementById('autocomplete-dropdown');
+      if (!items.length) return hideAC();
+      dd.innerHTML = items.map((s,i) =>
+        `<div class="autocomplete-item" data-text="${s.text}" data-index="${i}">
+           <span class="text">${s.display}</span>
+           <span class="category">${s.category}</span>
+         </div>`
+      ).join('');
+      dd.querySelectorAll('.autocomplete-item').forEach(el =>
+        el.addEventListener('click', () => {
+          document.getElementById('q').value = el.dataset.text;
+          hideAC();
+          doSearch(el.dataset.text);
         })
-        .catch(error => {
-          console.error('Autocomplete error:', error);
-          hideAutocomplete();
-        });
+      );
+      dd.style.display = 'block';
+      acSelected = -1;
     }
 
-    function displayAutocompleteSuggestions(suggestions) {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      
-      if (suggestions.length === 0) {
-        hideAutocomplete();
-        return;
-      }
-      
-      let html = '';
-      suggestions.forEach((suggestion, index) => {
-        html += `
-          <div class="autocomplete-item" data-text="${suggestion.text}" data-index="${index}">
-            <span class="text">${suggestion.display}</span>
-            <span class="category">${suggestion.category}</span>
-          </div>
-        `;
-      });
-      
-      dropdown.innerHTML = html;
-      dropdown.style.display = 'block';
-      selectedIndex = -1;
-      
-      // Add click handlers
-      dropdown.querySelectorAll('.autocomplete-item').forEach((item, index) => {
-        item.addEventListener('click', function() {
-          const text = this.dataset.text;
-          document.getElementById('q').value = text;
-          hideAutocomplete();
-          // Trigger search
-          document.getElementById('hero-search').dispatchEvent(new Event('submit'));
-        });
-      });
+    function highlightAC() {
+      document.querySelectorAll('.autocomplete-item').forEach((el,i) =>
+        el.classList.toggle('highlighted', i === acSelected)
+      );
     }
 
-    function updateHighlight() {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      const items = dropdown.querySelectorAll('.autocomplete-item');
-      
-      items.forEach((item, index) => {
-        if (index === selectedIndex) {
-          item.classList.add('highlighted');
-        } else {
-          item.classList.remove('highlighted');
-        }
-      });
+    function hideAC() {
+      document.getElementById('autocomplete-dropdown').style.display = 'none';
+      acSelected = -1;
     }
 
-    function hideAutocomplete() {
-      const dropdown = document.getElementById('autocomplete-dropdown');
-      dropdown.style.display = 'none';
-      selectedIndex = -1;
-    }
-
-    // Enhanced search functionality with API integration
-    document.getElementById('hero-search').addEventListener('submit', function(e){
+    // ── Search ────────────────────────────────────────────────
+    document.getElementById('hero-search').addEventListener('submit', e => {
       e.preventDefault();
       const q = document.getElementById('q').value.trim();
-      
-      if (!q) return;
-      
-      // Hide autocomplete
-      hideAutocomplete();
-      
-      // Show loading state
-      const resultsContainer = document.getElementById('results-container');
-      const searchResults = document.getElementById('search-results');
-      
-      resultsContainer.innerHTML = `
-        <div class="text-center py-4">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Searching...</span>
-          </div>
-          <div class="mt-2">Searching for "${q}"...</div>
-        </div>
-      `;
-      searchResults.style.display = 'block';
-      
-      // Search using the API
-      fetch(`/api/flights/search?q=${encodeURIComponent(q)}`)
-        .then(response => response.json())
-        .then(data => {
-          displaySearchResults(data, q);
-        })
-        .catch(error => {
-          console.error('Search error:', error);
-          resultsContainer.innerHTML = `
-            <div class="alert alert-danger">
-              <h4 class="alert-title">Search Error</h4>
-              <div>Unable to search for "${q}". Please try again.</div>
-            </div>
-          `;
-        });
+      if (q) doSearch(q);
     });
 
-    function displaySearchResults(data, query) {
-      const resultsContainer = document.getElementById('results-container');
-      
-      if (!data || data.length === 0) {
-        resultsContainer.innerHTML = `
-          <div class="empty">
-            <div class="empty-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
-              </svg>
-            </div>
-            <p class="empty-title">No flights found</p>
-            <p class="empty-subtitle text-secondary">
-              No flights found for "${query}". Try a different search term.
-            </p>
-          </div>
-        `;
+    function quickSearch(q) {
+      document.getElementById('q').value = q;
+      doSearch(q);
+    }
+
+    function clearSearch() {
+      document.getElementById('search-results').style.display = 'none';
+      document.getElementById('events-section').style.display = 'block';
+      document.getElementById('q').value = '';
+    }
+
+    async function doSearch(q) {
+      hideAC();
+      document.getElementById('events-section').style.display = 'none';
+      const sec = document.getElementById('search-results');
+      const box = document.getElementById('results-container');
+      document.getElementById('results-heading').textContent = `Results for "${q}"`;
+      sec.style.display = 'block';
+      box.innerHTML = `<div class="text-center py-5 text-dim">
+        <div class="spinner-border spinner-border-sm me-2"></div>Searching…</div>`;
+      try {
+        const res = await fetch(`${API.flights}/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        renderResults(data, q);
+      } catch {
+        box.innerHTML = `<div class="alert alert-danger">Search failed — please try again.</div>`;
+      }
+    }
+
+    function statusClass(s) {
+      const m = { active:'in-flight', departed:'departed', arrived:'arrived',
+                  scheduled:'filed', cancelled:'cancelled', diverted:'diverted' };
+      return 'status-' + (m[s] || 'filed');
+    }
+    function statusLabel(s) {
+      const m = { active:'In Flight', departed:'Departed', arrived:'Arrived',
+                  scheduled:'Scheduled', cancelled:'Cancelled', diverted:'Diverted' };
+      return m[s] || s || 'Unknown';
+    }
+
+    function renderResults(data, q) {
+      const box = document.getElementById('results-container');
+      if (!data || !data.length) {
+        box.innerHTML = `<div class="empty py-5">
+          <div class="empty-title">No results for "${q}"</div>
+          <div class="empty-subtitle text-dim">Try a tail number (N560PB), callsign (SWA123), or airport code (KLAX).</div>
+        </div>`;
         return;
       }
-
-      let html = `<div class="row">`;
-      
-      data.forEach(flight => {
-        const statusColor = getStatusColor(flight.status);
-        const statusText = getStatusText(flight.status);
-        const flightType = flight.flight_type || 'current';
-        
-        html += `
-          <div class="col-md-6 col-lg-4">
-            <div class="card flight-card">
+      box.innerHTML = `<div class="row g-3">` +
+        data.map(f => `
+          <div class="col-md-6 col-xl-4">
+            <div class="card flight-card h-100" onclick="location.href='/flight-detail.html?aircraft_id=${f.aircraft_id}'">
               <div class="card-body">
-                <div class="flight-info">
-                  <div>
-                    <h4 class="card-title mb-1">${flight.aircraft_id || 'Unknown'}</h4>
-                    <div class="flight-route">
-                      ${flight.departure_airport || 'N/A'} → ${flight.arrival_airport || 'N/A'}
-                    </div>
-                  </div>
-                  <div class="text-end">
-                    <span class="badge bg-${statusColor}">${statusText}</span>
-                    <div class="flight-status mt-1">${flightType}</div>
-                  </div>
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                  <div class="aircraft-avatar">${(f.aircraft_id||'?').slice(0,3)}</div>
+                  <span class="status-badge ${statusClass(f.status)}">${statusLabel(f.status)}</span>
                 </div>
-                
-                ${flight.aircraft_type ? `<div class="mt-2"><small class="text-muted">${flight.aircraft_type}</small></div>` : ''}
-                
-                ${flight.aircraft_operator ? `<div class="mt-1"><small class="text-muted">${flight.aircraft_operator}</small></div>` : ''}
-                
-                <div class="mt-3">
-                  <a href="/flight-detail.html?aircraft_id=${flight.aircraft_id}" class="btn btn-sm btn-outline-primary">
-                    View Details
-                  </a>
+                <h4 class="card-title mb-1">${f.aircraft_id || 'Unknown'}</h4>
+                <div class="text-dim mb-2" style="font-size:0.88rem">
+                  ${f.departure_airport||'?'} → ${f.arrival_airport||'?'}
                 </div>
+                ${f.aircraft_type ? `<div class="text-dim" style="font-size:0.78rem">${f.aircraft_type}</div>` : ''}
               </div>
             </div>
-          </div>
-        `;
-      });
-      
-      html += `</div>`;
-      resultsContainer.innerHTML = html;
+          </div>`
+        ).join('') + `</div>`;
     }
 
-    function getStatusColor(status) {
-      const statusMap = {
-        'active': 'success',
-        'departed': 'primary',
-        'arrived': 'secondary',
-        'scheduled': 'info',
-        'cancelled': 'danger',
-        'delayed': 'warning'
-      };
-      return statusMap[status] || 'secondary';
-    }
-
-    function getStatusText(status) {
-      const statusMap = {
-        'active': 'In Flight',
-        'departed': 'Departed',
-        'arrived': 'Arrived',
-        'scheduled': 'Scheduled',
-        'cancelled': 'Cancelled',
-        'delayed': 'Delayed'
-      };
-      return statusMap[status] || 'Unknown';
-    }
-
-    // Simple pattern checks for direct navigation (optional)
-    document.getElementById('q').addEventListener('keyup', function(e) {
-      if (e.key === 'Enter') {
-        const q = this.value.trim();
-        const routeSep = /\s*(?:→|->|to|\-\>)\s*/i;
-        const isRoute = routeSep.test(q);
-        const isAirport = /^[A-Z]{3,4}$/i.test(q);
-        const isTail = /^N\d{1,5}[A-Z]{0,2}$/i.test(q);
-        const isFlightNum = /^[A-Z]{2,3}\s?\d{1,4}$/i.test(q);
-
-        // For now, let the form submission handle everything
-        // This could be enhanced to provide instant feedback
+    // ── Events feed ───────────────────────────────────────────
+    async function loadEvents() {
+      try {
+        const since = new Date(Date.now() - 3600_000).toISOString();
+        const res = await fetch(`${API.v1}/flights/events?since=${since}&limit=30`);
+        const data = await res.json();
+        renderEvents(data.events || []);
+      } catch {
+        document.getElementById('events-feed').innerHTML =
+          `<div class="text-dim text-center py-3">Could not load events.</div>`;
       }
-    });
+    }
+
+    const EVENT_ICON = {
+      FILED:    { icon:'✈', cls:'filed' },
+      DEPARTED: { icon:'🛫', cls:'departed' },
+      ARRIVED:  { icon:'🛬', cls:'arrived' },
+      DIVERTED: { icon:'⚠️', cls:'diverted' },
+      DEVIATION:{ icon:'📍', cls:'deviation' },
+    };
+
+    function renderEvents(events) {
+      const feed = document.getElementById('events-feed');
+      if (!events.length) {
+        feed.innerHTML = `<div class="text-dim text-center py-4">No events in the last hour.</div>`;
+        return;
+      }
+      feed.innerHTML = events.map(ev => {
+        const meta = EVENT_ICON[ev.event_type] || { icon:'•', cls:'' };
+        const ed = ev.event_data || {};
+        const ts = ev.event_timestamp ? new Date(ev.event_timestamp).toLocaleTimeString() : '';
+        return `
+          <div class="notification-item ${meta.cls}">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <span style="font-size:1rem">${meta.icon}</span>
+                <strong class="ms-1">${ev.aircraft_id}</strong>
+                <span class="text-dim ms-1" style="font-size:0.82rem">${ev.event_type}</span>
+                ${ed.departure_airport ? `<span class="text-dim ms-2" style="font-size:0.78rem">${ed.departure_airport}→${ed.arrival_airport||'?'}</span>` : ''}
+              </div>
+              <span class="text-dim" style="font-size:0.75rem">${ts}</span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Risk summary sidebar ──────────────────────────────────
+    async function loadRiskSummary() {
+      const box = document.getElementById('risk-summary');
+      try {
+        const res = await fetch(`${API.v1}/airports/flow-forecast?airports=${HUBS.join(',')}&hours=2`);
+        const data = await res.json();
+        renderRiskSummary(data.airports || []);
+      } catch {
+        box.innerHTML = `<div class="text-dim text-center py-3" style="font-size:0.8rem">Flow data unavailable.</div>`;
+      }
+    }
+
+    function riskClass(lvl) {
+      return 'risk-' + (lvl||'very-low').toLowerCase().replace('_','-');
+    }
+
+    function renderRiskSummary(airports) {
+      const box = document.getElementById('risk-summary');
+      box.innerHTML = airports.map(a => {
+        if (a.error || a.flow_probability == null) return '';
+        const pct = Math.round((a.flow_probability||0)*100);
+        const lvl = (a.risk_level||'VERY_LOW').toLowerCase().replace('_','-');
+        return `
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-gm">
+            <div>
+              <a href="/airports.html#${a.airport}" class="text-decoration-none monospace fw-bold"
+                 style="color:var(--gm-text)">${a.airport}</a>
+              <div class="text-dim" style="font-size:0.72rem">${a.current_conditions?.flight_category||''}</div>
+            </div>
+            <div class="text-end">
+              <span class="risk-badge risk-${lvl}">${pct}%</span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Stats bar ─────────────────────────────────────────────
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API.flights}/current`);
+        const data = await res.json();
+        const count = Array.isArray(data) ? data.length : (data.count || '—');
+        document.getElementById('stat-active').textContent = count;
+        document.getElementById('stat-updated').textContent = new Date().toLocaleTimeString();
+      } catch {}
+
+      try {
+        const since = new Date(Date.now() - 3600_000).toISOString();
+        const res = await fetch(`${API.v1}/flights/events?since=${since}&type=FILED`);
+        const data = await res.json();
+        document.getElementById('stat-filed').textContent = data.count ?? '—';
+      } catch {}
+
+      try {
+        const since = new Date(Date.now() - 3600_000).toISOString();
+        const res = await fetch(`${API.v1}/flights/events?since=${since}`);
+        const data = await res.json();
+        document.getElementById('stat-events').textContent = data.count ?? '—';
+      } catch {}
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    loadStats();
+    loadEvents();
+    loadRiskSummary();
+    setInterval(loadStats,  60_000);
+    setInterval(loadEvents, 30_000);
+    setInterval(loadRiskSummary, 300_000);
   </script>
-  <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
 </body>
 </html>

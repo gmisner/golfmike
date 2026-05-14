@@ -1,9 +1,37 @@
-from sqlalchemy.orm import Session
-from models.sqlalchemy import TrackInformationDBModel, AircraftDBModel
+from datetime import datetime, timezone
 from typing import List
-from utils.logger import main_logger as logger
+
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+
+from models.sqlalchemy import TrackInformationDBModel, AircraftDBModel
+from models.sqlalchemy.flight_events import TrackUpdatesDBModel
+from models.sqlalchemy.flight_plan import FlightPlanDBModel
+from utils.logger import main_logger as logger
 from db_config import SessionLocal
+from services.notification_service import send_flight_event
+from services.route_overlay_service import process_track_point
+
+
+def _parse_altitude_ft(alt_str) -> int:
+    """Convert a filed altitude value to feet (handles FL### and raw integers)."""
+    if alt_str is None:
+        return None
+    try:
+        s = str(alt_str).upper().strip()
+        if s.startswith("FL"):
+            return int(s[2:]) * 100
+        return int(float(s))
+    except (ValueError, TypeError):
+        return None
+
+
+def _infer_event_type(diversion_indicator, prev_status: str, has_position: bool) -> str:
+    if diversion_indicator and str(diversion_indicator).upper() not in ("", "NONE", "N"):
+        return "DIVERTED"
+    if has_position:
+        return "IN_FLIGHT"
+    return None
 
 
 def store_track_information(
@@ -11,63 +39,44 @@ def store_track_information(
     session=None,
     batch_size: int = 100,
 ):
-    # Start the function and log its initiation
     logger.debug("Starting store_track_information function")
 
-    # Verify session type and create a new session if none is provided
     created_locally = False
     if session is None:
-        logger.debug("No session provided, creating a new session")
         session = SessionLocal()
         created_locally = True
     elif not isinstance(session, Session):
-        # Log an error if the provided session is not of the correct type
-        logger.error(
-            f"Invalid session type: {type(session)}. Expected <class 'sqlalchemy.orm.session.Session'>."
-        )
+        logger.error(f"Invalid session type: {type(session)}")
         raise TypeError("Invalid session type. Expected SQLAlchemy Session.")
 
-    logger.debug(f"Session type after check: {type(session)}")
-
-    # Lists to hold new aircraft and track information to be added to the database
     new_aircrafts = []
     new_tracks = []
+    new_track_updates = []
 
     try:
-        # Iterate over each track data object in the provided list
         for track_data in track_data_list:
-            logger.debug(f"Processing track data: {track_data}")
+            aircraft_id = track_data.aircraft_id
+            gufi = track_data.gufi
 
-            # Retrieve or create aircraft entry
-            logger.debug(f"Querying aircraft with ID: {track_data.aircraft_id}")
+            # ── Ensure aircraft record exists ─────────────────────────────────
             aircraft = (
                 session.query(AircraftDBModel)
-                .filter_by(aircraft_id=track_data.aircraft_id)
+                .filter_by(aircraft_id=aircraft_id)
                 .first()
             )
-            logger.debug(f"Query result for aircraft: {aircraft}")
-
-            # If the aircraft does not exist, create a new entry and add it to the batch list
             if not aircraft:
-                logger.info(
-                    f"Aircraft with ID {track_data.aircraft_id} not found. Creating new aircraft entry."
-                )
                 aircraft = AircraftDBModel(
-                    aircraft_id=track_data.aircraft_id,
-                    airline=track_data.airline,
-                    aircraft_category=track_data.aircraft_category,
-                    user_category=track_data.user_category,
+                    aircraft_id=aircraft_id,
+                    airline=getattr(track_data, "airline", None),
+                    aircraft_category=getattr(track_data, "aircraft_category", None),
+                    user_category=getattr(track_data, "user_category", None),
                 )
                 new_aircrafts.append(aircraft)
-                logger.debug(f"New aircraft added to batch: {aircraft}")
 
-            # Create a new track information entry using the current track data
-            logger.debug(
-                f"Creating track information entry for aircraft ID: {track_data.aircraft_id}"
-            )
+            # ── Write to legacy track_information table (keeps existing API) ──
             track = TrackInformationDBModel(
-                aircraft_id=track_data.aircraft_id,
-                gufi=track_data.gufi,
+                aircraft_id=aircraft_id,
+                gufi=gufi,
                 speed=track_data.speed,
                 altitude=track_data.altitude,
                 latitude=track_data.latitude,
@@ -75,73 +84,154 @@ def store_track_information(
                 time_at_position=track_data.time_at_position,
                 departure_airport=track_data.departure_airport,
                 arrival_airport=track_data.arrival_airport,
-                etd=track_data.etd,  # Estimated time of departure
-                eta=track_data.eta,  # Estimated time of arrival
-                diversion_indicator=track_data.diversion_indicator,  # Diversion status
-                rvsm_data=track_data.rvsm_data,  # RVSM data attributes
-                next_position=track_data.next_position,  # Next position
-                fixes=track_data.fixes,  # List of fixes
-                waypoints=track_data.waypoints,  # List of waypoints
-                sectors=track_data.sectors,  # List of sectors
-                route_of_flight=track_data.route_of_flight,  # Route of flight
+                etd=track_data.etd,
+                eta=track_data.eta,
+                diversion_indicator=track_data.diversion_indicator,
+                rvsm_data=track_data.rvsm_data,
+                next_position=track_data.next_position,
+                fixes=track_data.fixes,
+                waypoints=track_data.waypoints,
+                sectors=track_data.sectors,
+                route_of_flight=track_data.route_of_flight,
             )
             new_tracks.append(track)
-            logger.debug(f"New track added to batch: {track}")
 
-            # Commit the batch if the batch size limit is reached
-            if len(new_aircrafts) >= batch_size or len(new_tracks) >= batch_size:
-                logger.info(
-                    f"Batch size reached. Committing {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks."
-                )
-                session.add_all(new_aircrafts)  # Add all new aircrafts to the session
-                session.add_all(new_tracks)  # Add all new tracks to the session
+            # ── Write to normalised track_updates table ───────────────────────
+            lat = track_data.latitude
+            lon = track_data.longitude
+            has_position = lat is not None and lon is not None
+
+            if has_position:
                 try:
-                    session.commit()  # Commit the batch to the database
-                    logger.info(
-                        f"Batch committed successfully: {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks."
+                    lat_f = float(lat)
+                    lon_f = float(lon)
+                except (TypeError, ValueError):
+                    lat_f = lon_f = None
+                    has_position = False
+
+            if has_position:
+                ts_raw = track_data.time_at_position
+                if isinstance(ts_raw, str):
+                    try:
+                        ts = datetime.fromisoformat(ts_raw)
+                    except ValueError:
+                        ts = datetime.now(timezone.utc)
+                elif isinstance(ts_raw, datetime):
+                    ts = ts_raw
+                else:
+                    ts = datetime.now(timezone.utc)
+
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+
+                new_track_updates.append(
+                    TrackUpdatesDBModel(
+                        aircraft_id=aircraft_id,
+                        gufi=gufi,
+                        latitude=str(lat_f),
+                        longitude=str(lon_f),
+                        altitude=track_data.altitude,
+                        speed=track_data.speed,
+                        time_at_position=ts,
                     )
-                except SQLAlchemyError as e:
-                    # Rollback the session if there is an error during the commit
-                    session.rollback()
-                    logger.error(f"Error committing batch: {e}", exc_info=True)
-                # Clear the lists after attempting to commit
+                )
+
+            # ── Commit batch if full ──────────────────────────────────────────
+            if len(new_tracks) >= batch_size:
+                _flush(session, new_aircrafts, new_tracks, new_track_updates)
                 new_aircrafts.clear()
                 new_tracks.clear()
-                logger.debug("Batch cleared after commit attempt.")
+                new_track_updates.clear()
 
-        # Commit any remaining records that didn't make up a full batch
+        # Final flush
         if new_aircrafts or new_tracks:
-            logger.info(
-                f"Committing final batch of {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks."
-            )
-            session.add_all(new_aircrafts)  # Add remaining new aircrafts to the session
-            session.add_all(new_tracks)  # Add remaining new tracks to the session
+            _flush(session, new_aircrafts, new_tracks, new_track_updates)
+
+        # ── Post-commit: route overlay + event detection per position ─────────
+        for track_data in track_data_list:
+            if not (track_data.latitude and track_data.longitude):
+                continue
             try:
-                session.commit()  # Commit the final batch to the database
-                logger.info(
-                    f"Final batch committed successfully: {len(new_aircrafts)} aircraft and {len(new_tracks)} tracks."
-                )
-            except SQLAlchemyError as e:
-                # Rollback the session if there is an error during the commit
-                session.rollback()
-                logger.error(f"Error committing final batch: {e}", exc_info=True)
+                lat_f = float(track_data.latitude)
+                lon_f = float(track_data.longitude)
+            except (TypeError, ValueError):
+                continue
+
+            gufi = track_data.gufi
+            aircraft_id = track_data.aircraft_id
+
+            ts_raw = track_data.time_at_position
+            if isinstance(ts_raw, str):
+                try:
+                    ts = datetime.fromisoformat(ts_raw)
+                except ValueError:
+                    ts = datetime.now(timezone.utc)
+            elif isinstance(ts_raw, datetime):
+                ts = ts_raw
+            else:
+                ts = datetime.now(timezone.utc)
+
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+
+            # Look up filed altitude from flight plan for deviation calc
+            filed_altitude = None
+            if gufi:
+                fp = session.query(FlightPlanDBModel).filter_by(gufi=gufi).first()
+                if fp:
+                    filed_altitude = _parse_altitude_ft(
+                        fp.requestedAlt_09a or fp.assignedAlt_08a
+                    )
+
+            event_data = {
+                "aircraft_id": aircraft_id,
+                "gufi": gufi,
+                "departure_airport": track_data.departure_airport or "",
+                "arrival_airport": track_data.arrival_airport or "",
+            }
+
+            process_track_point(
+                gufi=gufi,
+                aircraft_id=aircraft_id,
+                latitude=lat_f,
+                longitude=lon_f,
+                altitude=track_data.altitude,
+                speed=track_data.speed,
+                timestamp=ts,
+                filed_altitude=filed_altitude,
+                event_data=event_data,
+                session=session,
+            )
+
+            # ── Detect DEPARTED / DIVERTED / ARRIVED events ───────────────────
+            diversion = track_data.diversion_indicator
+            event_type = _infer_event_type(diversion, "", True)
+            if event_type:
+                send_flight_event(event_type, event_data, session)
 
     except SQLAlchemyError as e:
-        # Log SQLAlchemy-specific errors that occur during processing
-        logger.error(f"SQLAlchemyError occurred while processing tracks: {e}")
+        logger.error(f"SQLAlchemyError in track storer: {e}")
         session.rollback()
-
     except Exception as e:
-        # Log any unexpected errors that occur during processing
-        logger.error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error in track storer: {e}")
         session.rollback()
-
     finally:
-        # Close the session if it was created locally
         if created_locally:
             session.close()
-            logger.debug("Session closed.")
 
-    # Log the successful completion of storing all track information
     logger.success("All track information stored successfully.")
-    logger.debug("Finished store_track_information function")
+
+
+def _flush(session, aircrafts, tracks, track_updates):
+    session.add_all(aircrafts)
+    session.add_all(tracks)
+    session.add_all(track_updates)
+    try:
+        session.commit()
+        logger.info(
+            f"Batch committed: {len(aircrafts)} aircraft, {len(tracks)} tracks, "
+            f"{len(track_updates)} track_updates"
+        )
+    except SQLAlchemyError as e:
+        session.rollback()
+        logger.error(f"Error committing track batch: {e}", exc_info=True)

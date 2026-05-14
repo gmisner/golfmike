@@ -38,10 +38,10 @@ beat_schedule = {
     
     # Test database connection every 5 minutes
     'test-database-connection': {
-        'task': 'tasks.test_database_connection',
-        'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        'task': 'tasks.test_db',
+        'schedule': crontab(minute='*/5'),
         'options': {
-            'queue': 'system_health',
+            'queue': 'maintenance',
             'priority': 1
         }
     },
@@ -50,6 +50,34 @@ beat_schedule = {
     'cleanup-old-weather-data': {
         'task': 'tasks.cleanup_old_weather_data',
         'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+        'options': {
+            'queue': 'maintenance',
+            'priority': 2
+        }
+    },
+
+    # Refresh flow probability predictions every 15 minutes for key airports
+    'refresh-flow-predictions': {
+        'task': 'tasks.refresh_flow_predictions',
+        'schedule': crontab(minute='*/15'),
+        'args': ([
+            # Primary hubs (highest traffic / most likely to have flow control)
+            'KJFK', 'KLAX', 'KORD', 'KDFW', 'KATL', 'KDEN', 'KSFO', 'KSEA',
+            'KIAH', 'KPHX', 'KLAS', 'KMIA', 'KBOS', 'KEWR', 'KMSP', 'KDTW',
+            # Secondary airports
+            'KPHL', 'KCLT', 'KMCO', 'KTPA', 'KPDX', 'KSLC', 'KMDW', 'KBWI',
+            'KSAN', 'KSJC', 'KOAK', 'KSTL', 'KMCI', 'KAUS', 'KMSY', 'KJAX',
+        ],),
+        'options': {
+            'queue': 'weather_processing',
+            'priority': 4
+        }
+    },
+
+    # Label completed predictions with actual flow control outcome (daily)
+    'label-flow-predictions': {
+        'task': 'tasks.label_completed_flow_predictions',
+        'schedule': crontab(minute=30),  # Every hour at :30
         'options': {
             'queue': 'maintenance',
             'priority': 2

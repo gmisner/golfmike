@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models.sqlalchemy.upcoming_flights import UpcomingFlightDBModel
 from utils.logger import main_logger as logger
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class UpcomingFlightStorer:
@@ -46,7 +46,7 @@ class UpcomingFlightStorer:
                     if hasattr(existing_flight, key) and value is not None:
                         setattr(existing_flight, key, value)
                 
-                existing_flight.updated_at = datetime.utcnow()
+                existing_flight.updated_at = datetime.now(timezone.utc)
                 
             else:
                 # Create new flight plan
@@ -83,7 +83,7 @@ class UpcomingFlightStorer:
         try:
             flights = session.query(UpcomingFlightDBModel).filter(
                 UpcomingFlightDBModel.aircraft_id == aircraft_id.upper(),
-                UpcomingFlightDBModel.departure_time > datetime.utcnow(),
+                UpcomingFlightDBModel.departure_time > datetime.now(timezone.utc),
                 UpcomingFlightDBModel.status.in_(['PLANNED', 'ACTIVE'])
             ).order_by(UpcomingFlightDBModel.departure_time.asc()).limit(limit).all()
             
@@ -114,7 +114,7 @@ class UpcomingFlightStorer:
             flights = session.query(UpcomingFlightDBModel).filter(
                 UpcomingFlightDBModel.departure_airport == departure_airport.upper(),
                 UpcomingFlightDBModel.arrival_airport == arrival_airport.upper(),
-                UpcomingFlightDBModel.departure_time > datetime.utcnow(),
+                UpcomingFlightDBModel.departure_time > datetime.now(timezone.utc),
                 UpcomingFlightDBModel.status.in_(['PLANNED', 'ACTIVE'])
             ).order_by(UpcomingFlightDBModel.departure_time.asc()).limit(limit).all()
             
@@ -146,7 +146,7 @@ class UpcomingFlightStorer:
             
             if flight:
                 flight.status = new_status.upper()
-                flight.updated_at = datetime.utcnow()
+                flight.updated_at = datetime.now(timezone.utc)
                 session.commit()
                 self.logger.info(f"Updated flight status for GUFI {gufi} to {new_status}")
                 return True
