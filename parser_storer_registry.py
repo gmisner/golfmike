@@ -1,9 +1,7 @@
 from functools import lru_cache
 
 # ── Parsers ────────────────────────────────────────────────────────────────────
-from parsers.flight_plan_parser import parse_flight_plan
 from parsers.flight_sectors_parser import parse_flight_sectors
-from parsers.status_parser import parse_status
 from parsers.tmi_flight_list_parser import parse_tmi_flight_list
 from parsers.track_information_parser import parse_track_information
 
@@ -26,9 +24,7 @@ from parsers.ncsm_flight_control_parser import parse_flight_control
 from parsers.oceanic_report_parser import parse_oceanic_report
 
 # ── Storers ────────────────────────────────────────────────────────────────────
-from storers.flight_plan_storer import store_flight_plan
 from storers.flight_modify_storer import store_flight_modification
-from storers.status_storer import store_status
 from storers.tmi_flight_list_storer import store_tmi_flight_list
 from storers.flight_sectors_storer import store_flight_sectors
 from storers.track_information_storer import store_track_information
@@ -60,6 +56,7 @@ PARSERS = {
     "boundaryCrossingUpdate": parse_boundary_crossing_update,
     "flightPlanCancellation": parse_flight_plan_cancellation,
     "flightPlanTraffic": parse_flight_plan_traffic,
+    "flightPlanAmendmentInformation": parse_flight_plan_traffic,
     "FlightScheduleActivate": parse_flight_schedule_activate,
     "FlightModify": parse_ncsm_flight_modify,
     "FlightRoute": parse_flight_route,
@@ -85,6 +82,7 @@ STORERS = {
     "beaconCodeInformation": store_beacon_code_updates,
     "flightPlanCancellation": store_flight_plan_cancellations,
     "flightPlanTraffic": store_flight_plan_traffic,
+    "flightPlanAmendmentInformation": store_flight_plan_traffic,
     "FlightScheduleActivate": store_route_assignments,
     "FlightModify": store_flight_plan_traffic,
     "FlightRoute": store_route_assignments,

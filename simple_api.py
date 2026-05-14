@@ -55,21 +55,19 @@ def create_simple_api(app: Flask) -> None:
 
     @app.route("/home", methods=["GET"])
     def home_page():
-        """Serve the simplified homepage"""
-        try:
-            with open("static/home.html", "r") as f:
-                return f.read()
-        except FileNotFoundError:
-            return "Homepage not found", 404
+        from flask import redirect
+        return redirect("/", 301)
 
     @app.route("/search", methods=["GET"])
     def search_page():
-        """Handle search form submission and redirect to search results page"""
-        query = request.args.get("q", "").strip()
-        if query:
-            return f'<script>window.location.href = "/search.html?q={query}";</script>'
-        else:
-            return '<script>window.location.href = "/";</script>'
+        from flask import redirect
+        return redirect("/", 301)
+
+    @app.route("/api/client-config", methods=["GET"])
+    def client_config():
+        """Return the web-UI API key so the frontend can authenticate /v1/ calls."""
+        key = next(iter(_VALID_KEYS), None)
+        return jsonify({"api_key": key})
 
     @app.route("/api/autocomplete", methods=["GET"])
     def autocomplete():

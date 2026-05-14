@@ -127,6 +127,7 @@
 
   <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/js/api_client.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────────
     const AIRPORTS = [
@@ -219,7 +220,7 @@
       const hours = document.getElementById('window-select').value;
       const icaos = AIRPORTS.map(a => a.icao).join(',');
       try {
-        const res = await fetch(`/v1/airports/flow-forecast?airports=${icaos}&hours=${hours}`);
+        const res = await GolfMikeAPI.apiFetch(`/v1/airports/flow-forecast?airports=${icaos}&hours=${hours}`);
         const data = await res.json();
         allResults = data.airports || [];
         document.getElementById('last-updated').textContent =
@@ -397,7 +398,7 @@
     // ── Trend sparkline ───────────────────────────────────────
     async function loadTrend(icao) {
       try {
-        const res = await fetch(`/v1/airports/${icao}/flow-history?hours=24&limit=48`);
+        const res = await GolfMikeAPI.apiFetch(`/v1/airports/${icao}/flow-history?hours=24&limit=48`);
         const data = await res.json();
         drawTrend(data.history || []);
       } catch {
