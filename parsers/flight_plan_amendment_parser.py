@@ -36,7 +36,7 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         return None
 
 
-def parse_flight_plan_amendment(xml_data: bytes) -> Optional[dict[str, Any]]:
+def parse_flight_plan_amendment(root: etree._Element) -> Optional[dict[str, Any]]:
     """
     Parse a SWIM flightAmendment message.
 
@@ -47,9 +47,6 @@ def parse_flight_plan_amendment(xml_data: bytes) -> Optional[dict[str, Any]]:
     or None on hard parse failure.
     """
     try:
-        parser = etree.XMLParser(recover=True)
-        root = etree.fromstring(xml_data, parser=parser)
-
         result: dict[str, Any] = {"amendment_type": "AMEND"}
 
         # ── qualifiedAircraftId — flight identity ─────────────────────────────
