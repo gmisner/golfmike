@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Sample: ARTCC boundary crossing (UZ) — schema-shaped fragment for parser regression. -->
+<ds:tfmDataService
+  xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata"
+  xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements"
+  xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd">
+  <fltdOutput>
+    <fdm:fltdMessage acid="AAL201" airline="AAL" arrArpt="KJFK" cdmPart="true" depArpt="KDFW" fdTrigger="HCS_UZ_MSG" flightRef="94000002" major="AAL" msgType="boundaryCrossingUpdate" sensitivity="A" sourceFacility="KZMP" sourceTimeStamp="2026-04-25T15:00:00Z">
+      <fdm:boundaryCrossingUpdate>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>AAL201</nxce:aircraftId>
+          <nxce:gufi>KSAMPLBND0002</nxce:gufi>
+          <nxce:igtd>2026-04-25T12:00:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>KDFW</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>KJFK</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightAircraftSpecs equipmentQualifier="L">B38M</nxcm:flightAircraftSpecs>
+        <nxcm:speed>
+          <nxce:filedTrueAirSpeed>450</nxce:filedTrueAirSpeed>
+        </nxcm:speed>
+        <nxcm:boundaryPosition boundaryCrossingTime="2026-04-25T15:22:00Z">
+          <nxce:namedFix>CHORD</nxce:namedFix>
+        </nxcm:boundaryPosition>
+        <nxcm:reportedAltitude>
+          <nxce:assignedAltitude>
+            <nxce:simpleAltitude>360</nxce:simpleAltitude>
+          </nxce:assignedAltitude>
+        </nxcm:reportedAltitude>
+        <nxcm:routeOfFlight>KDFW..TYR..JHW..CYYZ..KJFK</nxcm:routeOfFlight>
+      </fdm:boundaryCrossingUpdate>
+    </fdm:fltdMessage>
+  </fltdOutput>
+</ds:tfmDataService>

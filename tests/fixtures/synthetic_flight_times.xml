@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal TFM fragment for unit tests: one fltdMessage msgType=FlightTimes
+  with ncsmFlightTimes (ncsmFlightTimeInformationType). Not a full tfmDataService
+  document from the wire, but sufficient for parse_flight_times + registry.
+
+  Purpose: regression-test parsing without a live broker or a large capture file.
+-->
+<ds:tfmDataService
+  xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata"
+  xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements"
+  xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages">
+  <fdm:fltdOutput>
+    <fdm:fltdMessage acid="TST123" msgType="FlightTimes" flightRef="999001"
+      sourceFacility="KZLA" sourceTimeStamp="2026-04-25T12:00:00Z">
+      <fdm:ncsmFlightTimes>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>TST123</nxce:aircraftId>
+          <nxce:gufi>KSYNTHFT0001</nxce:gufi>
+          <nxce:igtd>2026-04-25T10:00:00Z</nxce:igtd>
+          <nxce:departurePoint><nxce:airport>KLAX</nxce:airport></nxce:departurePoint>
+          <nxce:arrivalPoint><nxce:airport>KJFK</nxce:airport></nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:flightStatusAndSpec>
+          <nxcm:flightStatus>PLANNED</nxcm:flightStatus>
+          <nxcm:aircraftModel>B738</nxcm:aircraftModel>
+          <nxcm:aircraftspecification aircraftEngineClass="JET" numberOfAircraft="1">B738</nxcm:aircraftspecification>
+        </nxcm:flightStatusAndSpec>
+        <nxcm:etd etdType="ESTIMATED" timeValue="2026-04-25T11:00:00Z"/>
+        <nxcm:eta etaType="ESTIMATED" timeValue="2026-04-25T19:30:00Z"/>
+        <nxcm:ctd>2026-04-25T11:05:00Z</nxcm:ctd>
+        <nxcm:cta>2026-04-25T19:25:00Z</nxcm:cta>
+        <nxcm:rvsmData currentCompliance="true" equipped="true" futureCompliance="true"/>
+      </fdm:ncsmFlightTimes>
+    </fdm:fltdMessage>
+  </fdm:fltdOutput>
+</ds:tfmDataService>

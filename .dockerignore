@@ -1,0 +1,48 @@
+# Git and VCS
+.git
+.gitignore
+**/.git
+
+# Python
+__pycache__
+**/__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+env
+.mypy_cache
+.pytest_cache
+.ruff_cache
+*.egg-info
+.eggs
+dist
+build
+
+# IDE / tooling
+.cursor
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs and local data
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (avoid nested contexts)
+**/.devcontainer/**/node_modules
+
+# Large or irrelevant paths for runtime image
+node_modules
+coverage
+htmlcov
+Sample XML
+tests/
+docs/

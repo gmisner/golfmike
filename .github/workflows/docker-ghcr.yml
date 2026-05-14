@@ -1,0 +1,69 @@
+# Build and push the app image to GitHub Container Registry (GHCR).
+# Set repository Actions permissions: Settings → Actions → General → Workflow permissions
+# to "Read and write" so GITHUB_TOKEN can push packages.
+#
+# Optional: set repository secret PORTAINER_WEBHOOK_URL to the Portainer stack
+# webhook URL. After a successful push to main, the workflow POSTs to it so the
+# stack can pull the new image (when the stack uses that webhook).
+
+name: Publish Docker image to GHCR
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Image name (GHCR requires lowercase)
+        run: |
+          echo "IMAGE_NAME=${REGISTRY}/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "${GITHUB_ENV}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=
+            type=ref,event=tag
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Trigger Portainer stack redeploy (optional)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+        run: |
+          if [ -z "${WEBHOOK_URL}" ]; then echo "No PORTAINER_WEBHOOK_URL secret; skip."; exit 0; fi
+          curl -fsS -X POST "${WEBHOOK_URL}"

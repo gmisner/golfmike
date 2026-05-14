@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Sample: oceanic report — schema-shaped fragment for parser regression. -->
+<ds:tfmDataService
+  xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata"
+  xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements"
+  xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd">
+  <fltdOutput>
+    <fdm:fltdMessage acid="BAW112" airline="BAW" arrArpt="EGLL" cdmPart="true" depArpt="KJFK" fdTrigger="HCS_OCEANIC" flightRef="94000003" major="BAW" msgType="oceanicReport" sensitivity="A" sourceFacility="KZNY" sourceTimeStamp="2026-04-25T12:00:00Z">
+      <fdm:oceanicReport>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>BAW112</nxce:aircraftId>
+          <nxce:gufi>KSAMPLOCN0003</nxce:gufi>
+          <nxce:igtd>2026-04-25T08:00:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>KJFK</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>EGLL</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxcm:speed>480</nxcm:speed>
+        <nxcm:reportedPositionData>
+          <nxcm:position>
+            <nxce:latitude>
+              <nxce:latitudeDMS degrees="50" minutes="0" direction="NORTH" seconds="0"/>
+            </nxce:latitude>
+            <nxce:longitude>
+              <nxce:longitudeDMS degrees="40" minutes="0" direction="WEST" seconds="0"/>
+            </nxce:longitude>
+          </nxcm:position>
+          <nxce:altitude>360</nxce:altitude>
+          <nxce:time>2026-04-25T12:00:00Z</nxce:time>
+        </nxcm:reportedPositionData>
+        <nxcm:ncsmTrackData>
+          <nxcm:eta etaType="ESTIMATED" timeValue="2026-04-25T22:30:00Z"/>
+          <nxcm:rvsmData currentCompliance="true" equipped="true" futureCompliance="true"/>
+        </nxcm:ncsmTrackData>
+      </fdm:oceanicReport>
+    </fdm:fltdMessage>
+  </fltdOutput>
+</ds:tfmDataService>

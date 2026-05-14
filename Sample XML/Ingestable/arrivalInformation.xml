@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Sample: Flow Control Arrival (AZ) — schema-shaped fragment for parser regression. -->
+<ds:tfmDataService
+  xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns="urn:us:gov:dot:faa:atm:tfm:tfmdataservice"
+  xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata"
+  xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements"
+  xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd">
+  <fltdOutput>
+    <fdm:fltdMessage acid="SWA100" airline="SWA" arrArpt="KMDW" cdmPart="false" depArpt="KPHX" fdTrigger="HCS_ARRIVAL_MSG" flightRef="94000001" major="SWA" msgType="arrivalInformation" sensitivity="A" sourceFacility="KZLC" sourceTimeStamp="2026-04-25T20:00:00Z">
+      <fdm:arrivalInformation>
+        <nxcm:qualifiedAircraftId aircraftCategory="JET" userCategory="COMMERCIAL">
+          <nxce:aircraftId>SWA100</nxce:aircraftId>
+          <nxce:gufi>KSAMPLARV0001</nxce:gufi>
+          <nxce:igtd>2026-04-25T10:00:00Z</nxce:igtd>
+          <nxce:departurePoint>
+            <nxce:airport>KPHX</nxce:airport>
+          </nxce:departurePoint>
+          <nxce:arrivalPoint>
+            <nxce:airport>KMDW</nxce:airport>
+          </nxce:arrivalPoint>
+        </nxcm:qualifiedAircraftId>
+        <nxce:timeOfArrival estimated="false">2026-04-25T19:15:00Z</nxce:timeOfArrival>
+        <nxcm:ncsmFlightTimeData>
+          <nxcm:etd etdType="ACTUAL" timeValue="2026-04-25T10:12:00Z"/>
+          <nxcm:eta etaType="ESTIMATED" timeValue="2026-04-25T19:20:00Z"/>
+          <nxcm:rvsmData currentCompliance="true" equipped="true" futureCompliance="true"/>
+        </nxcm:ncsmFlightTimeData>
+      </fdm:arrivalInformation>
+    </fdm:fltdMessage>
+  </fltdOutput>
+</ds:tfmDataService>

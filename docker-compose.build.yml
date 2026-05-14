@@ -1,0 +1,24 @@
+# Local development overlay: adds `build` so `docker compose` can build `golfmike-app`
+# from the repo Dockerfile. Omit this file in Portainer when using GHCR images.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
+
+x-build: &app-build
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+services:
+  db_init:
+    <<: *app-build
+  web_api:
+    <<: *app-build
+  celery_worker:
+    <<: *app-build
+  traffic_consumer:
+    <<: *app-build
+  fdps_tfm_consumer:
+    <<: *app-build
+  weather_consumer:
+    <<: *app-build

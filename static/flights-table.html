@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>All Flights - GolfMike Flight Tracker</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    .search-container {
+      margin-bottom: 1.5rem;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .aircraft-icon {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+    .loading {
+      text-align: center;
+      padding: 2rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+    .flight-row {
+      cursor: pointer;
+    }
+    .flight-row:hover {
+      background-color: #f8f9fa;
+    }
+    .route-modal .waypoint-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .waypoint-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .waypoint-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body class="layout-fluid">
+  <!-- Navbar -->
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <h1 class="navbar-brand navbar-brand-autodark pe-3">
+        <a href="/" class="text-decoration-none">
+          <svg class="aircraft-icon me-2" viewBox="0 0 24 24">
+            <path d="M12 2l-2 4l-4 1l2 2l-1 4l4 -2l4 2l-1 -4l2 -2l-4 -1z"/>
+          </svg>
+          GolfMike Flight Tracker
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last">
+        <a href="/" class="btn btn-outline-primary me-2">Home</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="page-wrapper">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <h2 class="page-title">All Flights</h2>
+            <div class="text-muted mt-1">View and search all current flights</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="container-xl">
+        <!-- Search Container -->
+        <div class="card search-container">
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-12 col-md-8">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="search-input" 
+                  placeholder="Search by aircraft ID, flight reference, airports, aircraft type, or operator..."
+                  autocomplete="off"
+                />
+              </div>
+              <div class="col-12 col-md-2">
+                <select class="form-select" id="status-filter" onchange="loadFlights()">
+                  <option value="">All Statuses</option>
+                  <option value="PLANNED">PLANNED</option>
+                  <option value="IN_FLIGHT">IN_FLIGHT</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-2">
+                <button class="btn btn-primary w-100" id="search-btn" onclick="loadFlights()">
+                  Search
+                </button>
+              </div>
+            </div>
+            <div class="mt-2">
+              <small class="text-muted">
+                <span id="flight-count">0</span> flights found
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading" style="display: none;">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading flights...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <p>No flights found. Try adjusting your search criteria.</p>
+        </div>
+
+        <!-- Table Container -->
+        <div class="card table-container" id="table-container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-vcenter table-hover">
+              <thead>
+                <tr>
+                  <th>Aircraft ID</th>
+                  <th>Flight Reference</th>
+                  <th>Route</th>
+                  <th>Departure Time</th>
+                  <th>Arrival Time</th>
+                  <th>Aircraft Type</th>
+                  <th>Operator</th>
+                  <th>Status</th>
+                  <th>GUFI</th>
+                </tr>
+              </thead>
+              <tbody id="flights-tbody">
+                <!-- Flights will be inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load flights on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadFlights();
+      
+      // Add enter key support for search
+      document.getElementById('search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          loadFlights();
+        }
+      });
+    });
+
+    function loadFlights() {
+      const searchInput = document.getElementById('search-input');
+      const searchTerm = searchInput.value.trim();
+      const loading = document.getElementById('loading');
+      const tableContainer = document.getElementById('table-container');
+      const emptyState = document.getElementById('empty-state');
+      const tbody = document.getElementById('flights-tbody');
+      const flightCount = document.getElementById('flight-count');
+      
+      // Show loading state
+      loading.style.display = 'block';
+      tableContainer.style.display = 'none';
+      emptyState.style.display = 'none';
+      
+      // Build API URL
+      const statusFilter = document.getElementById('status-filter').value;
+      let url = '/api/flights/all';
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      if (statusFilter) {
+        params.append('status', statusFilter);
+      }
+      if (params.toString()) {
+        url += '?' + params.toString();
+      }
+      
+      // Fetch flights
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          loading.style.display = 'none';
+          
+          if (data.error) {
+            console.error('Error:', data.error);
+            emptyState.innerHTML = `<p>Error loading flights: ${data.error}</p>`;
+            emptyState.style.display = 'block';
+            return;
+          }
+          
+          const flights = data.flights || [];
+          flightCount.textContent = data.count || 0;
+          
+          if (flights.length === 0) {
+            emptyState.style.display = 'block';
+            tableContainer.style.display = 'none';
+            return;
+          }
+          
+          // Clear existing rows
+          tbody.innerHTML = '';
+          
+          // Add flight rows
+          flights.forEach(flight => {
+            const row = createFlightRow(flight);
+            tbody.appendChild(row);
+          });
+          
+          tableContainer.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error fetching flights:', error);
+          loading.style.display = 'none';
+          emptyState.innerHTML = '<p>Error loading flights. Please try again.</p>';
+          emptyState.style.display = 'block';
+        });
+    }
+
+    function createFlightRow(flight) {
+      const tr = document.createElement('tr');
+      
+      // Format dates
+      const depTime = flight.departure_time 
+        ? new Date(flight.departure_time).toLocaleString()
+        : 'N/A';
+      const arrTime = flight.arrival_time 
+        ? new Date(flight.arrival_time).toLocaleString()
+        : 'N/A';
+      
+      // Route display
+      const route = flight.departure_airport && flight.arrival_airport
+        ? `${flight.departure_airport} → ${flight.arrival_airport}`
+        : 'N/A';
+      
+      // Determine if route is clickable (has route assignment or is PLANNED with GUFI)
+      const hasRouteAssignment = flight.assigned_altitude || flight.assigned_speed;
+      const isClickable = flight.gufi && (hasRouteAssignment || flight.status === 'PLANNED');
+      
+      // Status badge
+      const statusClass = getStatusClass(flight.status);
+      const statusBadge = `<span class="badge ${statusClass} status-badge">${flight.status || 'UNKNOWN'}</span>`;
+      
+      tr.className = 'flight-row';
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(flight.aircraft_id || 'N/A')}</strong></td>
+        <td>${escapeHtml(flight.flight_reference || 'N/A')}</td>
+        <td>
+          ${isClickable
+            ? `<a href="#" class="route-link" data-gufi="${escapeHtml(flight.gufi)}" onclick="showRouteDetails('${escapeHtml(flight.gufi)}'); return false;">${escapeHtml(route)} <small class="text-muted">(${hasRouteAssignment ? 'click for route' : 'route pending'})</small></a>`
+            : escapeHtml(route)}
+        </td>
+        <td>${depTime}</td>
+        <td>${arrTime}</td>
+        <td>${escapeHtml(flight.aircraft_type || 'N/A')}</td>
+        <td>${escapeHtml(flight.aircraft_operator || 'N/A')}</td>
+        <td>${statusBadge}</td>
+        <td><small class="text-muted">${escapeHtml(flight.gufi || 'N/A')}</small></td>
+      `;
+      
+      return tr;
+    }
+
+    function getStatusClass(status) {
+      const statusUpper = (status || '').toUpperCase();
+      if (statusUpper === 'ACTIVE' || statusUpper === 'IN_FLIGHT') return 'bg-success';
+      if (statusUpper === 'PLANNED') return 'bg-info';
+      if (statusUpper === 'COMPLETED') return 'bg-secondary';
+      if (statusUpper === 'CANCELLED') return 'bg-danger';
+      return 'bg-secondary';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showRouteDetails(gufi) {
+      // Show loading modal
+      const modal = document.getElementById('route-modal');
+      const modalBody = document.getElementById('route-modal-body');
+      modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Loading route details...</p></div>';
+      modal.style.display = 'block';
+      
+      // Fetch route details
+      fetch(`/api/flight-route/${encodeURIComponent(gufi)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            modalBody.innerHTML = `<div class="alert alert-danger">${escapeHtml(data.error)}</div>`;
+            return;
+          }
+          
+          if (data.message) {
+            // Show basic flight info even when no route assignment exists
+            let html = `
+              <div class="mb-3">
+                <h4>Flight Information for ${escapeHtml(data.aircraft_id || 'N/A')}</h4>
+                <p class="text-muted">GUFI: ${escapeHtml(data.gufi || 'N/A')}</p>
+              </div>
+              
+              <div class="alert alert-info">
+                <strong>Route Assignment Pending</strong><br>
+                ${escapeHtml(data.message)}<br>
+                <small>Route assignments are provided via FlightScheduleActivate messages from ATC. 
+                This flight plan has been filed but the route has not yet been assigned.</small>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <strong>Route:</strong> ${escapeHtml(data.departure_airport || 'N/A')} → ${escapeHtml(data.arrival_airport || 'N/A')}
+                </div>
+                <div class="col-md-6">
+                  <strong>Status:</strong> <span class="badge bg-info">${escapeHtml(data.current_status || 'PLANNED')}</span>
+                </div>
+              </div>
+              
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <strong>Flight Reference:</strong> ${escapeHtml(data.flight_reference || 'N/A')}
+                </div>
+                <div class="col-md-6">
+                  <strong>Scheduled Departure:</strong> ${data.scheduled_departure ? new Date(data.scheduled_departure).toLocaleString() : 'N/A'}
+                </div>
+              </div>
+            `;
+            modalBody.innerHTML = html;
+            return;
+          }
+          
+          // Build route details HTML
+          const route = data.route_assignment;
+          let html = `
+            <div class="mb-3">
+              <h4>Route Assignment for ${escapeHtml(data.aircraft_id)}</h4>
+              <p class="text-muted">GUFI: ${escapeHtml(data.gufi)}</p>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>Route:</strong> ${escapeHtml(data.departure_airport || 'N/A')} → ${escapeHtml(data.arrival_airport || 'N/A')}
+              </div>
+              <div class="col-md-6">
+                <strong>Status:</strong> <span class="badge bg-info">${escapeHtml(data.current_status || 'PLANNED')}</span>
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <strong>Assigned Altitude:</strong> ${route.assigned_altitude ? route.assigned_altitude + ' ft' : 'N/A'}
+              </div>
+              <div class="col-md-4">
+                <strong>Assigned Speed:</strong> ${route.assigned_speed ? route.assigned_speed + ' kts' : 'N/A'}
+              </div>
+              <div class="col-md-4">
+                <strong>Waypoints:</strong> ${route.waypoint_count || 0}
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>ETD:</strong> ${route.etd ? new Date(route.etd).toLocaleString() : 'N/A'}
+              </div>
+              <div class="col-md-6">
+                <strong>ETA:</strong> ${route.eta ? new Date(route.eta).toLocaleString() : 'N/A'}
+              </div>
+            </div>
+            
+            ${route.assigned_at ? `<p class="text-muted"><small>Assigned at: ${new Date(route.assigned_at).toLocaleString()}</small></p>` : ''}
+          `;
+          
+          // Add fixes if available (show prominently)
+          if (route.fixes && route.fixes.length > 0) {
+            html += `
+              <hr>
+              <h5>Route Fixes</h5>
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="d-flex flex-wrap gap-2">
+            `;
+            
+            route.fixes.forEach((fix, index) => {
+              const fixName = fix.name || fix.fix_name || 'N/A';
+              const elapsedTime = fix.elapsed_time || fix.elapsedTime;
+              html += `
+                <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+                  ${escapeHtml(fixName)}
+                  ${elapsedTime ? ` <small>(${elapsedTime}s)</small>` : ''}
+                </span>
+              `;
+            });
+            
+            html += `
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+          
+          // Add waypoints if available
+          if (route.waypoints && route.waypoints.length > 0) {
+            html += `
+              <hr>
+              <h5>Route Waypoints</h5>
+              <div class="waypoint-list">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Seq</th>
+                      <th>Name/Type</th>
+                      <th>Latitude</th>
+                      <th>Longitude</th>
+                      <th>Altitude</th>
+                      <th>Elapsed Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+            
+            route.waypoints.forEach(wp => {
+              // Show name if available (check for null/undefined/empty), otherwise show type
+              const name = wp.name || wp.fix_name;
+              const nameOrType = (name && name !== 'null' && name !== 'None') ? name : (wp.type || 'WAYPOINT');
+              html += `
+                <tr>
+                  <td>${wp.sequence || wp.sequence_number || 'N/A'}</td>
+                  <td><strong>${escapeHtml(nameOrType)}</strong></td>
+                  <td>${wp.latitude ? parseFloat(wp.latitude).toFixed(6) : 'N/A'}</td>
+                  <td>${wp.longitude ? parseFloat(wp.longitude).toFixed(6) : 'N/A'}</td>
+                  <td>${wp.altitude || 'N/A'}</td>
+                  <td>${wp.elapsed_time ? wp.elapsed_time + 's' : 'N/A'}</td>
+                </tr>
+              `;
+            });
+            
+            html += `
+                  </tbody>
+                </table>
+              </div>
+            `;
+          } else if (!route.fixes || route.fixes.length === 0) {
+            html += '<p class="text-muted">No waypoints or fixes available for this route.</p>';
+          }
+          
+          // Add track data if available (for in-flight aircraft)
+          if (data.track_data && data.current_status === 'IN_FLIGHT') {
+            const trackData = data.track_data;
+            html += `
+              <hr>
+              <h5>Active Track Fixes</h5>
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="d-flex flex-wrap gap-2">
+            `;
+            
+            // Departure fix
+            if (trackData.departure_fix && trackData.departure_fix.fix_name) {
+              const depTime = trackData.departure_fix.arr_time ? new Date(trackData.departure_fix.arr_time).toLocaleString() : '';
+              html += `
+                <span class="badge bg-success" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+                  <strong>DEP:</strong> ${escapeHtml(trackData.departure_fix.fix_name)}
+                  ${depTime ? ` <small>(${depTime})</small>` : ''}
+                </span>
+              `;
+            }
+            
+            // Arrival fix
+            if (trackData.arrival_fix && trackData.arrival_fix.fix_name) {
+              const arrTime = trackData.arrival_fix.arr_time ? new Date(trackData.arrival_fix.arr_time).toLocaleString() : '';
+              html += `
+                <span class="badge bg-danger" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+                  <strong>ARR:</strong> ${escapeHtml(trackData.arrival_fix.fix_name)}
+                  ${arrTime ? ` <small>(${arrTime})</small>` : ''}
+                </span>
+              `;
+            }
+            
+            html += `
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            html += `
+              <div class="card">
+                <div class="card-body">
+            `;
+            
+            // Next event
+            if (trackData.next_event) {
+              html += `
+                <div class="mb-2">
+                  <strong>Next Event:</strong> 
+                  ${trackData.next_event.latitude ? `Lat: ${parseFloat(trackData.next_event.latitude).toFixed(6)}` : ''}
+                  ${trackData.next_event.longitude ? `, Lon: ${parseFloat(trackData.next_event.longitude).toFixed(6)}` : ''}
+                </div>
+              `;
+            }
+            
+            // ETA from track data
+            if (trackData.eta && trackData.eta.time_value) {
+              html += `
+                <div class="mb-2">
+                  <strong>Estimated Arrival:</strong> 
+                  <span class="badge bg-primary">${trackData.eta.eta_type || 'ESTIMATED'}</span>
+                  ${new Date(trackData.eta.time_value).toLocaleString()}
+                </div>
+              `;
+            }
+            
+            // RVSM data
+            if (trackData.rvsm_data) {
+              html += `
+                <div class="mb-2">
+                  <strong>RVSM:</strong> 
+                  ${trackData.rvsm_data.equipped === 'true' ? '<span class="badge bg-success">Equipped</span>' : ''}
+                  ${trackData.rvsm_data.currentCompliance === 'true' ? '<span class="badge bg-success">Compliant</span>' : ''}
+                </div>
+              `;
+            }
+            
+            html += `
+                </div>
+              </div>
+            `;
+          }
+          
+          modalBody.innerHTML = html;
+        })
+        .catch(error => {
+          console.error('Error fetching route details:', error);
+          modalBody.innerHTML = `<div class="alert alert-danger">Error loading route details. Please try again.</div>`;
+        });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('route-modal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
+
+  <!-- Route Details Modal -->
+  <div id="route-modal" class="route-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-dialog modal-lg" style="margin: 2% auto; background-color: #fefefe; padding: 20px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 8px;">
+      <div class="modal-content">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 1rem;">
+          <h3 class="modal-title">Route Details</h3>
+          <span class="close" onclick="document.getElementById('route-modal').style.display='none'" style="color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        </div>
+        <div class="modal-body" id="route-modal-body">
+          <!-- Route details will be loaded here -->
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid #dee2e6; padding-top: 1rem; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('route-modal').style.display='none'">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
