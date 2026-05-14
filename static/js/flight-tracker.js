@@ -55,8 +55,9 @@ class FlightTracker {
         this.map = L.map('flight-map').setView([39.8283, -98.5795], 4); // Center on US
         
         // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd', maxZoom: 19
         }).addTo(this.map);
 
         // Add aircraft icon
@@ -857,8 +858,9 @@ class FlightTracker {
         // Create map for track history
         const trackMap = L.map('trackMap').setView([tracks[0].latitude, tracks[0].longitude], 8);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd', maxZoom: 19
         }).addTo(trackMap);
 
         // Add track line

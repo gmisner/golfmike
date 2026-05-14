@@ -1,108 +1,40 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Flight Detail — GolfMike Flight Tracker</title>
+    <title>Flight Detail — GolfMike</title>
     <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/css/custom.css"/>
     <style>
-      .route-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-      .map-placeholder { aspect-ratio: 16 / 9; background: #f0f2f6; display:flex; align-items:center; justify-content:center; border-radius: .5rem; }
       .map-container { aspect-ratio: 16 / 9; border-radius: .5rem; overflow: hidden; }
       @media (min-width: 992px){ .sticky-sidebar{ position: sticky; top: 1rem; } }
-      .flight-status-arrived { background-color: #28a745 !important; }
-      .flight-status-enroute { background-color: #007bff !important; }
-      .flight-status-delayed { background-color: #fd7e14 !important; }
-      .flight-status-scheduled { background-color: #6c757d !important; }
-      
-      /* Timeline styling */
-      .timeline {
-        position: relative;
-        padding-left: 2rem;
-      }
-      
-      .timeline::before {
-        content: '';
-        position: absolute;
-        left: 1rem;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #e9ecef;
-      }
-      
-      .timeline-item {
-        position: relative;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: flex-start;
-      }
-      
-      .timeline-time {
-        position: absolute;
-        left: -2rem;
-        top: 0;
-        font-size: 0.75rem;
-        color: #6c757d;
-        white-space: nowrap;
-        min-width: 3rem;
-        text-align: right;
-      }
-      
-      .timeline-badge {
-        position: absolute;
-        left: -1.5rem;
-        top: 0.25rem;
-        width: 1rem;
-        height: 1rem;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 0.5rem;
-        z-index: 1;
-      }
-      
-      .timeline-content {
-        margin-left: 1rem;
-        flex: 1;
-      }
-      
-      .timeline-title {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-      }
-      
-      .timeline-meta {
-        margin-top: 0.5rem;
-      }
-      
-      .timeline-badge svg {
-        width: 0.75rem;
-        height: 0.75rem;
-      }
+      #overlay-map { height: 400px; border-radius: .5rem; overflow: hidden; }
+      .deviation-table th, .deviation-table td { font-size: 0.8rem; }
     </style>
   </head>
   <body class="layout-fluid">
-    <!-- Top navbar -->
+    <!-- Navbar -->
     <header class="navbar navbar-expand-md d-print-none">
       <div class="container-xl">
-        <h1 class="navbar-brand navbar-brand-autodark pe-3">
-          <a href="/">GolfMike Flight Tracker</a>
-        </h1>
-
-        <div class="navbar-nav flex-row order-md-last">
-          <div class="nav-item d-none d-md-flex me-3">
-            <div class="input-icon">
-              <span class="input-icon-addon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
-              </span>
-              <input type="text" class="form-control" placeholder="Search flights, airports, aircraft…" id="global-search">
-            </div>
-          </div>
-          <a href="/flight-plan.html" class="btn btn-outline-primary">Flight Plans</a>
+        <a href="/" class="navbar-brand d-flex align-items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               style="color:var(--gm-blue)">
+            <path d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7H9l2-7H7l-2 2H2l2-4-2-4h3l2 2h4L9 3h3l4 7z"/>
+          </svg>
+          GolfMike
+        </a>
+        <div class="collapse navbar-collapse" id="navbar-menu">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="/">Tracker</a></li>
+            <li class="nav-item"><a class="nav-link" href="/airports.html">Airports</a></li>
+            <li class="nav-item"><a class="nav-link" href="/flight-plan.html">Flight Plans</a></li>
+          </ul>
+        </div>
+        <div class="ms-3 d-none d-md-block">
+          <a href="/" class="btn btn-sm btn-outline-secondary">← Back</a>
         </div>
       </div>
     </header>
@@ -198,6 +130,7 @@
                   <li class="nav-item"><a href="#tab-track" class="nav-link" data-bs-toggle="tab">Track Log</a></li>
                   <li class="nav-item"><a href="#tab-weather" class="nav-link" data-bs-toggle="tab">Weather</a></li>
                   <li class="nav-item"><a href="#tab-notams" class="nav-link" data-bs-toggle="tab">NOTAMs</a></li>
+                  <li class="nav-item"><a href="#tab-overlay" class="nav-link" data-bs-toggle="tab" id="overlay-tab">Route Overlay</a></li>
                 </ul>
               </div>
               <div class="card-body tab-content">
@@ -236,6 +169,34 @@
                   <ul class="list-group list-group-flush" id="notams-list">
                     <!-- NOTAMs will be populated by JavaScript -->
                   </ul>
+                </div>
+
+                <!-- Route Overlay -->
+                <div class="tab-pane" id="tab-overlay">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex gap-3 small">
+                      <span><span style="display:inline-block;width:24px;height:3px;background:#4a9eff;border-top:2px dashed #4a9eff;vertical-align:middle"></span> Planned Route</span>
+                      <span><span style="display:inline-block;width:24px;height:3px;background:#e8eaed;vertical-align:middle"></span> Actual Track</span>
+                      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fd7e14;vertical-align:middle"></span> Caution Deviation</span>
+                      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc3545;vertical-align:middle"></span> Warning Deviation</span>
+                    </div>
+                    <div class="text-secondary small">Adherence: <strong id="adherence-pct">—</strong></div>
+                  </div>
+                  <div id="overlay-map"></div>
+                  <div class="mt-3" id="deviation-section" style="display:none">
+                    <div class="text-secondary small fw-bold mb-1">Deviations</div>
+                    <div class="table-responsive">
+                      <table class="table table-sm deviation-table">
+                        <thead>
+                          <tr><th>Time (Z)</th><th>XTD (nm)</th><th>Alt Dev (ft)</th><th>Level</th></tr>
+                        </thead>
+                        <tbody id="deviation-rows"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div id="overlay-empty" class="text-secondary text-center py-4" style="display:none">
+                    No route overlay data available for this flight.
+                  </div>
                 </div>
               </div>
             </div>
@@ -316,6 +277,133 @@
     <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/static/js/flight-detail.js"></script>
+    <script>
+    (function () {
+      const CARTO_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      const CARTO_ATTR = '&copy; <a href="https://carto.com/">CARTO</a>';
+
+      let overlayMap = null;
+      let overlayLoaded = false;
+
+      function getGufi() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('gufi') || params.get('id');
+      }
+
+      function levelColor(level) {
+        return level === 'WARNING' ? '#dc3545' : '#fd7e14';
+      }
+
+      function initOverlayMap() {
+        if (overlayMap) return;
+        overlayMap = L.map('overlay-map', { zoomControl: true }).setView([39, -98], 4);
+        L.tileLayer(CARTO_DARK, { attribution: CARTO_ATTR, subdomains: 'abcd', maxZoom: 19 }).addTo(overlayMap);
+      }
+
+      async function loadOverlay() {
+        if (overlayLoaded) return;
+        const gufi = getGufi();
+        if (!gufi) {
+          document.getElementById('overlay-empty').style.display = '';
+          return;
+        }
+
+        initOverlayMap();
+
+        let data;
+        try {
+          const resp = await fetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`);
+          if (!resp.ok) throw new Error(resp.status);
+          data = await resp.json();
+        } catch (e) {
+          document.getElementById('overlay-empty').style.display = '';
+          return;
+        }
+
+        const bounds = [];
+
+        // Planned route — dashed blue polyline
+        if (data.planned_route && data.planned_route.length > 0) {
+          const coords = data.planned_route.map(w => [w.latitude, w.longitude]);
+          L.polyline(coords, {
+            color: '#4a9eff', weight: 2, opacity: 0.8,
+            dashArray: '8 5'
+          }).addTo(overlayMap);
+          coords.forEach(c => bounds.push(c));
+
+          // Waypoint labels
+          data.planned_route.forEach(w => {
+            L.circleMarker([w.latitude, w.longitude], {
+              radius: 3, color: '#4a9eff', fillColor: '#4a9eff', fillOpacity: 1, weight: 1
+            }).bindTooltip(w.fix_name, { permanent: false, direction: 'top', className: 'leaflet-tooltip' })
+              .addTo(overlayMap);
+          });
+        }
+
+        // Actual track — solid white polyline
+        if (data.actual_track && data.actual_track.length > 0) {
+          const coords = data.actual_track.map(t => [t.latitude, t.longitude]);
+          L.polyline(coords, {
+            color: '#e8eaed', weight: 2, opacity: 0.9
+          }).addTo(overlayMap);
+          coords.forEach(c => bounds.push(c));
+        }
+
+        // Deviation markers
+        if (data.deviations && data.deviations.length > 0) {
+          data.deviations.forEach(d => {
+            L.circleMarker([d.latitude, d.longitude], {
+              radius: 6, color: levelColor(d.alert_level),
+              fillColor: levelColor(d.alert_level), fillOpacity: 0.7, weight: 2
+            }).bindPopup(
+              `<strong>${d.alert_level}</strong><br>` +
+              `XTD: ${d.cross_track_distance_nm?.toFixed(1)} nm<br>` +
+              `Alt dev: ${d.altitude_deviation_ft ?? '—'} ft`
+            ).addTo(overlayMap);
+            bounds.push([d.latitude, d.longitude]);
+          });
+
+          // Populate deviation table
+          const tbody = document.getElementById('deviation-rows');
+          tbody.innerHTML = '';
+          data.deviations.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${d.timestamp ? new Date(d.timestamp).toISOString().slice(11, 19) + 'Z' : '—'}</td>` +
+              `<td>${d.cross_track_distance_nm?.toFixed(1) ?? '—'}</td>` +
+              `<td>${d.altitude_deviation_ft ?? '—'}</td>` +
+              `<td><span class="badge" style="background:${levelColor(d.alert_level)}">${d.alert_level}</span></td>`;
+            tbody.appendChild(tr);
+          });
+          document.getElementById('deviation-section').style.display = '';
+        }
+
+        // Adherence
+        if (data.adherence_pct != null) {
+          document.getElementById('adherence-pct').textContent = data.adherence_pct.toFixed(0) + '%';
+        }
+
+        if (bounds.length > 0) {
+          overlayMap.fitBounds(bounds, { padding: [30, 30] });
+        }
+
+        overlayLoaded = true;
+      }
+
+      // Lazy-load when tab is activated
+      document.addEventListener('DOMContentLoaded', function () {
+        const tabEl = document.getElementById('overlay-tab');
+        if (tabEl) {
+          tabEl.addEventListener('shown.bs.tab', function () {
+            // Force Leaflet to recalculate size after tab becomes visible
+            setTimeout(function () {
+              if (overlayMap) overlayMap.invalidateSize();
+              loadOverlay();
+            }, 50);
+          });
+        }
+      });
+    })();
+    </script>
   </body>
 </html>
 

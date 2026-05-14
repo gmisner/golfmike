@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 def store_tmi_flight_list(parsed_data, session=None):
     logger.debug("Starting store_tmi_flight_list function")
 
+    created_locally = session is None
+
     # Verify session type and create a new session if none is provided
     if session is None:
         logger.debug("No session provided, creating a new session")
@@ -88,8 +90,8 @@ def store_tmi_flight_list(parsed_data, session=None):
             session.rollback()
 
     finally:
-        if session:
-            SessionLocal.remove()  # Clear the scoped session if created locally
+        if created_locally and session:
+            SessionLocal.remove()
             logger.debug("Scoped session removed.")
 
     logger.debug("Finished store_tmi_flight_list function")

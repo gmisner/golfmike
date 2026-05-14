@@ -4,9 +4,15 @@ Parses flight plan XML data from the FDPS Solace queue
 """
 
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from utils.logger import main_logger as logger
+
+try:
+    from dateutil.parser import isoparse as _isoparse
+    _HAS_DATEUTIL = True
+except ImportError:
+    _HAS_DATEUTIL = False
 
 
 class FlightPlanXMLParser:
@@ -133,35 +139,38 @@ class FlightPlanXMLParser:
             return None
 
     def _parse_datetime(self, datetime_str: str) -> Optional[datetime]:
-        """
-        Parse datetime string in various formats
-
-        Args:
-            datetime_str: String representation of datetime
-
-        Returns:
-            Parsed datetime object or None if parsing fails
-        """
+        """Parse datetime string, always returning a UTC-aware datetime."""
         if not datetime_str:
             return None
 
-        # Common datetime formats to try
-        formats = [
-            "%Y-%m-%dT%H:%M:%S.%fZ",  # ISO format with microseconds
-            "%Y-%m-%dT%H:%M:%SZ",  # ISO format without microseconds
-            "%Y-%m-%dT%H:%M:%S",  # ISO format without timezone
-            "%Y-%m-%d %H:%M:%S",  # Standard format
-            "%Y%m%d%H%M%S",  # Compact format
-            "%Y-%m-%d",  # Date only
-        ]
+        s = datetime_str.strip()
 
+        # Prefer dateutil — handles Z suffix, offsets, and most ISO variants
+        if _HAS_DATEUTIL:
+            try:
+                dt = _isoparse(s)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            except (ValueError, OverflowError):
+                pass
+
+        # Fallback strptime; all naive results are treated as UTC
+        formats = [
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y%m%d%H%M%S",
+            "%Y-%m-%d",
+        ]
         for fmt in formats:
             try:
-                return datetime.strptime(datetime_str.strip(), fmt)
+                return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
 
-        self.logger.warning(f"Could not parse datetime: {datetime_str}")
+        self.logger.warning(f"Could not parse datetime: {datetime_str!r}")
         return None
 
 

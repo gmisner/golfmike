@@ -1,517 +1,489 @@
-/* Custom CSS for GolfMike Flight Tracker */
+/* ============================================================
+   GolfMike — Custom Design System
+   Dark-first aviation theme built on Tabler / Bootstrap 5
+   ============================================================ */
 
-/* Top navigation styling */
-.navbar .navbar-nav .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    margin: 0 4px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    color: rgba(255, 255, 255, 0.8);
+/* ── Design tokens ───────────────────────────────────────── */
+:root {
+  --gm-blue:        #3b82f6;
+  --gm-blue-dim:    #1d4ed8;
+  --gm-green:       #22c55e;
+  --gm-amber:       #f59e0b;
+  --gm-red:         #ef4444;
+  --gm-purple:      #a855f7;
+
+  --gm-surface:     #1a1f2e;
+  --gm-surface-2:   #242938;
+  --gm-surface-3:   #2d3348;
+  --gm-border:      rgba(255,255,255,0.08);
+  --gm-text:        #e2e8f0;
+  --gm-text-dim:    #94a3b8;
+
+  --gm-shadow-sm:   0 1px 3px rgba(0,0,0,0.4);
+  --gm-shadow-md:   0 4px 16px rgba(0,0,0,0.5);
+  --gm-shadow-lg:   0 8px 32px rgba(0,0,0,0.6);
+
+  --gm-radius:      0.5rem;
+  --gm-radius-lg:   0.75rem;
+  --gm-transition:  0.2s cubic-bezier(0.4,0,0.2,1);
 }
 
-.navbar .navbar-nav .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    transform: translateY(-1px);
+/* ── Base ────────────────────────────────────────────────── */
+body {
+  background-color: var(--gm-surface) !important;
+  color: var(--gm-text) !important;
 }
 
-.navbar .navbar-nav .nav-link.active {
-    background-color: #206bc4;
-    color: #ffffff;
+/* ── Navbar ──────────────────────────────────────────────── */
+.navbar {
+  background-color: var(--gm-surface-2) !important;
+  border-bottom: 1px solid var(--gm-border) !important;
+  box-shadow: var(--gm-shadow-sm);
 }
 
-.navbar .navbar-nav .nav-link .icon {
-    width: 20px;
-    height: 20px;
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gm-text) !important;
 }
 
-/* Enhanced flight card animations */
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  margin: 0 2px;
+  border-radius: var(--gm-radius);
+  color: var(--gm-text-dim) !important;
+  transition: all var(--gm-transition);
+}
+
+.navbar-nav .nav-link:hover {
+  background: rgba(59,130,246,0.12);
+  color: var(--gm-text) !important;
+}
+
+.navbar-nav .nav-link.active {
+  background: rgba(59,130,246,0.18);
+  color: var(--gm-blue) !important;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card {
+  background-color: var(--gm-surface-2) !important;
+  border: 1px solid var(--gm-border) !important;
+  border-radius: var(--gm-radius-lg) !important;
+  box-shadow: var(--gm-shadow-sm);
+}
+
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--gm-border) !important;
+  padding: 1rem 1.25rem;
+}
+
+.card-title {
+  color: var(--gm-text) !important;
+  font-weight: 600;
+}
+
+/* ── Flight cards ────────────────────────────────────────── */
 .flight-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform var(--gm-transition), box-shadow var(--gm-transition), border-color var(--gm-transition);
+  cursor: pointer;
 }
 
 .flight-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    border-color: #206bc4;
+  transform: translateY(-3px);
+  box-shadow: var(--gm-shadow-md);
+  border-color: var(--gm-blue) !important;
 }
 
-/* Aircraft avatar styling */
-.aircraft-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #206bc4, #4299e1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    box-shadow: 0 2px 8px rgba(32, 107, 196, 0.3);
-}
-
-/* Status badges */
-.status-badge {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
-    border-radius: 6px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Map container */
+/* ── Map containers ──────────────────────────────────────── */
 .map-container {
-    height: 500px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--gm-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--gm-border);
+  box-shadow: var(--gm-shadow-md);
 }
 
-/* Notification items */
+.map-container-full  { height: 540px; }
+.map-container-split { height: 420px; }
+.map-container-thumb { height: 280px; }
+
+.map-placeholder {
+  background: var(--gm-surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--gm-radius-lg);
+  border: 1px dashed var(--gm-border);
+  color: var(--gm-text-dim);
+  min-height: 200px;
+}
+
+/* ── Risk / flow probability badges ─────────────────────── */
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.3em 0.75em;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.risk-very-low  { background: rgba(34,197,94,0.15);  color: var(--gm-green);  border: 1px solid rgba(34,197,94,0.3); }
+.risk-low       { background: rgba(34,197,94,0.10);  color: #86efac;          border: 1px solid rgba(34,197,94,0.2); }
+.risk-moderate  { background: rgba(245,158,11,0.15); color: var(--gm-amber);  border: 1px solid rgba(245,158,11,0.3); }
+.risk-high      { background: rgba(239,68,68,0.15);  color: var(--gm-red);    border: 1px solid rgba(239,68,68,0.3); }
+.risk-very-high { background: rgba(239,68,68,0.25);  color: #fca5a5;          border: 1px solid rgba(239,68,68,0.5); }
+
+/* Airport risk cards */
+.airport-risk-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--gm-transition), box-shadow var(--gm-transition);
+}
+
+.airport-risk-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gm-shadow-md);
+}
+
+.airport-risk-card .probability-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+.probability-bar-very-low  { background: var(--gm-green); }
+.probability-bar-low       { background: #86efac; }
+.probability-bar-moderate  { background: var(--gm-amber); }
+.probability-bar-high      { background: var(--gm-red); }
+.probability-bar-very-high { background: #f87171; }
+
+/* ── Flight status badges ────────────────────────────────── */
+.status-badge {
+  font-size: 0.68rem;
+  padding: 0.25em 0.6em;
+  border-radius: 99px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.status-in-flight  { background: rgba(59,130,246,0.2);  color: var(--gm-blue); }
+.status-departed   { background: rgba(34,197,94,0.18);  color: var(--gm-green); }
+.status-arrived    { background: rgba(148,163,184,0.15); color: var(--gm-text-dim); }
+.status-filed      { background: rgba(168,85,247,0.18); color: var(--gm-purple); }
+.status-cancelled  { background: rgba(239,68,68,0.18);  color: var(--gm-red); }
+.status-diverted   { background: rgba(245,158,11,0.18); color: var(--gm-amber); }
+
+/* ── Deviation alert indicators ─────────────────────────── */
+.deviation-normal  { color: var(--gm-text-dim); }
+.deviation-caution { color: var(--gm-amber); }
+.deviation-warning { color: var(--gm-red); }
+
+/* ── Live stats bar ──────────────────────────────────────── */
+.stats-bar {
+  background: var(--gm-surface-2);
+  border-bottom: 1px solid var(--gm-border);
+  padding: 0.6rem 0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  border-right: 1px solid var(--gm-border);
+}
+
+.stat-item:last-child { border-right: none; }
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gm-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: var(--gm-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Real-time indicator ─────────────────────────────────── */
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gm-green);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gm-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Autocomplete ────────────────────────────────────────── */
+.autocomplete-container { position: relative; }
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--gm-surface-3);
+  border: 1px solid var(--gm-border);
+  border-radius: var(--gm-radius);
+  box-shadow: var(--gm-shadow-lg);
+  z-index: 1050;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--gm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background var(--gm-transition);
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+  background: rgba(59,130,246,0.12);
+}
+
+.autocomplete-item .text     { font-weight: 500; color: var(--gm-text); }
+.autocomplete-item .category { font-size: 0.72rem; color: var(--gm-text-dim); }
+
+/* ── Forms ───────────────────────────────────────────────── */
+.form-control,
+.form-select {
+  background-color: var(--gm-surface-3) !important;
+  border-color: var(--gm-border) !important;
+  color: var(--gm-text) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--gm-blue) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2) !important;
+}
+
+.form-control::placeholder { color: var(--gm-text-dim) !important; }
+
+/* ── Tables ──────────────────────────────────────────────── */
+.table {
+  color: var(--gm-text) !important;
+}
+
+.table thead th {
+  background: var(--gm-surface-3) !important;
+  color: var(--gm-text-dim) !important;
+  border-color: var(--gm-border) !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.table td, .table th {
+  border-color: var(--gm-border) !important;
+}
+
+.table tbody tr:hover { background: rgba(255,255,255,0.03) !important; }
+
+/* ── Timeline ────────────────────────────────────────────── */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gm-border);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.timeline-badge {
+  position: absolute;
+  left: -1.5rem;
+  top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  font-weight: 700;
+  border: 2px solid var(--gm-surface-2);
+}
+
+.timeline-content { flex: 1; }
+
+/* ── Hero ────────────────────────────────────────────────── */
+.hero {
+  padding: 5rem 0 4rem;
+  background: linear-gradient(180deg, var(--gm-surface-2) 0%, var(--gm-surface) 100%);
+  border-bottom: 1px solid var(--gm-border);
+}
+
+.hero-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--gm-text);
+}
+
+.hero-subtitle { color: var(--gm-text-dim); max-width: 52ch; }
+
+/* ── Notification items ──────────────────────────────────── */
 .notification-item {
-    border-left: 4px solid #206bc4;
-    padding-left: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 0 8px 8px 0;
-    transition: all 0.2s ease;
+  border-left: 3px solid var(--gm-blue);
+  padding: 0.75rem 1rem;
+  border-radius: 0 var(--gm-radius) var(--gm-radius) 0;
+  background: rgba(59,130,246,0.05);
+  margin-bottom: 0.5rem;
+  transition: background var(--gm-transition);
 }
 
-.notification-item:hover {
-    background-color: rgba(32, 107, 196, 0.05);
-    transform: translateX(4px);
+.notification-item:hover   { background: rgba(59,130,246,0.10); }
+.notification-item.filed   { border-left-color: var(--gm-purple); background: rgba(168,85,247,0.05); }
+.notification-item.departed{ border-left-color: var(--gm-green);  background: rgba(34,197,94,0.05);  }
+.notification-item.arrived { border-left-color: var(--gm-text-dim); }
+.notification-item.diverted{ border-left-color: var(--gm-amber); background: rgba(245,158,11,0.05); }
+.notification-item.deviation{ border-left-color: var(--gm-red);  background: rgba(239,68,68,0.05); }
+
+/* ── Aircraft avatar ─────────────────────────────────────── */
+.aircraft-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gm-blue-dim), var(--gm-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.7rem;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.4);
 }
 
-.notification-item.departed {
-    border-left-color: #2fb344;
-}
-
-.notification-item.arrived {
-    border-left-color: #f76707;
-}
-
-.notification-item.diverted {
-    border-left-color: #e03131;
-}
-
-.notification-item.cancelled {
-    border-left-color: #6c757d;
-}
-
-/* Aircraft markers on map */
-.aircraft-marker {
-    background: #206bc4 !important;
-    border: 2px solid white !important;
-    border-radius: 50% !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(32, 107, 196, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(32, 107, 196, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(32, 107, 196, 0);
-    }
-}
-
-/* Stats cards */
-.card {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(32, 107, 196, 0.3);
-}
-
-/* Loading states */
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid #206bc4;
-    border-top: 2px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .map-container {
-        height: 300px;
-    }
-    
-    .flight-card {
-        margin-bottom: 1rem;
-    }
-    
-    .aircraft-avatar {
-        width: 32px;
-        height: 32px;
-        font-size: 0.65rem;
-    }
-}
-
-/* Dark theme enhancements */
-[data-bs-theme="dark"] .card {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-bs-theme="dark"] .notification-item {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-[data-bs-theme="dark"] .notification-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #206bc4;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #4299e1;
-}
-
-/* Tabler.io customizations */
-.navbar-brand {
-    font-weight: 600;
-    color: #206bc4 !important;
-}
-
+/* ── Buttons ─────────────────────────────────────────────── */
 .btn-primary {
-    background: linear-gradient(135deg, #206bc4, #4299e1);
-    border: none;
-    box-shadow: 0 2px 8px rgba(32, 107, 196, 0.3);
+  background-color: var(--gm-blue) !important;
+  border-color: var(--gm-blue) !important;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #1a5a9e, #3b82c4);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(32, 107, 196, 0.4);
+  background-color: var(--gm-blue-dim) !important;
+  border-color: var(--gm-blue-dim) !important;
 }
 
-/* Empty state styling */
-.empty {
-    padding: 3rem 1rem;
+.btn-outline-secondary {
+  color: var(--gm-text-dim) !important;
+  border-color: var(--gm-border) !important;
 }
 
-.empty-icon {
-    font-size: 3rem;
-    opacity: 0.5;
+.btn-outline-secondary:hover {
+  background: var(--gm-surface-3) !important;
+  color: var(--gm-text) !important;
 }
 
-/* Real-time indicator */
-.real-time-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #2fb344;
-    border-radius: 50%;
-    animation: blink 1s infinite;
-    margin-right: 0.5rem;
-}
+/* ── Misc utilities ──────────────────────────────────────── */
+.text-dim   { color: var(--gm-text-dim) !important; }
+.bg-surface { background: var(--gm-surface-2) !important; }
+.border-gm  { border-color: var(--gm-border) !important; }
+.monospace  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
-}
+.sticky-sidebar { position: sticky; top: 1rem; }
+@media (max-width: 991px) { .sticky-sidebar { position: static; } }
 
-/* Enhanced flight cards with position data */
-.flight-card.has-position {
-    border-left: 4px solid #2fb344;
-}
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--gm-surface); }
+::-webkit-scrollbar-thumb { background: var(--gm-surface-3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gm-text-dim); }
 
-.flight-card.has-position .aircraft-avatar {
-    background: linear-gradient(135deg, #2fb344, #40c057);
-    animation: pulse-glow 2s infinite;
-}
-
-/* Dark mode specific styles */
-.theme-dark .flight-card.has-position {
-    border-left: 4px solid #2fb344;
-    background: rgba(47, 179, 68, 0.05);
-}
-
-.theme-light .flight-card.has-position {
-    border-left: 4px solid #2fb344;
-    background: rgba(47, 179, 68, 0.1);
-}
-
-@keyframes pulse-glow {
-    0% { box-shadow: 0 0 0 0 rgba(47, 179, 68, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(47, 179, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(47, 179, 68, 0); }
-}
-
-/* Position data styling */
-.position-data {
-    background: rgba(47, 179, 68, 0.1);
-    border-radius: 6px;
-    padding: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.theme-dark .position-data {
-    background: rgba(47, 179, 68, 0.15);
-    border: 1px solid rgba(47, 179, 68, 0.2);
-}
-
-.theme-light .position-data {
-    background: rgba(47, 179, 68, 0.08);
-    border: 1px solid rgba(47, 179, 68, 0.15);
-}
-
-.position-data .position-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.25rem;
-}
-
-.position-data .position-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Modal enhancements */
-.modal-content {
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-    background: linear-gradient(135deg, #206bc4, #4299e1);
-    color: white;
-    border-bottom: none;
-}
-
-.modal-header .btn-close {
-    filter: invert(1);
-}
-
-/* Track map styling */
-#trackMap {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.track-marker {
-    background: transparent !important;
-    border: none !important;
-}
-
-/* Enhanced status badges */
-.status-badge.in-flight {
-    background: linear-gradient(135deg, #f76707, #fd7e14);
-    color: white;
-    animation: pulse-status 2s infinite;
-}
-
-@keyframes pulse-status {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-/* Loading states for modals */
-.modal-loading {
-    position: relative;
-    min-height: 200px;
-}
-
-.modal-loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 40px;
-    height: 40px;
-    margin: -20px 0 0 -20px;
-    border: 4px solid #206bc4;
-    border-top: 4px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-/* Enhanced map popups */
-.leaflet-popup-content {
-    margin: 0;
-    padding: 0;
-}
-
+/* ── Leaflet overrides ───────────────────────────────────── */
 .leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--gm-surface-2) !important;
+  color: var(--gm-text) !important;
+  border: 1px solid var(--gm-border) !important;
+  box-shadow: var(--gm-shadow-lg) !important;
 }
 
-/* Dynamic aircraft markers */
-.aircraft-marker {
-    transition: all 0.3s ease;
-    animation: pulse-marker 2s infinite;
+.leaflet-popup-tip { background: var(--gm-surface-2) !important; }
+
+.leaflet-control-zoom a {
+  background-color: var(--gm-surface-2) !important;
+  color: var(--gm-text) !important;
+  border-color: var(--gm-border) !important;
 }
 
-@keyframes pulse-marker {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+.leaflet-control-zoom a:hover { background-color: var(--gm-surface-3) !important; }
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.nav-tabs {
+  border-bottom-color: var(--gm-border) !important;
 }
 
-/* Flight trail animations */
-.flight-trail {
-    stroke-dasharray: 10, 5;
-    animation: dash 1s linear infinite;
+.nav-tabs .nav-link {
+  color: var(--gm-text-dim) !important;
+  border-color: transparent !important;
 }
 
-@keyframes dash {
-    to {
-        stroke-dashoffset: -15;
-    }
+.nav-tabs .nav-link:hover {
+  color: var(--gm-text) !important;
+  border-color: var(--gm-border) !important;
 }
 
-/* Real-time indicator enhancement */
-.real-time-indicator {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    background: #2fb344;
-    border-radius: 50%;
-    animation: blink 1s infinite;
-    margin-right: 0.5rem;
-    box-shadow: 0 0 0 0 rgba(47, 179, 68, 0.7);
-    animation: pulse-glow 2s infinite;
+.nav-tabs .nav-link.active {
+  background: var(--gm-surface-2) !important;
+  border-color: var(--gm-border) var(--gm-border) var(--gm-surface-2) !important;
+  color: var(--gm-blue) !important;
 }
 
-@keyframes pulse-glow {
-    0% {
-        box-shadow: 0 0 0 0 rgba(47, 179, 68, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(47, 179, 68, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(47, 179, 68, 0);
-    }
-}
-
-/* Flight details modal */
-.flight-details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-@media (max-width: 768px) {
-    .flight-details-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Track history scrollbar */
-.track-history {
-    scrollbar-width: thin;
-    scrollbar-color: #206bc4 rgba(255, 255, 255, 0.1);
-}
-
-.track-history::-webkit-scrollbar {
-    width: 6px;
-}
-
-.track-history::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-}
-
-.track-history::-webkit-scrollbar-thumb {
-    background: #206bc4;
-    border-radius: 3px;
-}
-
-.track-history::-webkit-scrollbar-thumb:hover {
-    background: #4299e1;
-}
-
-/* Theme toggle button styling */
-#theme-toggle {
-    border: none;
-    background: transparent;
-    color: inherit;
-    transition: all 0.3s ease;
-    border-radius: 6px;
-    padding: 0.5rem;
-}
-
-#theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-}
-
-.theme-light #theme-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-#theme-toggle svg {
-    transition: transform 0.3s ease;
-}
-
-#theme-toggle:hover svg {
-    transform: rotate(180deg);
-}
-
-/* Enhanced map styling for both themes */
-.theme-dark #map {
-    filter: brightness(0.8) contrast(1.2);
-}
-
-.theme-light #map {
-    filter: brightness(1.1) contrast(1.1);
-}
-
-/* Status badge enhancements for both themes */
-.theme-dark .status-badge.in-flight {
-    background: linear-gradient(135deg, #f76707, #fd7e14);
-    box-shadow: 0 2px 8px rgba(247, 103, 7, 0.3);
-}
-
-.theme-light .status-badge.in-flight {
-    background: linear-gradient(135deg, #f76707, #fd7e14);
-    box-shadow: 0 2px 8px rgba(247, 103, 7, 0.2);
+/* ── Page footer ─────────────────────────────────────────── */
+.footer {
+  background: var(--gm-surface-2) !important;
+  border-top: 1px solid var(--gm-border) !important;
+  color: var(--gm-text-dim) !important;
 }
