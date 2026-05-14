@@ -1,5 +1,5 @@
 from db_config import SessionLocal
-from models.sqlalchemy import AircraftDBModel, FlightPlanDBModel
+from models.sqlalchemy import AircraftDBModel, FlightPlanDBModel, FlightsDBModel
 from utils.logger import main_logger as logger
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -54,6 +54,25 @@ def store_tmi_flight_list(parsed_data, session=None):
                 aircraft = AircraftDBModel(aircraft_id=aircraft_id)
                 session.add(aircraft)
                 logger.debug(f"Added aircraft {aircraft_id}")
+
+            # Ensure flights anchor row exists (flight_plan.gufi FK → flights.gufi)
+            flights_row = session.query(FlightsDBModel).filter_by(gufi=gufi).first()
+            if not flights_row:
+                flights_row = FlightsDBModel(
+                    gufi=gufi,
+                    aircraft_id=aircraft_id,
+                    departure_airport=departure_airport,
+                    arrival_airport=arrival_airport,
+                    current_status=flight.get("status", "PLANNED"),
+                )
+                session.add(flights_row)
+                session.flush()  # make FK visible before flight_plan insert
+                logger.debug(f"Added flights anchor for {gufi}")
+            else:
+                flights_row.departure_airport = departure_airport
+                flights_row.arrival_airport = arrival_airport
+                if flight.get("status"):
+                    flights_row.current_status = flight["status"]
 
             # Fetch or create FlightPlanDBModel entry
             flight_plan = (
