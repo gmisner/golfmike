@@ -276,7 +276,7 @@
 
     <script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/js/api_client.js"></script>
+
     <script src="/static/js/flight-detail.js"></script>
     <script>
     (function () {
@@ -313,7 +313,7 @@
 
         let data;
         try {
-          const resp = await GolfMikeAPI.apiFetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`);
+          const resp = await fetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`);
           if (!resp.ok) throw new Error(resp.status);
           data = await resp.json();
         } catch (e) {

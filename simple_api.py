@@ -20,54 +20,25 @@ except ImportError:
     get_remote_address = None
     _LIMITER_AVAILABLE = False
 
-# ── API key auth ───────────────────────────────────────────────────────────────
-# Set GOLFMIKE_API_KEYS to a comma-separated list of valid bearer tokens.
-# If the env var is empty or unset all /v1/ requests are rejected.
-_RAW_KEYS = os.getenv("GOLFMIKE_API_KEYS", "")
-_VALID_KEYS: set[str] = {k.strip() for k in _RAW_KEYS.split(",") if k.strip()}
-
-
-def _get_api_key() -> str:
-    """Extract API key from X-API-Key header or ?api_key= query param."""
-    return (
-        request.headers.get("X-API-Key", "")
-        or request.args.get("api_key", "")
-    )
-
 
 def create_simple_api(app: Flask) -> None:
     """Add simple flight tracking endpoints to the Flask app"""
 
-    # ── Rate limiter (Redis backend, keyed by API key) ─────────────────────
+    # ── Rate limiter ───────────────────────────────────────────────────────
     if _LIMITER_AVAILABLE:
         redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
         limiter = Limiter(
-            key_func=lambda: _get_api_key() or get_remote_address(),
+            key_func=get_remote_address,
             app=app,
             storage_uri=redis_url,
             default_limits=["500/hour", "60/minute"],
             strategy="fixed-window",
         )
     else:
-        logger.warning("flask_limiter not installed — rate limiting disabled. Run: pip install flask-limiter")
-        # Stub so @limiter.limit() decorators below don't crash
         class _NoopLimiter:
             def limit(self, *a, **kw):
                 return lambda f: f
         limiter = _NoopLimiter()
-
-    # ── Auth gate for all /v1/ routes ──────────────────────────────────────
-    @app.before_request
-    def _require_api_key():
-        if not request.path.startswith("/v1/"):
-            return None
-        if not _VALID_KEYS:
-            # No keys configured — open access with a log warning (dev/single-user mode)
-            return None
-        key = _get_api_key()
-        if not key or key not in _VALID_KEYS:
-            return jsonify({"error": "Invalid or missing API key"}), 401
-        return None
 
     @app.route("/home", methods=["GET"])
     def home_page():
@@ -78,12 +49,6 @@ def create_simple_api(app: Flask) -> None:
     def search_page():
         from flask import redirect
         return redirect("/", 301)
-
-    @app.route("/api/client-config", methods=["GET"])
-    def client_config():
-        """Return the web-UI API key so the frontend can authenticate /v1/ calls."""
-        key = next(iter(_VALID_KEYS), None)
-        return jsonify({"api_key": key})
 
     @app.route("/api/autocomplete", methods=["GET"])
     def autocomplete():
