@@ -21,6 +21,8 @@ Navaid database:
 """
 
 import csv
+import json
+import math
 import os
 import re
 from typing import Dict, List, Optional, Tuple
@@ -180,25 +182,21 @@ SEED_NAVAIDS: Dict[str, Tuple[float, float]] = {
 }
 
 
-# ── NASR CSV loader ───────────────────────────────────────────────────────────
+# ── NASR data loaders ─────────────────────────────────────────────────────────
 
-_navaid_db: Optional[Dict[str, Tuple[float, float]]] = None
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+NASR_CSV_PATH     = os.path.join(_DATA_DIR, "nasr_fixes.csv")
+NASR_AIRWAYS_PATH = os.path.join(_DATA_DIR, "nasr_airways.json")
 
-NASR_CSV_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "data", "nasr_fixes.csv"
-)
+_navaid_db:  Optional[Dict[str, Tuple[float, float]]] = None
+_airways_db: Optional[Dict[str, List[str]]] = None
 
 
 def _load_navaid_db() -> Dict[str, Tuple[float, float]]:
     db = dict(SEED_NAVAIDS)
-
     if not os.path.exists(NASR_CSV_PATH):
-        logger.info(
-            "NASR navaid CSV not found — using seed dataset only. "
-            "Import FAA NASR data to data/nasr_fixes.csv for full coverage."
-        )
+        logger.info("NASR navaid CSV not found — using seed dataset only.")
         return db
-
     loaded = 0
     try:
         with open(NASR_CSV_PATH, newline="") as f:
@@ -212,11 +210,24 @@ def _load_navaid_db() -> Dict[str, Tuple[float, float]]:
                     loaded += 1
                 except (KeyError, ValueError):
                     continue
-        logger.info(f"Loaded {loaded} navaids from NASR CSV")
+        logger.info(f"Loaded {loaded:,} navaids from NASR CSV")
     except Exception as e:
         logger.error(f"Failed to load NASR CSV: {e}")
-
     return db
+
+
+def _load_airways_db() -> Dict[str, List[str]]:
+    if not os.path.exists(NASR_AIRWAYS_PATH):
+        logger.info("NASR airways JSON not found — airway expansion disabled.")
+        return {}
+    try:
+        with open(NASR_AIRWAYS_PATH) as f:
+            db = json.load(f)
+        logger.info(f"Loaded {len(db):,} airways from NASR JSON")
+        return db
+    except Exception as e:
+        logger.error(f"Failed to load airways JSON: {e}")
+        return {}
 
 
 def get_navaid_db() -> Dict[str, Tuple[float, float]]:
@@ -226,17 +237,79 @@ def get_navaid_db() -> Dict[str, Tuple[float, float]]:
     return _navaid_db
 
 
+def get_airways_db() -> Dict[str, List[str]]:
+    global _airways_db
+    if _airways_db is None:
+        _airways_db = _load_airways_db()
+    return _airways_db
+
+
 def lookup_fix(fix_name: str) -> Optional[Tuple[float, float]]:
     """Return (lat, lon) for a fix/navaid/airport, or None if unknown."""
     return get_navaid_db().get(fix_name.upper())
 
 
+# ── Radial-distance fix resolver ──────────────────────────────────────────────
+
+_R_NM = 3440.065  # Earth radius in nautical miles
+# Pattern: 2-3 char navaid + 3-digit radial + 3-digit distance  e.g. HCT241092
+_RADIAL_DIST_RE = re.compile(r"^([A-Z]{2,3})(\d{3})(\d{3})$")
+
+
+def _resolve_radial_dist(token: str) -> Optional[Tuple[float, float, str]]:
+    """
+    Resolve a radial-distance fix token like HCT241092 to (lat, lon, label).
+    Returns None if the navaid isn't in the database.
+    """
+    m = _RADIAL_DIST_RE.match(token)
+    if not m:
+        return None
+    navaid, radial_str, dist_str = m.group(1), m.group(2), m.group(3)
+    coords = lookup_fix(navaid)
+    if not coords:
+        return None
+    lat1 = math.radians(coords[0])
+    lon1 = math.radians(coords[1])
+    brng = math.radians(float(radial_str))
+    d    = float(dist_str) / _R_NM  # angular distance
+    lat2 = math.asin(
+        math.sin(lat1) * math.cos(d) + math.cos(lat1) * math.sin(d) * math.cos(brng)
+    )
+    lon2 = lon1 + math.atan2(
+        math.sin(brng) * math.sin(d) * math.cos(lat1),
+        math.cos(d) - math.sin(lat1) * math.sin(lat2),
+    )
+    return math.degrees(lat2), math.degrees(lon2), token
+
+
+# ── Airway expander ───────────────────────────────────────────────────────────
+
+def _expand_airway(airway: str, entry_fix: str, exit_fix: str) -> List[str]:
+    """
+    Return the ordered list of intermediate fixes on the airway between
+    entry_fix and exit_fix (exclusive of both endpoints).
+    Returns [] if the airway or endpoints aren't found.
+    """
+    fixes = get_airways_db().get(airway.upper())
+    if not fixes:
+        return []
+    entry = entry_fix.upper()
+    exit_ = exit_fix.upper()
+    try:
+        i = fixes.index(entry)
+        j = fixes.index(exit_)
+    except ValueError:
+        return []
+    if i < j:
+        return fixes[i + 1:j]   # westbound/southbound direction
+    else:
+        return fixes[j + 1:i][::-1]  # reversed
+
+
 # ── Route string tokenizer ────────────────────────────────────────────────────
 
-# Airway identifiers: V###, J###, Q###, T###, L###, M###, A###
+# Airway identifiers: V###, J###, Q###, T###, L###, M###, A###, B###
 _AIRWAY_RE = re.compile(r"^[VJQTLMABvjqtlmab]\d+$")
-# SID/STAR identifiers: typically uppercase letters + digits + optional letter, ≥6 chars
-_PROC_RE = re.compile(r"^[A-Z]{2,6}\d[A-Z]?$")
 # DCT = direct, no fix
 _DCT_RE = re.compile(r"^DCT$", re.IGNORECASE)
 # Altitude/speed restrictions embedded in route (e.g. "FIXNAME/FL350")
@@ -244,11 +317,20 @@ _RESTRICTION_RE = re.compile(r"^([A-Z0-9]{2,20})/(.+)$")
 
 
 def _tokenize_route(route_str: str) -> List[str]:
-    """Split a raw route string into a clean list of tokens."""
-    # Normalize separators: double-dot, spaces, slashes-as-separators
-    cleaned = re.sub(r"\.\.+", " ", route_str)
-    tokens = [t.strip().upper() for t in cleaned.split() if t.strip()]
-    return tokens
+    """
+    Split a raw FAA SWIM route string into a clean list of tokens.
+
+    FAA uses dots as separators (both single and double):
+      KDEN./.HCT241092..DSM..GERBS.Q186.WEVEL..ETG.MIP4.KLGA/0135
+    All dots (single or multiple) and slashes are treated as delimiters
+    except that "/HHMM" ETD/ETA suffixes are stripped first.
+    """
+    s = route_str.strip().upper()
+    # Strip ETD/ETA suffix (/HHMM or /HHMMZ)
+    s = re.sub(r"/\d{4}Z?$", "", s)
+    # Replace all dot sequences and slashes with spaces
+    s = re.sub(r"[./]+", " ", s)
+    return [t for t in s.split() if t and t != "DCT"]
 
 
 def decode_route(
@@ -258,80 +340,94 @@ def decode_route(
 ) -> List[Dict]:
     """
     Decode a raw FAA route string into an ordered list of waypoints with
-    coordinates. Fixes not found in the navaid DB are included with
-    latitude/longitude = None so the caller can handle them gracefully.
+    coordinates.
 
-    Args:
-        route_str:   Raw flightPlanRoute_10a string from SWIM/FDPS
-        departure:   ICAO departure airport (prepended to waypoint list)
-        destination: ICAO destination airport (appended to waypoint list)
+    Handles:
+      - Named fixes / navaids / airports  (looked up in NASR database)
+      - Radial-distance fixes             (e.g. HCT241092 → bearing+distance from HCT)
+      - Airways                           (expanded to intermediate fixes via NASR)
+      - Inline altitude/speed restrictions (FIX/FL350)
 
-    Returns:
-        List of dicts: [{sequence, fix_name, latitude, longitude,
-                         altitude_restriction, speed_restriction, fix_type}]
+    Fixes not found in the navaid DB are included with latitude/longitude = None.
     """
     waypoints: List[Dict] = []
     seq = 0
 
-    def _add(fix: str, alt_rest: str = "", spd_rest: str = "", fix_type: str = "FIX"):
+    def _add(fix: str, lat=None, lon=None, alt_rest="", spd_rest="", fix_type="FIX"):
         nonlocal seq
-        coords = lookup_fix(fix)
+        if lat is None or lon is None:
+            coords = lookup_fix(fix)
+            lat = coords[0] if coords else None
+            lon = coords[1] if coords else None
         waypoints.append({
             "sequence": seq,
             "fix_name": fix,
-            "latitude": coords[0] if coords else None,
-            "longitude": coords[1] if coords else None,
+            "latitude": lat,
+            "longitude": lon,
             "altitude_restriction": alt_rest or None,
             "speed_restriction": spd_rest or None,
             "fix_type": fix_type,
         })
         seq += 1
 
-    # Departure airport is always first
-    _add(departure.upper(), fix_type="AIRPORT")
+    dep = departure.upper()
+    dst = destination.upper()
+
+    _add(dep, fix_type="AIRPORT")
 
     if not route_str:
-        _add(destination.upper(), fix_type="AIRPORT")
+        _add(dst, fix_type="AIRPORT")
         return waypoints
 
     tokens = _tokenize_route(route_str)
 
-    for token in tokens:
-        # Skip direct routing keyword
-        if _DCT_RE.match(token):
-            continue
+    # We need one-token lookahead for airway expansion, so work with indices
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
 
-        # Skip airway identifiers — they're connectors, not fixes
         if _AIRWAY_RE.match(token):
+            # Expand airway between the fix we just added and the next fix
+            entry = waypoints[-1]["fix_name"] if waypoints else dep
+            exit_fix = tokens[i + 1].upper() if i + 1 < len(tokens) else dst
+            # Strip inline restriction from exit fix name for lookup
+            exit_clean = _RESTRICTION_RE.match(exit_fix)
+            if exit_clean:
+                exit_fix = exit_clean.group(1)
+            intermediates = _expand_airway(token, entry, exit_fix)
+            for fix in intermediates:
+                if fix not in (dep, dst):
+                    _add(fix, fix_type="FIX")
+            i += 1
             continue
 
-        # Extract inline altitude/speed restriction (FIX/FL350 or FIX/250K/FL350)
-        alt_rest = ""
-        spd_rest = ""
+        # Strip inline altitude/speed restriction (FIXNAME/FL350)
+        alt_rest = spd_rest = ""
         m = _RESTRICTION_RE.match(token)
         if m:
             token = m.group(1)
-            restrictions = m.group(2).split("/")
-            for r in restrictions:
+            for r in m.group(2).split("/"):
                 if r.startswith("FL") or r.endswith("00"):
                     alt_rest = r
                 elif r.endswith("K") or r.endswith("N"):
                     spd_rest = r
 
-        # Skip if this token is the departure or destination (avoid duplicates)
-        if token in (departure.upper(), destination.upper()):
+        if token in (dep, dst):
+            i += 1
             continue
 
-        # Determine fix type
-        fix_type = "FIX"
-        if _PROC_RE.match(token) and len(token) >= 5:
-            fix_type = "PROCEDURE"
+        # Radial-distance fix (e.g. HCT241092)
+        rd = _resolve_radial_dist(token)
+        if rd:
+            _add(token, lat=rd[0], lon=rd[1], alt_rest=alt_rest, spd_rest=spd_rest,
+                 fix_type="RADIAL_DIST")
+            i += 1
+            continue
 
-        _add(token, alt_rest, spd_rest, fix_type)
+        _add(token, alt_rest=alt_rest, spd_rest=spd_rest, fix_type="FIX")
+        i += 1
 
-    # Destination airport is always last
-    _add(destination.upper(), fix_type="AIRPORT")
-
+    _add(dst, fix_type="AIRPORT")
     return waypoints
 
 

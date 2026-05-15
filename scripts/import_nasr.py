@@ -2,8 +2,10 @@
 """
 FAA NASR navaid importer.
 
-Reads FIX_BASE.csv, NAV_BASE.csv, and APT_BASE.csv from the FAA 28-day
-NASR subscription and produces data/nasr_fixes.csv for the route decoder.
+Reads FIX_BASE.csv, NAV_BASE.csv, APT_BASE.csv, and AWY_SEG_ALT.csv from
+the FAA 28-day NASR subscription and produces:
+  data/nasr_fixes.csv    — fix_name → lat/lon/type (for route_decoder lookup)
+  data/nasr_airways.json — airway_id → ordered fix list (for airway expansion)
 
 Priority when the same fix_name appears in multiple sources:
   1. FIX_BASE  (named intersections — most accurate for en-route route strings)
@@ -17,12 +19,22 @@ Usage:
 
 import argparse
 import csv
+import json
 import os
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
-OUTPUT_PATH = Path(__file__).parent.parent / "data" / "nasr_fixes.csv"
+OUTPUT_FIXES  = Path(__file__).parent.parent / "data" / "nasr_fixes.csv"
+OUTPUT_AIRWAYS = Path(__file__).parent.parent / "data" / "nasr_airways.json"
+
+# Keep only fixes with printable names (skip border markers, etc.)
+_BAD_CHARS = set(".-/")
+
+
+def _is_valid_fix(name: str) -> bool:
+    return bool(name) and not any(c in _BAD_CHARS for c in name) and len(name) <= 10
 
 
 def _signed_lon(lon_decimal: str, lon_hemis: str) -> float:
@@ -125,6 +137,56 @@ def load_airports(nasr_dir: Path) -> Dict[str, Tuple[float, float, str]]:
     return airports
 
 
+def load_airways(nasr_dir: Path) -> Dict[str, List[str]]:
+    """
+    Load AWY_SEG_ALT.csv and build an ordered fix sequence per airway.
+
+    AWY_SEG_ALT has one row per segment (FROM_POINT → TO_POINT) with a
+    POINT_SEQ that gives the order within the airway. We collect all
+    FROM_POINTs in order and append the final TO_POINT.
+    """
+    path = nasr_dir / "AWY_SEG_ALT.csv"
+    if not path.exists():
+        print(f"  AWY_SEG_ALT.csv not found — skipping airway import")
+        return {}
+
+    # segments[airway_id] = [(seq, from_pt, to_pt), ...]
+    segments: Dict[str, List[Tuple[int, str, str]]] = defaultdict(list)
+
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            awy = row.get("AWY_ID", "").strip().upper()
+            if not awy:
+                continue
+            try:
+                seq = int(row["POINT_SEQ"])
+            except (ValueError, KeyError):
+                continue
+            from_pt = row.get("FROM_POINT", "").strip().upper()
+            to_pt   = row.get("TO_POINT",   "").strip().upper()
+            segments[awy].append((seq, from_pt, to_pt))
+
+    airways: Dict[str, List[str]] = {}
+    for awy_id, segs in segments.items():
+        segs.sort(key=lambda x: x[0])
+        # Build ordered unique fix list, skipping non-fix border markers
+        ordered: List[str] = []
+        for _, from_pt, to_pt in segs:
+            if _is_valid_fix(from_pt) and (not ordered or ordered[-1] != from_pt):
+                ordered.append(from_pt)
+        # Append final TO_POINT from last segment
+        if segs:
+            last_to = segs[-1][2]
+            if _is_valid_fix(last_to) and (not ordered or ordered[-1] != last_to):
+                ordered.append(last_to)
+        if len(ordered) >= 2:
+            airways[awy_id] = ordered
+
+    print(f"  Loaded {len(airways):,} airways from AWY_SEG_ALT.csv")
+    return airways
+
+
 def main(nasr_dir: str) -> None:
     base = Path(nasr_dir)
     if not base.is_dir():
@@ -132,7 +194,7 @@ def main(nasr_dir: str) -> None:
 
     print(f"Importing FAA NASR data from: {base}")
 
-    # Load in priority order — later dicts do NOT overwrite earlier ones
+    # Load fixes in priority order — later dicts do NOT overwrite earlier ones
     combined: Dict[str, Tuple[float, float, str]] = {}
 
     airports = load_airports(base)
@@ -146,15 +208,20 @@ def main(nasr_dir: str) -> None:
     for k, v in fixes.items():
         combined[k] = v  # FIX always wins
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", newline="", encoding="utf-8") as f:
+    OUTPUT_FIXES.parent.mkdir(parents=True, exist_ok=True)
+    with open(OUTPUT_FIXES, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["fix_name", "latitude", "longitude", "type"])
         for fix_name, (lat, lon, fix_type) in sorted(combined.items()):
             writer.writerow([fix_name, round(lat, 8), round(lon, 8), fix_type])
+    print(f"  Wrote {len(combined):,} fix entries → {OUTPUT_FIXES}")
 
-    print(f"\nWrote {len(combined):,} entries → {OUTPUT_PATH}")
-    print("Route decoder will load this file automatically on next startup.")
+    airways = load_airways(base)
+    with open(OUTPUT_AIRWAYS, "w", encoding="utf-8") as f:
+        json.dump(airways, f, separators=(",", ":"))
+    print(f"  Wrote {len(airways):,} airways → {OUTPUT_AIRWAYS}")
+
+    print("\nRoute decoder will load these files automatically on next startup.")
 
 
 if __name__ == "__main__":
