@@ -130,7 +130,6 @@
                   <li class="nav-item"><a href="#tab-track" class="nav-link" data-bs-toggle="tab">Track Log</a></li>
                   <li class="nav-item"><a href="#tab-weather" class="nav-link" data-bs-toggle="tab">Weather</a></li>
                   <li class="nav-item"><a href="#tab-notams" class="nav-link" data-bs-toggle="tab">NOTAMs</a></li>
-                  <li class="nav-item"><a href="#tab-overlay" class="nav-link" data-bs-toggle="tab" id="overlay-tab">Route Overlay</a></li>
                 </ul>
               </div>
               <div class="card-body tab-content">
@@ -171,33 +170,6 @@
                   </ul>
                 </div>
 
-                <!-- Route Overlay -->
-                <div class="tab-pane" id="tab-overlay">
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="d-flex gap-3 small">
-                      <span><span style="display:inline-block;width:24px;height:3px;background:#4a9eff;border-top:2px dashed #4a9eff;vertical-align:middle"></span> Planned Route</span>
-                      <span><span style="display:inline-block;width:24px;height:3px;background:#e8eaed;vertical-align:middle"></span> Actual Track</span>
-                      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fd7e14;vertical-align:middle"></span> Caution Deviation</span>
-                      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc3545;vertical-align:middle"></span> Warning Deviation</span>
-                    </div>
-                    <div class="text-secondary small">Adherence: <strong id="adherence-pct">—</strong></div>
-                  </div>
-                  <div id="overlay-map"></div>
-                  <div class="mt-3" id="deviation-section" style="display:none">
-                    <div class="text-secondary small fw-bold mb-1">Deviations</div>
-                    <div class="table-responsive">
-                      <table class="table table-sm deviation-table">
-                        <thead>
-                          <tr><th>Time (Z)</th><th>XTD (nm)</th><th>Alt Dev (ft)</th><th>Level</th></tr>
-                        </thead>
-                        <tbody id="deviation-rows"></tbody>
-                      </table>
-                    </div>
-                  </div>
-                  <div id="overlay-empty" class="text-secondary text-center py-4" style="display:none">
-                    No route overlay data available for this flight.
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -278,138 +250,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script src="/static/js/flight-detail.js"></script>
-    <script>
-    (function () {
-      const CARTO_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-      const CARTO_ATTR = '&copy; <a href="https://carto.com/">CARTO</a>';
-
-      let overlayMap = null;
-      let overlayLoaded = false;
-
-      function getGufi() {
-        const params = new URLSearchParams(window.location.search);
-        return (
-          params.get('gufi') ||
-          params.get('id') ||
-          window.flightDetailPage?.flightData?.flight?.gufi ||
-          null
-        );
-      }
-
-      function levelColor(level) {
-        return level === 'WARNING' ? '#dc3545' : '#fd7e14';
-      }
-
-      function initOverlayMap() {
-        if (overlayMap) return;
-        overlayMap = L.map('overlay-map', { zoomControl: true }).setView([39, -98], 4);
-        L.tileLayer(CARTO_DARK, { attribution: CARTO_ATTR, subdomains: 'abcd', maxZoom: 19 }).addTo(overlayMap);
-      }
-
-      async function loadOverlay() {
-        if (overlayLoaded) return;
-        const gufi = getGufi();
-        if (!gufi) {
-          document.getElementById('overlay-empty').style.display = '';
-          return;
-        }
-
-        initOverlayMap();
-
-        let data;
-        try {
-          const resp = await fetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`);
-          if (!resp.ok) throw new Error(resp.status);
-          data = await resp.json();
-        } catch (e) {
-          document.getElementById('overlay-empty').style.display = '';
-          return;
-        }
-
-        const bounds = [];
-
-        // Planned route — dashed blue polyline
-        if (data.planned_route && data.planned_route.length > 0) {
-          const coords = data.planned_route.map(w => [w.latitude, w.longitude]);
-          L.polyline(coords, {
-            color: '#4a9eff', weight: 2, opacity: 0.8,
-            dashArray: '8 5'
-          }).addTo(overlayMap);
-          coords.forEach(c => bounds.push(c));
-
-          // Waypoint labels
-          data.planned_route.forEach(w => {
-            L.circleMarker([w.latitude, w.longitude], {
-              radius: 3, color: '#4a9eff', fillColor: '#4a9eff', fillOpacity: 1, weight: 1
-            }).bindTooltip(w.fix_name, { permanent: false, direction: 'top', className: 'leaflet-tooltip' })
-              .addTo(overlayMap);
-          });
-        }
-
-        // Actual track — solid white polyline
-        if (data.actual_track && data.actual_track.length > 0) {
-          const coords = data.actual_track.map(t => [t.latitude, t.longitude]);
-          L.polyline(coords, {
-            color: '#e8eaed', weight: 2, opacity: 0.9
-          }).addTo(overlayMap);
-          coords.forEach(c => bounds.push(c));
-        }
-
-        // Deviation markers
-        if (data.deviations && data.deviations.length > 0) {
-          data.deviations.forEach(d => {
-            L.circleMarker([d.latitude, d.longitude], {
-              radius: 6, color: levelColor(d.alert_level),
-              fillColor: levelColor(d.alert_level), fillOpacity: 0.7, weight: 2
-            }).bindPopup(
-              `<strong>${d.alert_level}</strong><br>` +
-              `XTD: ${d.cross_track_distance_nm?.toFixed(1)} nm<br>` +
-              `Alt dev: ${d.altitude_deviation_ft ?? '—'} ft`
-            ).addTo(overlayMap);
-            bounds.push([d.latitude, d.longitude]);
-          });
-
-          // Populate deviation table
-          const tbody = document.getElementById('deviation-rows');
-          tbody.innerHTML = '';
-          data.deviations.forEach(d => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${d.timestamp ? new Date(d.timestamp).toISOString().slice(11, 19) + 'Z' : '—'}</td>` +
-              `<td>${d.cross_track_distance_nm?.toFixed(1) ?? '—'}</td>` +
-              `<td>${d.altitude_deviation_ft ?? '—'}</td>` +
-              `<td><span class="badge" style="background:${levelColor(d.alert_level)}">${d.alert_level}</span></td>`;
-            tbody.appendChild(tr);
-          });
-          document.getElementById('deviation-section').style.display = '';
-        }
-
-        // Adherence
-        if (data.adherence_pct != null) {
-          document.getElementById('adherence-pct').textContent = data.adherence_pct.toFixed(0) + '%';
-        }
-
-        if (bounds.length > 0) {
-          overlayMap.fitBounds(bounds, { padding: [30, 30] });
-        }
-
-        overlayLoaded = true;
-      }
-
-      // Lazy-load when tab is activated
-      document.addEventListener('DOMContentLoaded', function () {
-        const tabEl = document.getElementById('overlay-tab');
-        if (tabEl) {
-          tabEl.addEventListener('shown.bs.tab', function () {
-            // Force Leaflet to recalculate size after tab becomes visible
-            setTimeout(function () {
-              if (overlayMap) overlayMap.invalidateSize();
-              loadOverlay();
-            }, 50);
-          });
-        }
-      });
-    })();
-    </script>
   </body>
 </html>
 

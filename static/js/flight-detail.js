@@ -109,29 +109,38 @@ class FlightDetailPage {
                 fetch(`/api/flights/${this.aircraftId}/detail?date=${this.flightDate}`),
                 fetch(`/api/flights/${this.aircraftId}/upcoming?include_past=1`)
             ]);
-            
-            console.log('API response status:', flightResponse.status);
-            console.log('API response headers:', flightResponse.headers);
-            
+
             if (!flightResponse.ok) {
                 throw new Error(`HTTP error! status: ${flightResponse.status}`);
             }
-            
-            const responseText = await flightResponse.text();
-            console.log('API response text length:', responseText.length);
-            console.log('API response text preview:', responseText.substring(0, 200));
-            
-            this.flightData = JSON.parse(responseText);
-            console.log('Parsed flight data:', this.flightData);
-            
-            // Load upcoming flights if available
+
+            this.flightData = await flightResponse.json();
+
+            // Fetch planned route waypoints using GUFI (parallel, non-blocking)
+            const gufi = this.flightData?.flight?.gufi ||
+                         new URLSearchParams(window.location.search).get('gufi');
+            if (gufi) {
+                fetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(overlay => {
+                        if (!overlay) return;
+                        const pts = (overlay.planned_route || [])
+                            .filter(w => w.latitude != null && w.longitude != null)
+                            .map(w => [w.latitude, w.longitude]);
+                        if (pts.length >= 2) {
+                            this.flightData.planned_route = pts;
+                            this.renderMap();
+                        }
+                    })
+                    .catch(() => {});
+            }
+
             if (upcomingResponse.ok) {
                 this.upcomingFlights = await upcomingResponse.json();
-                console.log('Upcoming flights:', this.upcomingFlights);
             } else {
                 this.upcomingFlights = [];
             }
-            
+
             this.renderFlightData();
             
         } catch (error) {
