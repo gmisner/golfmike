@@ -16,6 +16,10 @@ x-app-env: &app-env
   DATABASE_URL: postgresql+psycopg2://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-postgres}
   PYTHONPATH: /app
   APPRISE_URLS: ${APPRISE_URLS:-}
+  # SWIM / Solace credentials shared by all consumers
+  SWIM_HOST: ${SWIM_HOST:-tcps://ems2.swim.faa.gov:55443}
+  SWIM_USERNAME: ${SWIM_USERNAME:-gear.twinhawk.co}
+  SWIM_PASSWORD: ${SWIM_PASSWORD:-}
 
 # Shared build config for the application image
 x-app-build: &app-build
@@ -229,10 +233,8 @@ services:
     container_name: golfmike-traffic-consumer
     environment:
       <<: *app-env
-      SOLACE_HOST: ${SOLACE_HOST:-}
-      SOLACE_VPN: ${SOLACE_VPN:-}
-      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
-      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
+      TFMS_VPN: ${TFMS_VPN:-TFMS}
+      TFMS_QUEUE: ${TFMS_QUEUE:-gear.twinhawk.co.TFMS.39cf9ef5-e72e-4d5c-bd12-f700b6b725c3.OUT}
     command: python consumers/traffic_consumer.py
     depends_on:
       redis:
@@ -251,11 +253,49 @@ services:
     container_name: golfmike-weather-consumer
     environment:
       <<: *app-env
-      SOLACE_HOST: ${SOLACE_HOST:-}
-      SOLACE_VPN: ${SOLACE_VPN:-}
-      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
-      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
+      ITWS_VPN: ${ITWS_VPN:-ITWS}
+      ITWS_QUEUE: ${ITWS_QUEUE:-gear.twinhawk.co.ITWS.35078235-3acd-40a5-931f-f9e15c04f7da.OUT}
     command: python consumers/weather_consumer.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  fdps_consumer:
+    <<: *app-build
+    container_name: golfmike-fdps-consumer
+    environment:
+      <<: *app-env
+      FDPS_VPN: ${FDPS_VPN:-FDPS}
+      FDPS_QUEUE: ${FDPS_QUEUE:-gear.twinhawk.co.FDPS.4de2dd99-fd7d-4246-9460-8c32dfdcfede.OUT}
+    command: python consumers/fdps_tfm_consumer.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  tbfm_consumer:
+    <<: *app-build
+    container_name: golfmike-tbfm-consumer
+    environment:
+      <<: *app-env
+      TBFM_VPN: ${TBFM_VPN:-TBFM}
+      TBFM_QUEUE: ${TBFM_QUEUE:-gear.twinhawk.co.TBFM.73a8d366-e856-4085-a58a-fa7ec3214bd1.OUT}
+    command: python consumers/tbfm_consumer.py
     depends_on:
       redis:
         condition: service_healthy
@@ -273,10 +313,6 @@ services:
     container_name: golfmike-fp-consumer
     environment:
       <<: *app-env
-      SOLACE_HOST: ${SOLACE_HOST:-}
-      SOLACE_VPN: ${SOLACE_VPN:-}
-      SOLACE_USERNAME: ${SOLACE_USERNAME:-}
-      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-}
     command: python consumers/flight_plan_consumer.py
     depends_on:
       redis:

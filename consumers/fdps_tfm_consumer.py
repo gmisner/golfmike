@@ -17,11 +17,11 @@ from consumers.solace_connection_manager import SolaceConnectionManager
 from consumers.solace_message_processor import SolaceMessageProcessor
 from swim_data_processor import parse_and_store_to_database
 
-HOST = "tcps://ems2.swim.faa.gov:55443"
-USERNAME = "gear.twinhawk.co"
-PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
-VPN_NAME = "FDPS"
-QUEUE_NAME = "gear.twinhawk.co.FDPS.4de2dd99-fd7d-4246-9460-8c32dfdcfede.OUT"
+HOST       = os.getenv("SWIM_HOST",     "tcps://ems2.swim.faa.gov:55443")
+USERNAME   = os.getenv("SWIM_USERNAME", "gear.twinhawk.co")
+PASSWORD   = os.getenv("SWIM_PASSWORD", "")
+VPN_NAME   = os.getenv("FDPS_VPN",     "FDPS")
+QUEUE_NAME = os.getenv("FDPS_QUEUE",   "gear.twinhawk.co.FDPS.4de2dd99-fd7d-4246-9460-8c32dfdcfede.OUT")
 
 connection_manager: SolaceConnectionManager = None
 message_processor: SolaceMessageProcessor = None

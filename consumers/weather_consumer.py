@@ -18,11 +18,11 @@ from parsers.weather_parser import WeatherXMLParser
 from storers.weather_storer import WeatherDataStorer
 
 # Solace message broker connection parameters
-HOST = "tcps://ems2.swim.faa.gov:55443"
-USERNAME = "gear.twinhawk.co"
-PASSWORD = "Bke2fbKgTcKycCYdvBrPDw"
-VPN_NAME = "ITWS"
-QUEUE_NAME = "gear.twinhawk.co.ITWS.35078235-3acd-40a5-931f-f9e15c04f7da.OUT"
+HOST       = os.getenv("SWIM_HOST",     "tcps://ems2.swim.faa.gov:55443")
+USERNAME   = os.getenv("SWIM_USERNAME", "gear.twinhawk.co")
+PASSWORD   = os.getenv("SWIM_PASSWORD", "")
+VPN_NAME   = os.getenv("ITWS_VPN",     "ITWS")
+QUEUE_NAME = os.getenv("ITWS_QUEUE",   "gear.twinhawk.co.ITWS.35078235-3acd-40a5-931f-f9e15c04f7da.OUT")
 
 # Global instances
 connection_manager: SolaceConnectionManager = None

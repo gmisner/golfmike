@@ -119,20 +119,26 @@ class FlightDetailPage {
             // Fetch planned route waypoints using GUFI (parallel, non-blocking)
             const gufi = this.flightData?.flight?.gufi ||
                          new URLSearchParams(window.location.search).get('gufi');
+            console.log('[overlay] gufi for route fetch:', gufi, 'flight.gufi:', this.flightData?.flight?.gufi);
             if (gufi) {
                 fetch(`/v1/flights/${encodeURIComponent(gufi)}/route-overlay`)
-                    .then(r => r.ok ? r.json() : null)
+                    .then(r => {
+                        console.log('[overlay] response status:', r.status, r.ok);
+                        return r.ok ? r.json() : null;
+                    })
                     .then(overlay => {
-                        if (!overlay) return;
+                        console.log('[overlay] planned_route count:', overlay?.planned_route?.length, 'first pt:', overlay?.planned_route?.[0]);
+                        if (!overlay) { console.warn('[overlay] no overlay data'); return; }
                         const pts = (overlay.planned_route || [])
                             .filter(w => w.latitude != null && w.longitude != null)
                             .map(w => [w.latitude, w.longitude]);
+                        console.log('[overlay] valid pts:', pts.length, pts[0], pts[pts.length - 1]);
                         if (pts.length >= 2) {
                             this.flightData.planned_route = pts;
                             this.renderMap();
                         }
                     })
-                    .catch(() => {});
+                    .catch(e => console.error('[overlay] error:', e));
             }
 
             if (upcomingResponse.ok) {
@@ -1528,6 +1534,7 @@ class FlightDetailPage {
 
             const boundsLayers = [];
             const overlayTarget = this.mapOverlayGroup || this.map;
+            console.log('[renderMap] planned:', plannedLatLngs.length, 'track:', trackLatLngs.length, 'overlayTarget:', !!overlayTarget, 'mapOverlayGroup:', !!this.mapOverlayGroup);
 
             if (plannedLatLngs.length >= 2) {
                 const plannedLine = L.polyline(plannedLatLngs, {

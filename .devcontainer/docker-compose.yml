@@ -312,9 +312,13 @@ services:
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
+    env_file:
+      - ../.env
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - DB_PORT=5432
+      - DB_PASSWORD=password
     working_dir: /workspace
     volumes:
       - ..:/workspace
@@ -339,9 +343,13 @@ services:
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
+    env_file:
+      - ../.env
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - DB_PORT=5432
+      - DB_PASSWORD=password
     working_dir: /workspace
     volumes:
       - ..:/workspace
@@ -365,13 +373,47 @@ services:
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
+    env_file:
+      - ../.env
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
+      - DB_PORT=5432
+      - DB_PASSWORD=password
     working_dir: /workspace
     volumes:
       - ..:/workspace
     command: /bin/bash -c "cd /workspace && watchfiles --filter python 'python consumers/weather_consumer.py' ."
+    user: "vscode"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - golfmike_network
+    restart: unless-stopped
+    logging: *default-logging
+
+  # TBFM Consumer (Traffic-Based Flow Management)
+  tbfm_consumer:
+    platform: linux/amd64
+    container_name: golfmike-tbfm-consumer
+    image: golfmike-dev:amd64
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        VARIANT: "3.10"
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONPATH=/workspace
+      - PATH=/home/vscode/.local/bin:$PATH
+      - DB_PORT=5432
+      - DB_PASSWORD=password
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    command: /bin/bash -c "cd /workspace && watchfiles --filter python 'python consumers/tbfm_consumer.py' ."
     user: "vscode"
     depends_on:
       - redis

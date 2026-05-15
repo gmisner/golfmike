@@ -9,6 +9,20 @@ from sqlalchemy import text
 from utils.logger import main_logger as logger
 import json
 
+try:
+    from services.route_decoder import decode_route
+    from services.route_overlay_service import store_planned_waypoints
+    _ROUTE_DECODER_AVAILABLE = True
+except ImportError:
+    _ROUTE_DECODER_AVAILABLE = False
+
+try:
+    from aviation_weather_fetcher import AviationWeatherFetcher
+    from storers.weather_api_storer import WeatherAPIStorer
+    _WEATHER_FETCHER_AVAILABLE = True
+except ImportError:
+    _WEATHER_FETCHER_AVAILABLE = False
+
 from db_config import SessionLocal
 
 try:
@@ -19,6 +33,112 @@ except ImportError:
     Limiter = None
     get_remote_address = None
     _LIMITER_AVAILABLE = False
+
+
+def _get_metar(session, icao_code: str) -> dict | None:
+    """
+    Return the most recent METAR for a station.
+    Tries metar_data (ITWS) → metar_data_api (AviationWeather cache) →
+    live fetch from AviationWeather.gov (cached into metar_data_api).
+    Returns a normalised dict or None.
+    """
+    _METAR_SQL = """
+        SELECT station_id, observation_time, raw_text, temperature, dewpoint,
+               wind_direction, wind_speed,
+               visibility::text AS visibility,
+               flight_category, sky_conditions, weather_phenomena
+        FROM {table}
+        WHERE station_id = :sid
+        ORDER BY observation_time DESC
+        LIMIT 1
+    """
+
+    def _row_to_dict(row):
+        temp_c = row.temperature
+        dew_c  = row.dewpoint
+        vis    = row.visibility
+        try:
+            vis = float(vis) if vis is not None else None
+        except (ValueError, TypeError):
+            pass  # keep as string if it can't convert (e.g. "10+")
+        return {
+            "station_id": row.station_id,
+            "observation_time": row.observation_time.isoformat() if row.observation_time else None,
+            "raw_text": row.raw_text,
+            "temperature": {
+                "celsius": temp_c,
+                "fahrenheit": round((temp_c * 9 / 5) + 32, 1) if temp_c is not None else None,
+            },
+            "dewpoint": {
+                "celsius": dew_c,
+                "fahrenheit": round((dew_c * 9 / 5) + 32, 1) if dew_c is not None else None,
+            },
+            "wind_direction": row.wind_direction,
+            "wind_speed": row.wind_speed,
+            "visibility": vis,
+            "flight_category": row.flight_category,
+            "sky_conditions": row.sky_conditions,
+            "weather_phenomena": row.weather_phenomena,
+        }
+
+    for table in ("metar_data", "metar_data_api"):
+        try:
+            row = session.execute(
+                text(_METAR_SQL.format(table=table)), {"sid": icao_code}
+            ).fetchone()
+            if row:
+                return _row_to_dict(row)
+        except Exception as e:
+            logger.warning(f"METAR query failed on {table} for {icao_code}: {e}")
+            try:
+                session.rollback()
+            except Exception:
+                pass
+
+    # Live fallback — fetch from AviationWeather.gov and cache
+    if _WEATHER_FETCHER_AVAILABLE:
+        try:
+            fetcher = AviationWeatherFetcher()
+            raw_records = fetcher.fetch_metars(station_ids=[icao_code], hours=2)
+            if raw_records:
+                storer = WeatherAPIStorer()
+                storer.store_metar_data(raw_records)
+                # Re-query from cache
+                try:
+                    row = session.execute(
+                        text(_METAR_SQL.format(table="metar_data_api")), {"sid": icao_code}
+                    ).fetchone()
+                    if row:
+                        return _row_to_dict(row)
+                except Exception:
+                    pass
+                # If re-query fails, build from raw API response directly
+                rec = raw_records[0]
+                temp_c = rec.get("temp")
+                dew_c  = rec.get("dewp")
+                return {
+                    "station_id": rec.get("icaoId", icao_code),
+                    "observation_time": rec.get("obsTime"),
+                    "raw_text": rec.get("rawOb"),
+                    "temperature": {
+                        "celsius": temp_c,
+                        "fahrenheit": round((temp_c * 9 / 5) + 32, 1) if temp_c is not None else None,
+                    },
+                    "dewpoint": {
+                        "celsius": dew_c,
+                        "fahrenheit": round((dew_c * 9 / 5) + 32, 1) if dew_c is not None else None,
+                    },
+                    "wind_direction": rec.get("wdir"),
+                    "wind_speed": rec.get("wspd"),
+                    "visibility": rec.get("visib"),
+                    "flight_category": rec.get("fltcat") or rec.get("flightCategory"),
+                    "sky_conditions": rec.get("clouds"),
+                    "weather_phenomena": rec.get("wxString"),
+                }
+        except Exception as e:
+            logger.warning(f"Live METAR fetch failed for {icao_code}: {e}")
+
+    return None
 
 
 def create_simple_api(app: Flask) -> None:
@@ -819,275 +939,40 @@ def create_simple_api(app: Flask) -> None:
                     f"Fetching weather for {flight_row.departure_airport} ({departure_icao}) -> {flight_row.arrival_airport} ({arrival_icao})"
                 )
 
-                # Check which airports have METAR data available
-                available_airports = []
-                for airport, icao_code in [
-                    (flight_row.departure_airport, departure_icao),
-                    (flight_row.arrival_airport, arrival_icao),
-                ]:
-                    try:
-                        check_query = text(
-                            "SELECT COUNT(*) FROM metar_data WHERE station_id = :station_id"
-                        )
-                        result = session.execute(check_query, {"station_id": icao_code})
-                        count = result.scalar()
-                        if count > 0:
-                            available_airports.append((airport, icao_code))
-                            logger.info(
-                                f"✅ METAR data available for {airport} ({icao_code})"
-                            )
-                        else:
-                            logger.info(f"❌ No METAR data for {airport} ({icao_code})")
-                    except Exception as e:
-                        logger.error(
-                            f"Error checking METAR for {airport} ({icao_code}): {e}"
-                        )
-                        session.rollback()
+                # Fetch METAR for departure and arrival (tries DB then live API)
+                dep_metar = _get_metar(session, departure_icao)
+                arr_metar = _get_metar(session, arrival_icao)
+                if dep_metar:
+                    weather_data["departure_metar"] = dep_metar
+                if arr_metar:
+                    weather_data["arrival_metar"] = arr_metar
 
-                if available_airports:
-                    try:
-                        # Get METAR for departure airport
-                        departure_airport_available = any(
-                            airport == flight_row.departure_airport
-                            for airport, _ in available_airports
-                        )
-                        if departure_airport_available:
-                            departure_metar_query = text(
+                # TAF — query taf_data_api (no live fallback needed, optional)
+                try:
+                    for key, icao in [("departure_taf", departure_icao), ("arrival_taf", arrival_icao)]:
+                        taf_row = session.execute(
+                            text(
                                 """
-                                SELECT 
-                                    station_id,
-                                    observation_time,
-                                    raw_text,
-                                    temperature,
-                                    dewpoint,
-                                    wind_direction,
-                                    wind_speed,
-                                    visibility,
-                                    flight_category,
-                                    sky_conditions,
-                                    weather_phenomena
-                                FROM metar_data 
-                                WHERE station_id = :station_id
-                                ORDER BY observation_time DESC
-                                LIMIT 1
+                                SELECT station_id, issue_time, valid_from, valid_to,
+                                       raw_text, forecast_periods
+                                FROM taf_data_api
+                                WHERE station_id = :sid
+                                ORDER BY issue_time DESC LIMIT 1
                                 """
-                            )
-
-                            departure_metar_result = session.execute(
-                                departure_metar_query,
-                                {"station_id": departure_icao},
-                            )
-                            departure_metar = departure_metar_result.fetchone()
-
-                            if departure_metar:
-                                # Convert Celsius to Fahrenheit
-                                temp_c = departure_metar.temperature
-                                temp_f = (
-                                    round((temp_c * 9 / 5) + 32, 1)
-                                    if temp_c is not None
-                                    else None
-                                )
-
-                                dewpoint_c = departure_metar.dewpoint
-                                dewpoint_f = (
-                                    round((dewpoint_c * 9 / 5) + 32, 1)
-                                    if dewpoint_c is not None
-                                    else None
-                                )
-
-                                weather_data["departure_metar"] = {
-                                    "station_id": departure_metar.station_id,
-                                    "observation_time": (
-                                        departure_metar.observation_time.isoformat()
-                                        if departure_metar.observation_time
-                                        else None
-                                    ),
-                                    "raw_text": departure_metar.raw_text,
-                                    "temperature": {
-                                        "celsius": temp_c,
-                                        "fahrenheit": temp_f,
-                                    },
-                                    "dewpoint": {
-                                        "celsius": dewpoint_c,
-                                        "fahrenheit": dewpoint_f,
-                                    },
-                                    "wind_direction": departure_metar.wind_direction,
-                                    "wind_speed": departure_metar.wind_speed,
-                                    "visibility": departure_metar.visibility,
-                                    "flight_category": departure_metar.flight_category,
-                                    "sky_conditions": departure_metar.sky_conditions,
-                                    "weather_phenomena": departure_metar.weather_phenomena,
-                                }
-
-                        # Get METAR for arrival airport
-                        arrival_airport_available = any(
-                            airport == flight_row.arrival_airport
-                            for airport, _ in available_airports
-                        )
-                        if arrival_airport_available:
-                            arrival_metar_query = text(
-                                """
-                                SELECT 
-                                    station_id,
-                                    observation_time,
-                                    raw_text,
-                                    temperature,
-                                    dewpoint,
-                                    wind_direction,
-                                    wind_speed,
-                                    visibility,
-                                    flight_category,
-                                    sky_conditions,
-                                    weather_phenomena
-                                FROM metar_data 
-                                WHERE station_id = :station_id
-                                ORDER BY observation_time DESC
-                                LIMIT 1
-                                """
-                            )
-
-                            arrival_metar_result = session.execute(
-                                arrival_metar_query,
-                                {"station_id": arrival_icao},
-                            )
-                            arrival_metar = arrival_metar_result.fetchone()
-
-                            if arrival_metar:
-                                # Convert Celsius to Fahrenheit
-                                temp_c = arrival_metar.temperature
-                                temp_f = (
-                                    round((temp_c * 9 / 5) + 32, 1)
-                                    if temp_c is not None
-                                    else None
-                                )
-
-                                dewpoint_c = arrival_metar.dewpoint
-                                dewpoint_f = (
-                                    round((dewpoint_c * 9 / 5) + 32, 1)
-                                    if dewpoint_c is not None
-                                    else None
-                                )
-
-                                weather_data["arrival_metar"] = {
-                                    "station_id": arrival_metar.station_id,
-                                    "observation_time": (
-                                        arrival_metar.observation_time.isoformat()
-                                        if arrival_metar.observation_time
-                                        else None
-                                    ),
-                                    "raw_text": arrival_metar.raw_text,
-                                    "temperature": {
-                                        "celsius": temp_c,
-                                        "fahrenheit": temp_f,
-                                    },
-                                    "dewpoint": {
-                                        "celsius": dewpoint_c,
-                                        "fahrenheit": dewpoint_f,
-                                    },
-                                    "wind_direction": arrival_metar.wind_direction,
-                                    "wind_speed": arrival_metar.wind_speed,
-                                    "visibility": arrival_metar.visibility,
-                                    "flight_category": arrival_metar.flight_category,
-                                    "sky_conditions": arrival_metar.sky_conditions,
-                                    "weather_phenomena": arrival_metar.weather_phenomena,
-                                }
-
-                        # Get TAF for departure airport
-                        if departure_airport_available:
-                            departure_taf_query = text(
-                                """
-                                SELECT 
-                                    station_id,
-                                    issue_time,
-                                    valid_from,
-                                    valid_to,
-                                    raw_text,
-                                    forecast_periods
-                                FROM taf_data_api 
-                                WHERE station_id = :station_id
-                                ORDER BY issue_time DESC
-                                LIMIT 1
-                                """
-                            )
-
-                            departure_taf_result = session.execute(
-                                departure_taf_query,
-                                {"station_id": departure_icao},
-                            )
-                            departure_taf = departure_taf_result.fetchone()
-
-                            if departure_taf:
-                                weather_data["departure_taf"] = {
-                                    "station_id": departure_taf.station_id,
-                                    "issue_time": (
-                                        departure_taf.issue_time.isoformat()
-                                        if departure_taf.issue_time
-                                        else None
-                                    ),
-                                    "valid_from": (
-                                        departure_taf.valid_from.isoformat()
-                                        if departure_taf.valid_from
-                                        else None
-                                    ),
-                                    "valid_to": (
-                                        departure_taf.valid_to.isoformat()
-                                        if departure_taf.valid_to
-                                        else None
-                                    ),
-                                    "raw_text": departure_taf.raw_text,
-                                    "forecast_periods": departure_taf.forecast_periods,
-                                }
-
-                        # Get TAF for arrival airport
-                        if arrival_airport_available:
-                            arrival_taf_query = text(
-                                """
-                                SELECT 
-                                    station_id,
-                                    issue_time,
-                                    valid_from,
-                                    valid_to,
-                                    raw_text,
-                                    forecast_periods
-                                FROM taf_data_api 
-                                WHERE station_id = :station_id
-                                ORDER BY issue_time DESC
-                                LIMIT 1
-                                """
-                            )
-
-                            arrival_taf_result = session.execute(
-                                arrival_taf_query,
-                                {"station_id": arrival_icao},
-                            )
-                            arrival_taf = arrival_taf_result.fetchone()
-
-                            if arrival_taf:
-                                weather_data["arrival_taf"] = {
-                                    "station_id": arrival_taf.station_id,
-                                    "issue_time": (
-                                        arrival_taf.issue_time.isoformat()
-                                        if arrival_taf.issue_time
-                                        else None
-                                    ),
-                                    "valid_from": (
-                                        arrival_taf.valid_from.isoformat()
-                                        if arrival_taf.valid_from
-                                        else None
-                                    ),
-                                    "valid_to": (
-                                        arrival_taf.valid_to.isoformat()
-                                        if arrival_taf.valid_to
-                                        else None
-                                    ),
-                                    "raw_text": arrival_taf.raw_text,
-                                    "forecast_periods": arrival_taf.forecast_periods,
-                                }
-
-                    except Exception as e:
-                        # If METAR/TAF queries fail, just continue with alerts
-                        logger.error(f"Weather query error: {e}")
-                        pass
+                            ),
+                            {"sid": icao},
+                        ).fetchone()
+                        if taf_row:
+                            weather_data[key] = {
+                                "station_id": taf_row.station_id,
+                                "issue_time": taf_row.issue_time.isoformat() if taf_row.issue_time else None,
+                                "valid_from": taf_row.valid_from.isoformat() if taf_row.valid_from else None,
+                                "valid_to": taf_row.valid_to.isoformat() if taf_row.valid_to else None,
+                                "raw_text": taf_row.raw_text,
+                                "forecast_periods": taf_row.forecast_periods,
+                            }
+                except Exception as e:
+                    logger.warning(f"TAF query error: {e}")
 
             # Get weather alerts from existing tables
             try:
@@ -1615,6 +1500,47 @@ def create_simple_api(app: Flask) -> None:
                 for r in planned_rows
                 if r.latitude is not None and r.longitude is not None
             ]
+
+            # ── On-demand route decode (if planned_waypoints empty) ────────────
+            if not planned_route and _ROUTE_DECODER_AVAILABLE:
+                try:
+                    fp_row = session.execute(
+                        text(
+                            """
+                            SELECT aircraft_id, departure_airport, arrival_airport,
+                                   "flightPlanRoute_10a" as route_text
+                            FROM flight_plan
+                            WHERE gufi = :gufi
+                            LIMIT 1
+                            """
+                        ),
+                        {"gufi": gufi},
+                    ).fetchone()
+                    if fp_row and fp_row.route_text:
+                        waypoints = decode_route(
+                            fp_row.route_text,
+                            fp_row.departure_airport or "",
+                            fp_row.arrival_airport or "",
+                        )
+                        if waypoints:
+                            n = store_planned_waypoints(gufi, fp_row.aircraft_id or "", waypoints, session)
+                            logger.info(f"On-demand decoded {n} waypoints for {gufi}")
+                            planned_route = [
+                                {
+                                    "sequence": wp["sequence"],
+                                    "fix_name": wp["fix_name"],
+                                    "latitude": wp["latitude"],
+                                    "longitude": wp["longitude"],
+                                    "altitude_restriction": wp.get("altitude_restriction"),
+                                    "speed_restriction": wp.get("speed_restriction"),
+                                    "estimated_time_over": None,
+                                    "route_source": "FILED",
+                                }
+                                for wp in waypoints
+                                if wp.get("latitude") is not None and wp.get("longitude") is not None
+                            ]
+                except Exception as decode_err:
+                    logger.warning(f"On-demand route decode failed for {gufi}: {decode_err}")
 
             # ── Actual track ──────────────────────────────────────────────────
             track_rows = session.execute(

@@ -59,6 +59,19 @@ def test_db():
         logger.error(f"Database connection test failed: {e}")
 
 
+# ── TBFM consumer task ────────────────────────────────────────────────────────
+@shared_task(name="tasks.start_tbfm_consumer", queue="solace")
+def start_tbfm_consumer():
+    """Start the TBFM (Metering Publication) consumer as a long-running task."""
+    logger.info("Starting TBFM consumer…")
+    try:
+        from consumers.tbfm_consumer import main as tbfm_main
+        tbfm_main()
+    except Exception as e:
+        logger.error(f"TBFM consumer error: {e}", exc_info=True)
+        raise
+
+
 # Start Solace consumer task, assigned to the 'solace' queue
 @shared_task(name="tasks.start_solace_consumer", queue="solace")
 def start_solace_consumer():

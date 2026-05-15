@@ -74,12 +74,18 @@ body {
   border: 1px solid var(--gm-border) !important;
   border-radius: var(--gm-radius-lg) !important;
   box-shadow: var(--gm-shadow-sm);
+  color: var(--gm-text) !important;
 }
 
 .card-header {
   background-color: transparent !important;
   border-bottom: 1px solid var(--gm-border) !important;
   padding: 1rem 1.25rem;
+  color: var(--gm-text) !important;
+}
+
+.card-body {
+  color: var(--gm-text) !important;
 }
 
 .card-title {
@@ -356,7 +362,15 @@ body {
   border: 2px solid var(--gm-surface-2);
 }
 
-.timeline-content { flex: 1; }
+.timeline-content  { flex: 1; }
+.timeline-time     { font-size: 0.75rem; color: var(--gm-text-dim); margin-bottom: 0.15rem; font-variant-numeric: tabular-nums; }
+.timeline-title    { font-weight: 600; color: var(--gm-text); }
+.timeline-meta     { font-size: 0.8rem; color: var(--gm-text-dim); margin-top: 0.2rem; }
+
+/* ── Weather / METAR cards ───────────────────────────────── */
+.card .fw-bold     { color: var(--gm-text) !important; }
+.card strong       { color: var(--gm-text) !important; }
+.card .text-secondary { color: var(--gm-text-dim) !important; }
 
 /* ── Hero ────────────────────────────────────────────────── */
 .hero {
