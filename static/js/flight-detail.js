@@ -1534,7 +1534,7 @@ class FlightDetailPage {
                     color: '#94a3b8',
                     weight: 3,
                     opacity: 0.5,
-                    dashArray: '10, 14',
+                    dashArray: '4, 6',
                     lineCap: 'round',
                     lineJoin: 'round',
                 }).addTo(overlayTarget);
