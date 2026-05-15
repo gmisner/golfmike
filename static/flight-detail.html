@@ -288,7 +288,12 @@
 
       function getGufi() {
         const params = new URLSearchParams(window.location.search);
-        return params.get('gufi') || params.get('id');
+        return (
+          params.get('gufi') ||
+          params.get('id') ||
+          window.flightDetailPage?.flightData?.flight?.gufi ||
+          null
+        );
       }
 
       function levelColor(level) {

@@ -827,7 +827,7 @@ def create_simple_api(app: Flask) -> None:
                 ]:
                     try:
                         check_query = text(
-                            "SELECT COUNT(*) FROM metar_data_api WHERE station_id = :station_id"
+                            "SELECT COUNT(*) FROM metar_data WHERE station_id = :station_id"
                         )
                         result = session.execute(check_query, {"station_id": icao_code})
                         count = result.scalar()
@@ -842,6 +842,7 @@ def create_simple_api(app: Flask) -> None:
                         logger.error(
                             f"Error checking METAR for {airport} ({icao_code}): {e}"
                         )
+                        session.rollback()
 
                 if available_airports:
                     try:
@@ -865,7 +866,7 @@ def create_simple_api(app: Flask) -> None:
                                     flight_category,
                                     sky_conditions,
                                     weather_phenomena
-                                FROM metar_data_api 
+                                FROM metar_data 
                                 WHERE station_id = :station_id
                                 ORDER BY observation_time DESC
                                 LIMIT 1
@@ -938,7 +939,7 @@ def create_simple_api(app: Flask) -> None:
                                     flight_category,
                                     sky_conditions,
                                     weather_phenomena
-                                FROM metar_data_api 
+                                FROM metar_data 
                                 WHERE station_id = :station_id
                                 ORDER BY observation_time DESC
                                 LIMIT 1
