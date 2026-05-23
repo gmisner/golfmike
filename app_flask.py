@@ -212,6 +212,17 @@ def health_ready():
 # Add simple flight tracking API endpoints
 create_simple_api(app)
 
+# Register v1 API blueprints
+from api.v1 import flights as v1_flights
+from api.v1 import airports as v1_airports
+from api.v1 import events as v1_events
+from api.v1 import status as v1_status
+
+app.register_blueprint(v1_flights.bp)
+app.register_blueprint(v1_airports.bp)
+app.register_blueprint(v1_events.bp)
+app.register_blueprint(v1_status.bp)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5500"))
     debug = os.environ.get("FLASK_DEBUG", "true").lower() in ("1", "true", "yes")
