@@ -1,11 +1,13 @@
 # app_flask.py - Flask version to avoid Quart compatibility issues
 from flask import Flask, jsonify, request, send_from_directory, render_template_string
+from flask_jwt_extended import JWTManager
 from celery_app import app as celery_app
 from tasks import process_xml
 from simple_api import create_simple_api
 from sqlalchemy import text
 import time
 import os
+import secrets
 
 from utils.logger import main_logger as logger
 from utils.readiness import database_connection_ok
@@ -18,6 +20,30 @@ app.celery_app = celery_app
 # Configure Flask for better response handling
 app.config["JSON_SORT_KEYS"] = False
 app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+
+# JWT configuration
+app.config["JWT_SECRET_KEY"] = os.environ.get(
+    "JWT_SECRET_KEY", secrets.token_hex(32)
+)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"]  = 900       # 15 minutes
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = 2_592_000  # 30 days
+
+jwt = JWTManager(app)
+
+# Token denylist check
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    from db_config import SessionLocal
+    jti = jwt_payload["jti"]
+    try:
+        with SessionLocal() as db:
+            row = db.execute(
+                text("SELECT id FROM jwt_denylist WHERE jti = :jti"),
+                {"jti": jti},
+            ).fetchone()
+            return row is not None
+    except Exception:
+        return False
 
 
 @app.route("/", methods=["GET"])
@@ -217,11 +243,13 @@ from api.v1 import flights as v1_flights
 from api.v1 import airports as v1_airports
 from api.v1 import events as v1_events
 from api.v1 import status as v1_status
+from api.v1 import auth as v1_auth
 
 app.register_blueprint(v1_flights.bp)
 app.register_blueprint(v1_airports.bp)
 app.register_blueprint(v1_events.bp)
 app.register_blueprint(v1_status.bp)
+app.register_blueprint(v1_auth.bp)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5500"))
