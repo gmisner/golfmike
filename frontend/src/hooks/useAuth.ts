@@ -39,7 +39,7 @@ export function useAuth() {
     onSuccess: (data) => {
       storeTokens(data.access_token, data.refresh_token)
       qc.setQueryData(['auth-me'], data.user)
-      navigate('/')
+      navigate('/live')
     },
   })
 
@@ -56,7 +56,7 @@ export function useAuth() {
     onSuccess: (data) => {
       storeTokens(data.access_token, data.refresh_token)
       qc.setQueryData(['auth-me'], data.user)
-      navigate('/')
+      navigate('/live')
     },
   })
 

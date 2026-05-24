@@ -194,11 +194,16 @@ services:
       dockerfile: .devcontainer/Dockerfile
       args:
         VARIANT: "3.10"
+    env_file:
+      - ../.env
     environment:
       - PYTHONPATH=/workspace
       - PATH=/home/vscode/.local/bin:$PATH
       # Werkzeug reloader + bind-mounted /workspace causes endless reloads and dropped HTTP connections.
       - FLASK_USE_RELOADER=0
+      # Override .env DB settings with internal Docker network values
+      - DB_PORT=5432
+      - DB_PASSWORD=password
     logging: *default-logging
     working_dir: /workspace
     volumes:
