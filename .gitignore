@@ -212,3 +212,9 @@ yarn-error.log*
 
 # Local development
 .local/
+
+# Claude Code session data
+.claude/
+
+# TBFM raw sample captures
+data/tbfm_samples/
