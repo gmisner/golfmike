@@ -244,12 +244,14 @@ from api.v1 import airports as v1_airports
 from api.v1 import events as v1_events
 from api.v1 import status as v1_status
 from api.v1 import auth as v1_auth
+from api.v1 import watchlist as v1_watchlist
 
 app.register_blueprint(v1_flights.bp)
 app.register_blueprint(v1_airports.bp)
 app.register_blueprint(v1_events.bp)
 app.register_blueprint(v1_status.bp)
 app.register_blueprint(v1_auth.bp)
+app.register_blueprint(v1_watchlist.bp)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5500"))

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Gauge, MoveUp } from 'lucide-react'
 import type { FlightSummary } from '@/api/flights'
 import { FlightStatusBadge } from '@/pages/IndexPage'
+import WatchButton from '@/components/watchlist/WatchButton'
 
 export default function FlightCard({ flight }: { flight: FlightSummary }) {
   return (
@@ -22,7 +23,10 @@ export default function FlightCard({ flight }: { flight: FlightSummary }) {
             </p>
           ) : null}
         </div>
-        <FlightStatusBadge status={flight.status} />
+        <div className="flex items-center gap-1">
+          <WatchButton aircraftId={flight.ident} />
+          <FlightStatusBadge status={flight.status} />
+        </div>
       </div>
 
       <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">

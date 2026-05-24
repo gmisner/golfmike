@@ -6,6 +6,7 @@ import AirportsPage from '@/pages/AirportsPage'
 import AlertsPage from '@/pages/AlertsPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import WatchlistPage from '@/pages/WatchlistPage'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/flight/:ident" element={<FlightDetailPage />} />
         <Route path="/airports" element={<AirportsPage />} />
         <Route path="/alerts" element={<AlertsPage />} />
+        <Route path="/watchlist" element={<WatchlistPage />} />
       </Route>
     </Routes>
   )

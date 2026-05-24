@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 
 const FlightMap = lazy(() => import('@/components/map/FlightMap'))
 
+import WatchButton from '@/components/watchlist/WatchButton'
+
 export default function FlightDetailPage() {
   const { ident } = useParams<{ ident: string }>()
 
@@ -51,12 +53,13 @@ export default function FlightDetailPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold font-mono">{flight.ident}</h1>
             <FlightStatusBadge status={flight.status} />
             {flight.aircraft_type && (
               <Badge variant="outline" className="font-mono">{flight.aircraft_type}</Badge>
             )}
+            <WatchButton aircraftId={flight.ident} variant="full" />
           </div>
           {flight.origin && flight.destination && (
             <p className="text-muted-foreground mt-1 flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Plane, Bell, Map, Activity, Sun, Moon, User, LogOut, ChevronDown } from 'lucide-react'
+import { Plane, Bell, Map, Activity, Sun, Moon, User, LogOut, ChevronDown, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLiveStatus } from '@/hooks/useLiveStatus'
 import { useTheme } from '@/hooks/useTheme'
@@ -26,6 +26,9 @@ export default function Navbar() {
           <NavItem to="/" icon={<Activity className="size-4" />} label="Live" />
           <NavItem to="/airports" icon={<Map className="size-4" />} label="Airports" />
           <NavItem to="/alerts" icon={<Bell className="size-4" />} label="Alerts" />
+          {user && (
+            <NavItem to="/watchlist" icon={<Star className="size-4" />} label="Watchlist" />
+          )}
         </nav>
 
         {/* Right side */}
