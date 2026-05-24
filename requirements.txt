@@ -35,3 +35,4 @@ python-dateutil==2.9.0
 # Notifications (Apprise supports Slack, Discord, Telegram, Pushover, ntfy, email, +50 more)
 # See: https://github.com/caronc/apprise
 apprise==1.9.3
+pywebpush==2.0.0

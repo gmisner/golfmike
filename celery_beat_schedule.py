@@ -83,6 +83,16 @@ beat_schedule = {
             'priority': 2
         }
     },
+
+    # Check watchlist for flight events and send notifications every minute
+    'check-watchlist-notifications': {
+        'task': 'tasks.notify_watchlist.check_watchlist_events',
+        'schedule': 60.0,  # every 60 seconds
+        'options': {
+            'queue': 'celery',
+            'priority': 7,
+        }
+    },
 }
 
 # Timezone for the beat schedule

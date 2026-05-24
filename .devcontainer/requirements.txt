@@ -37,6 +37,10 @@ python-dotenv==1.0.0
 python-dateutil==2.9.0
 requests==2.31.0
 
+# Notifications
+pywebpush==2.0.0
+apprise==1.9.3
+
 # Dev: reload long-running processes when Python sources change (matches Flask debug reloader)
 watchfiles==1.1.1
 

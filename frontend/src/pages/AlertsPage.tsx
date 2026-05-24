@@ -1,35 +1,63 @@
-import { Bell, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Link } from 'react-router-dom'
+import { Bell, Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/hooks/useAuth'
+import NotificationSettings from '@/components/notifications/NotificationSettings'
 
 export default function AlertsPage() {
+  const { isAuthenticated } = useAuth()
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Alerts</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Get notified when flights depart, land, or conditions change.
-          </p>
-        </div>
-        <Button size="sm" disabled className="gap-1.5">
-          <Plus className="size-4" />
-          New Alert
-        </Button>
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Bell className="size-6" /> Alerts & Notifications
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Get notified when watched aircraft depart, land, or file a flight plan.
+        </p>
       </div>
 
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2 text-muted-foreground">
-            <Bell className="size-5" />
-            No alerts yet
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-1">
-          <p>Alerts are coming in a future release.</p>
-          <p>You'll be able to watch specific tail numbers, flights, and airports — and get notified via SMS, push, or in-app when events occur.</p>
-        </CardContent>
-      </Card>
+      {!isAuthenticated ? (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="text-base text-muted-foreground">Sign in to use alerts</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-3">
+            <p>Create an account to save aircraft to your watchlist and receive notifications via browser push, SMS, Telegram, and more.</p>
+            <div className="flex gap-2">
+              <Link to="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+              <span>·</span>
+              <Link to="/register" className="text-primary hover:underline font-medium">Create account</Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* How it works */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Star className="size-4 text-amber-400 fill-amber-400" />
+                How it works
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-1">
+              <p>
+                Add aircraft to your{' '}
+                <Link to="/watchlist" className="text-primary hover:underline">watchlist</Link>
+                {' '}and toggle DEP / ARR / FPL on each one. Notifications fire within 60 seconds of the event.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* Notification settings */}
+          <NotificationSettings />
+        </>
+      )}
     </div>
   )
 }

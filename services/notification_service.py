@@ -1,5 +1,5 @@
 """
-Notification service powered by Apprise.
+Notification service powered by Apprise + Web Push.
 
 Supports any Apprise-compatible URL: Slack, Discord, Telegram, Pushover,
 ntfy, email (SMTP), PagerDuty, Teams, and 50+ others.
@@ -15,6 +15,7 @@ Configuration:
     APPRISE_URLS=ntfy://mytopic,mailto://user:pass@smtp.example.com/recipient@example.com
 """
 
+import json
 import os
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
@@ -25,6 +26,16 @@ try:
 except ImportError:
     _apprise_lib = None
     _APPRISE_AVAILABLE = False
+
+try:
+    from pywebpush import webpush, WebPushException
+    _WEBPUSH_AVAILABLE = True
+except ImportError:
+    _WEBPUSH_AVAILABLE = False
+
+VAPID_PUBLIC_KEY  = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_EMAIL       = os.environ.get("VAPID_CLAIMS_EMAIL", "admin@golfmike.app")
 
 from sqlalchemy.orm import Session
 
@@ -204,3 +215,72 @@ def send_flight_event(
         session.commit()
     except Exception:
         session.rollback()
+
+
+# ── Browser push helpers ──────────────────────────────────────────────────────
+
+def send_push_notification(endpoint: str, p256dh: str, auth: str,
+                           title: str, body: str, url: str = "/") -> bool:
+    """Send a single Web Push notification. Returns True on success, raises on 410."""
+    if not _WEBPUSH_AVAILABLE or not VAPID_PRIVATE_KEY:
+        return False
+    try:
+        payload = json.dumps({"title": title, "body": body, "url": url})
+        webpush(
+            subscription_info={"endpoint": endpoint, "keys": {"p256dh": p256dh, "auth": auth}},
+            data=payload,
+            vapid_private_key=VAPID_PRIVATE_KEY,
+            vapid_claims={"sub": f"mailto:{VAPID_EMAIL}"},
+        )
+        return True
+    except WebPushException as e:
+        status = e.response.status_code if e.response is not None else 0
+        logger.warning(f"Push failed ({status}): {e}")
+        if status == 410:
+            raise  # subscription expired — caller removes it
+        return False
+    except Exception as e:
+        logger.exception(f"Push error: {e}")
+        return False
+
+
+def notify_watchlist_user(db_session, user_id: int, title: str, body: str, url: str = "/") -> int:
+    """
+    Fire all active push subscriptions + Apprise channels for a user.
+    Returns count of successful sends. Removes expired push subs automatically.
+    """
+    from sqlalchemy import text
+    sent = 0
+
+    # --- Browser push ---
+    if _WEBPUSH_AVAILABLE and VAPID_PRIVATE_KEY:
+        subs = db_session.execute(
+            text("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = :uid"),
+            {"uid": user_id},
+        ).fetchall()
+        dead = []
+        for sub in subs:
+            try:
+                if send_push_notification(sub.endpoint, sub.p256dh, sub.auth, title, body, url):
+                    sent += 1
+            except Exception:
+                dead.append(sub.id)
+        for dead_id in dead:
+            db_session.execute(text("DELETE FROM push_subscriptions WHERE id = :id"), {"id": dead_id})
+
+    # --- Apprise channels ---
+    if _APPRISE_AVAILABLE:
+        channels = db_session.execute(
+            text("SELECT apprise_url FROM notification_channels WHERE user_id = :uid AND enabled = true"),
+            {"uid": user_id},
+        ).fetchall()
+        for ch in channels:
+            try:
+                ap = _apprise_lib.Apprise()
+                ap.add(ch.apprise_url)
+                if ap.notify(title=title, body=body):
+                    sent += 1
+            except Exception as e:
+                logger.exception(f"Apprise channel error: {e}")
+
+    return sent
