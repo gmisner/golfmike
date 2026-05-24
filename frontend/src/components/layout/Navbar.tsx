@@ -15,15 +15,15 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-zinc-950 border-b border-zinc-800 text-zinc-100">
       <div className="container mx-auto px-4 max-w-7xl h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:text-white transition-colors">
+        {/* Logo — goes to /live (app home) from within the app layout */}
+        <Link to="/live" className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:text-white transition-colors">
           <Plane className="size-5 text-sky-400" />
           <span>GolfMike</span>
         </Link>
 
         {/* Nav links */}
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          <NavItem to="/" icon={<Activity className="size-4" />} label="Live" />
+          <NavItem to="/live" icon={<Activity className="size-4" />} label="Live" />
           <NavItem to="/airports" icon={<Map className="size-4" />} label="Airports" />
           <NavItem to="/alerts" icon={<Bell className="size-4" />} label="Alerts" />
           {user && (
@@ -107,7 +107,7 @@ function NavItem({ to, icon, label }: { to: string; icon: React.ReactNode; label
   return (
     <NavLink
       to={to}
-      end={to === '/'}
+      end
       className={({ isActive }) =>
         cn(
           'flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors',

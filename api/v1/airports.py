@@ -71,8 +71,8 @@ def _metar_row_to_airport(row) -> dict:
 @bp.get("")
 def list_airports():
     try:
+        rows = []
         with _session() as db:
-            # Try metar_data_api first, fall back to metar_data
             for table in ("metar_data_api", "metar_data"):
                 try:
                     rows = db.execute(
@@ -83,7 +83,7 @@ def list_airports():
                                 visibility::text AS visibility,
                                 flight_category, sky_conditions
                             FROM {table}
-                            WHERE observation_time > NOW() - INTERVAL '2 hours'
+                            WHERE observation_time > NOW() - INTERVAL '3 hours'
                             ORDER BY station_id, observation_time DESC
                             LIMIT 50
                         """)

@@ -20,10 +20,12 @@ def status():
         with _session() as db:
             row = db.execute(
                 text("""
-                    SELECT COUNT(*) AS cnt
-                    FROM flight_plan
-                    WHERE flight_status NOT IN ('cancelled', 'completed', 'landed')
-                      AND proposed_departure_time > NOW() - INTERVAL '12 hours'
+                    SELECT COUNT(DISTINCT f.aircraft_id) AS cnt
+                    FROM flights f
+                    INNER JOIN track_information ti ON ti.aircraft_id = f.aircraft_id
+                    WHERE f.current_status IN ('ACTIVE', 'IN_FLIGHT')
+                      AND ti.time_at_position > TO_CHAR(NOW() - INTERVAL '2 hours',
+                                                        'YYYY-MM-DD"T"HH24:MI:SS"Z"')
                 """)
             ).fetchone()
             flight_count = row.cnt if row else 0
