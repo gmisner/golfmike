@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from db_config import SessionLocal
 from storers.flight_hub import ensure_flight_hub_row, resolve_or_create_plan_gufi
 from utils.logger import main_logger as logger
+from sqlalchemy import text
 
 
 def _parse_dt(dt_str: Optional[str]) -> Optional[datetime]:
@@ -80,6 +81,25 @@ def store_departure_information(
                 scheduled_arrival=arr_t,
                 current_status="IN_FLIGHT",
             )
+
+            # Write flight event for departure
+            try:
+                session.execute(text("""
+                    INSERT INTO flight_events
+                        (aircraft_id, gufi, event_type, event_timestamp, event_data, source_facility)
+                    VALUES
+                        (:aid, :gufi, 'DEPARTED', :ts, :data::jsonb, :fac)
+                    ON CONFLICT DO NOTHING
+                """), {
+                    "aid":  aid,
+                    "gufi": gufi,
+                    "ts":   dep_t,
+                    "data": '{"type":"departureInformation"}',
+                    "fac":  row.get("source_facility"),
+                })
+            except Exception as ev_err:
+                logger.warning("Could not write departure event for {}: {}", aid, ev_err)
+
             logger.info(
                 "departureInformation stored: gufi={} aircraft={} dep={} arr={}",
                 gufi,
