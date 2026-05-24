@@ -4,10 +4,15 @@ wheel==0.41.2
 
 # Core web framework
 quart==0.19.4
+flask==3.0.3
+flask-limiter==3.5.0
+flask-jwt-extended==4.7.1
+bcrypt==4.2.1
 
 # Database
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
+alembic==1.13.1
 
 # Celery and Redis
 celery==5.3.4
